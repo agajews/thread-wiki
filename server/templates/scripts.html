@@ -1,0 +1,13 @@
+<script>
+  function post(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    }).then(res => res.json());
+  }
+</script>

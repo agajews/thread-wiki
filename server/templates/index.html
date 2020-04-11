@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>Thread</title>
+    {% include 'scripts.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+    {% from 'modules/login.html' import loginscript %}
+    {{ loginscript() }}
+
+    <h1>Welcome to thread!</h1>
+
+    <h2>Here are our currently registered users:</h2>
+    <ul>
+    {% for user in users %}
+      <li><a href="{{ url_for('page', title=user.username) }}">{{ user.name }}</a></li>
+    {% endfor %}
+    </ul>
+
+  </body>
+</html>

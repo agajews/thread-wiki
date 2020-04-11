@@ -1,0 +1,34 @@
+<div id="loginmodule">
+  {% if current_user %}
+    <p>Welcome, {{ current_user.name }}!</p>
+  {% else %}
+    {% if login_error %}
+      <p>{{ login_error }}</p>
+    {% endif %}
+    <form id="loginform" onsubmit="login(event)">
+      <label for="email">Email:</label>
+      <input type="email" name="email">
+      <label for="password">Password:</label>
+      <input type="password" name="password">
+      <input type="submit">
+    </form>
+  {% endif %}
+</div>
+
+{% macro loginscript() %}
+  <script>
+    function login(event) {
+      event.preventDefault();
+      let form = document.getElementById("loginform");
+      post("/authenticate", {
+          email: form.elements["email"].value,
+          password: form.elements["password"].value,
+      }).then(data => {
+        document.getElementById("loginmodule").outerHTML = data.html;
+        if (data.token) {
+          document.cookie = "token=" + data.token + "; path=/; max-age=" + 3600 * 24 * 7;
+        }
+      });
+    }
+  </script>
+{% endmacro %}
