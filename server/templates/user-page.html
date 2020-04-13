@@ -1,20 +1,18 @@
 <html>
   <head>
-    <title>{{ user.name }} - Thread</title>
+    <title>{{ page.name }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
   <body>
     {% include 'modules/login.html' %}
-    {% from 'modules/login.html' import loginscript %}
-    {{ loginscript() }}
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>{{ user.name }}</h1>
-    <p>{{ user.summary }}</p>
+    <h1>{{ page.name }}</h1>
+    <p>{{ page.summary }}</p>
 
-    {% for section in user.sections %}
+    {% for section in page.sections %}
       {% if section.level == 1 %}
         <h2>{{ section.heading }}</h2>
       {% elif section.level == 2 %}

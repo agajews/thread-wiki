@@ -5,34 +5,25 @@ from .auth import verify_password, generate_auth_token
 
 @app.route("/")
 def index():
-    users = db.userpages.find()
-    return render_template("index.html", users=users)
+    userpages = db.userpages.find()
+    return render_template("index.html", userpages=userpages)
 
 
 @app.route("/page/<title>")
 def page(title):
-    user = db.userpages.find_one({"username": title})
-    if user is not None:
-        return render_template("user-page.html", user=user)
-    abort(404)
+    page = db.userpages.find_one({"username": title})
+    if page is None:
+        abort(404)
+    return render_template("user-page.html", page=page)
 
 
 @app.route("/authenticate", methods=["POST"])
 def authenticate():
     data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-    if email is None or password is None:
-        return jsonify(
-            html=render_template("modules/login.html", login_error="badrequest")
-        )
-    verified = verify_password(email, password)
-    if "error" in verified:
-        return jsonify(
-            html=render_template("modules/login.html", login_error=verified["error"])
-        )
-    g.current_user = verified["user"]
-    return jsonify(
-        html=render_template("modules/login.html"),
-        token=generate_auth_token(verified["username"]),
-    )
+    verified = verify_password(data.get("email"), data.get("password"))
+    g.user = verified.get("user")
+    g.login_error = verified.get("error")
+    g.rerender = True
+    res = jsonify(html={"loginmodule": render_template("modules/login.html")})
+    g.reissue_token = True
+    return res

@@ -1,9 +1,9 @@
 <div id="loginmodule">
-  {% if current_user %}
-    <p>Welcome, {{ current_user.name }}!</p>
+  {% if g.user %}
+    <p>Welcome, {{ g.user.name }}!</p>
   {% else %}
-    {% if login_error %}
-      <p>{{ login_error }}</p>
+    {% if g.login_error %}
+      <p>{{ g.login_error }}</p>
     {% endif %}
     <form id="loginform" onsubmit="login(event)">
       <label for="email">Email:</label>
@@ -15,7 +15,7 @@
   {% endif %}
 </div>
 
-{% macro loginscript() %}
+{% if not g.rerender %}
   <script>
     function login(event) {
       event.preventDefault();
@@ -24,11 +24,8 @@
           email: form.elements["email"].value,
           password: form.elements["password"].value,
       }).then(data => {
-        document.getElementById("loginmodule").outerHTML = data.html;
-        if (data.token) {
-          document.cookie = "token=" + data.token + "; path=/; max-age=" + 3600 * 24 * 7;
-        }
+        rerender(data.html);
       });
     }
   </script>
-{% endmacro %}
+{% endif %}
