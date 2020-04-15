@@ -4,6 +4,19 @@ from html.parser import HTMLParser
 self_closing = ["br"]
 
 
+def split_words(data):
+    words = []
+    word = ""
+    for char in data:
+        word += char
+        if char in [" ", "\t", "\n"]:
+            words.append(word)
+            word = ""
+    if word:
+        words.append(word)
+    return words
+
+
 class DataToken:
     def __init__(self, data, context):
         self.data = data
@@ -43,7 +56,9 @@ class MyHTMLParser(HTMLParser):
             print("Warning: mismatched tag `{}`".format(end_tag))
 
     def handle_data(self, data):
-        self.sequence.append(DataToken(data, self.context.copy()))
+        words = split_words(data)
+        for word in words:
+            self.sequence.append(DataToken(word, self.context.copy()))
 
 
 def list_difference(xs, ys):
@@ -76,6 +91,8 @@ def generate_html(sequence):
     return "".join(html)
 
 
+print(split_words("hello world!"))
+print(split_words("hello world! "))
 parser = MyHTMLParser()
 parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
