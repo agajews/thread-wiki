@@ -35,7 +35,7 @@ class TagToken:
         return "<{}>({})".format(self.tag, ",".join(self.context))
 
 
-class MyHTMLParser(HTMLParser):
+class HTMLSequencer(HTMLParser):
     def __init__(self):
         super().__init__()
 
@@ -93,10 +93,10 @@ def generate_html(sequence):
 
 print(split_words("hello world!"))
 print(split_words("hello world! "))
-parser = MyHTMLParser()
+parser = HTMLSequencer()
 parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
-    "<div><p>This is the <strong>beginning</strong> of my paragraph.</p></div>\n\n"
+    "<div><p>This is the <strong>beginning</strong> of <br><br>my paragraph.</p></div>\n\n"
     "<h2><strong><em>This is a sub-header</em></strong></h2>\n"
     "<div>This is the <em>middle</em> of my document.</div>"
 )
