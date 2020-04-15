@@ -9,7 +9,7 @@ class Token:
         self.data = data
         self.bolded = bolded
         self.italicized = italicized
-        self.header = None
+        self.header = header
 
     def __repr__(self):
         if self.tokentype == "br":
@@ -17,8 +17,8 @@ class Token:
         elif self.tokentype == "data":
             return "{}({}{}{})".format(
                 repr(self.data),
-                "b" if self.bolded else "",
-                "i" if self.italicized else "",
+                "strong" if self.bolded else "",
+                "em" if self.italicized else "",
                 "h{}".format(self.header) if self.header is not None else "",
             )
 
@@ -86,5 +86,10 @@ class MyHTMLParser(HTMLParser):
 
 
 parser = MyHTMLParser()
-parser.feed("<p>Parse <b>me</b>!</p>")
-print(parser.sequence)
+parser.feed(
+    "<h1>This is a header</h1>\n\n"
+    "<div>This is the <strong>beginning</strong> of my paragraph.</div>\n\n"
+    "<h2>This is a sub-header</h2>\n"
+    "<div>This is the <em>middle</em> of my document.</div>"
+)
+print("\n".join(repr(t) for t in parser.sequence))
