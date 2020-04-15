@@ -69,7 +69,14 @@ class MyHTMLParser(HTMLParser):
         elif tag.name in ["i", "em"]:
             self.italicized = False
         elif tag.name in ["p", "div"]:
-            self.sequence.append(Token("br"))
+            self.sequence.append(
+                Token(
+                    "br",
+                    bolded=self.bolded,
+                    italicized=self.italicized,
+                    header=self.header,
+                )
+            )
         elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
             self.header = None
         else:
@@ -87,6 +94,40 @@ class MyHTMLParser(HTMLParser):
         )
 
 
+def generate_html(sequence):
+    bolded = False
+    italicized = False
+    header = None
+
+    html = []
+
+    for token in sequence:
+        # have to close and open in reverse order
+        # bc we want our html to be well-formatted
+        if not token.bolded and bolded:
+            html.append("</strong>")
+        if not token.italicized and italicized:
+            html.append("</em>")
+        if token.header != header and header is not None:
+            html.append("</h{}>".format(header))
+        if token.header != header and token.header is not None:
+            html.append("<h{}>".format(token.header))
+        if token.italicized and not italicized:
+            html.append("<em>")
+        if token.bolded and not bolded:
+            html.append("<strong>")
+        bolded = token.bolded
+        italicized = token.italicized
+        header = token.header
+
+        if token.tokentype == "br":
+            html.append("<br>")
+        elif token.tokentype == "data":
+            html.append(token.data)
+
+    return "".join(html)
+
+
 parser = MyHTMLParser()
 parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
@@ -95,3 +136,5 @@ parser.feed(
     "<div>This is the <em>middle</em> of my document.</div>"
 )
 print("\n".join(repr(t) for t in parser.sequence))
+print("\n\n===HTML===")
+print(generate_html(parser.sequence))
