@@ -132,7 +132,7 @@ parser = MyHTMLParser()
 parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
     "<div><p>This is the <strong>beginning</strong> of my paragraph.</p></div>\n\n"
-    "<h2>This is a sub-header</h2>\n"
+    "<h2><strong><em>This is a sub-header</em></strong></h2>\n"
     "<div>This is the <em>middle</em> of my document.</div>"
 )
 print("\n".join(repr(t) for t in parser.sequence))
