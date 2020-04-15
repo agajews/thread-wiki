@@ -23,16 +23,17 @@ class DataToken:
         self.context = context
 
     def __repr__(self):
-        return "{}({})".format(repr(self.data), ",".join(self.context))
+        return "{}({})".format(repr(self.data), ",".join(t for t, a in self.context))
 
 
 class TagToken:
-    def __init__(self, tag, context):
+    def __init__(self, tag, context, attrs):
         self.tag = tag
         self.context = context
+        self.attrs = attrs
 
     def __repr__(self):
-        return "<{}>({})".format(self.tag, ",".join(self.context))
+        return "<{}>({})".format(self.tag, ",".join(t for t, a in self.context))
 
 
 class HTMLSequencer(HTMLParser):
@@ -44,14 +45,14 @@ class HTMLSequencer(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag in self_closing:
-            self.sequence.append(TagToken(tag, self.context.copy()))
+            self.sequence.append(TagToken(tag, self.context.copy(), attrs))
         else:
-            self.context.append(tag)
+            self.context.append((tag, attrs))
 
     def handle_endtag(self, end_tag):
         if not self.context:
             print("Warning: mismatched tag `{}`".format(end_tag))
-        start_tag = self.context.pop()
+        start_tag, attrs = self.context.pop()
         if start_tag != end_tag:
             print("Warning: mismatched tag `{}`".format(end_tag))
 
@@ -70,24 +71,36 @@ def list_difference(xs, ys):
     return xs[i:], ys[i:]
 
 
+def open_tag(tag, attrs):
+    if not attrs:
+        return "<{}>".format(tag)
+    return "<{} {}>".format(
+        tag, " ".join("{}={}".format(prop, repr(val)) for prop, val in attrs)
+    )
+
+
+def close_tag(tag):
+    return "</{}>".format(tag)
+
+
 def generate_html(sequence):
     html = []
     context = []
     for token in sequence:
         to_close, to_open = list_difference(context, token.context)
-        for tag in reversed(to_close):
-            html.append("</{}>".format(tag))
-        for tag in to_open:
-            html.append("<{}>".format(tag))
+        for tag, attrs in reversed(to_close):
+            html.append(close_tag(tag))
+        for tag, attrs in to_open:
+            html.append(open_tag(tag, attrs))
         if isinstance(token, DataToken):
             html.append(token.data)
         elif isinstance(token, TagToken):
-            html.append("<{}>".format(token.tag))
+            html.append(open_tag(token.tag, token.attrs))
         else:
             raise Exception("Oops, what happened here?")
         context = token.context
-    for tag in reversed(context):
-        html.append("</{}>".format(tag))
+    for tag, attrs in reversed(context):
+        html.append(close_tag(tag))
     return "".join(html)
 
 
@@ -97,7 +110,7 @@ parser = HTMLSequencer()
 parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
     "<div><p>This is the <strong>beginning</strong> of <br><br>my paragraph.</p></div>\n\n"
-    "<h2><strong><em>This is a sub-header</em></strong></h2>\n"
+    "<h2><strong><em>This is a <a href='https://google.com'>sub-header</a></em></strong></h2>\n"
     "<div>This is the <em>middle</em> of my document.</div>"
 )
 print("\n".join(repr(t) for t in parser.sequence))
