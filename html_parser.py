@@ -15,12 +15,14 @@ class Token:
         if self.tokentype == "br":
             return "(br)"
         elif self.tokentype == "data":
-            return "{}({}{}{})".format(
-                repr(self.data),
-                "strong" if self.bolded else "",
-                "em" if self.italicized else "",
-                "h{}".format(self.header) if self.header is not None else "",
-            )
+            attributes = []
+            if self.bolded:
+                attributes.append("strong")
+            if self.italicized:
+                attributes.append("em")
+            if self.header is not None:
+                attributes.append("h{}".format(self.header))
+            return "{}({})".format(repr(self.data), ",".join(attributes))
 
 
 class Tag:
@@ -87,8 +89,8 @@ class MyHTMLParser(HTMLParser):
 
 parser = MyHTMLParser()
 parser.feed(
-    "<h1>This is a header</h1>\n\n"
-    "<div>This is the <strong>beginning</strong> of my paragraph.</div>\n\n"
+    "<h1>This is <em>a</em> header</h1>\n\n"
+    "<div><p>This is the <strong>beginning</strong> of my paragraph.</p></div>\n\n"
     "<h2>This is a sub-header</h2>\n"
     "<div>This is the <em>middle</em> of my document.</div>"
 )
