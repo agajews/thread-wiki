@@ -111,7 +111,7 @@ parser.feed(
     "<h1>This is <em>a</em> header</h1>\n\n"
     "<div><p>This is the <strong>beginning</strong> of <br><br>my paragraph.</p></div>\n\n"
     "<h2><strong><em>This is a <a href='https://google.com'>sub-header</a></em></strong></h2>\n"
-    "<div>This is the <em>middle</em> of my document.</div>"
+    "<div><p>This is the <em>middle</em> of my document.</p></div>"
 )
 print("\n".join(repr(t) for t in parser.sequence))
 print("\n\n===HTML===")

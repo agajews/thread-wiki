@@ -1,6 +1,9 @@
 <div id="loginmodule">
   {% if g.user %}
-    <p>Welcome, {{ g.user.name }}!</p>
+    <p>Welcome, {{ g.user.name }}!
+      <button type="button" onclick="logout(event)">Logout</button>
+    </p>
+    
   {% else %}
     {% if g.login_error %}
       <p>{{ g.login_error }}</p>
@@ -24,6 +27,13 @@
           email: form.elements["email"].value,
           password: form.elements["password"].value,
       }).then(data => {
+        rerender(data.html);
+      });
+    }
+
+    function logout(event) {
+      event.preventDefault()
+      post("/logout").then((data) => {
         rerender(data.html);
       });
     }

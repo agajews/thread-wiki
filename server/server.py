@@ -19,7 +19,9 @@ def page(title):
 
 @app.route("/authenticate", methods=["POST"])
 def authenticate():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data is None:
+        abort(400)
     verified = verify_password(data.get("email"), data.get("password"))
     g.user = verified.get("user")
     g.login_error = verified.get("error")
@@ -27,3 +29,10 @@ def authenticate():
     res = jsonify(html={"loginmodule": render_template("modules/login.html")})
     g.reissue_token = True
     return res
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    g.user = None
+    g.rerender = True
+    return jsonify(html={"loginmodule": render_template("modules/login.html")})

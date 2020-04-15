@@ -49,13 +49,15 @@ def verify_auth_token(token):
 @app.before_request
 def populate_user():
     token = request.cookies.get("token")
-    g.user = verify_auth_token(token)
     g.reissue_token = False
+    g.user = verify_auth_token(token)
 
 
 @app.after_request
-def reissue_token(response):
-    if g.reissue_token and g.user is not None:
+def manage_token(response):
+    if g.user is None:
+        response.set_cookie("token", "", expires=0)
+    elif g.reissue_token:
         token = generate_auth_token(g.user["username"])
         response.set_cookie("token", token, max_age=3600 * 24 * 7)
     return response
