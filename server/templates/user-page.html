@@ -10,18 +10,8 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <h1>{{ page.name }}</h1>
-    <p>{{ page.summary }}</p>
-
-    {% for section in page.sections %}
-      {% if section.level == 1 %}
-        <h2>{{ section.heading }}</h2>
-      {% elif section.level == 2 %}
-        <h3>{{ section.heading }}</h3>
-      {% else %}
-        <h4>{{ section.heading }}</h4>
-      {% endif %}
-      <p>{{ section.body }}</p>
-    {% endfor %}
+    <a href="{{ url_for('edit', title=page.username) }}">Edit</a>
+    <div>{{ page.body|safe }}</div>
 
   </body>
 </html>

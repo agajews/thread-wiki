@@ -13,7 +13,10 @@
 
   function rerender(elements) {
     Object.entries(elements).forEach(([id, html]) => {
-      document.getElementById(id).outerHTML = html;
+      let element = document.getElementById(id);
+      if (element) {
+        element.outerHTML = html;
+      }
     });
   }
 </script>

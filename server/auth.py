@@ -1,8 +1,7 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from datetime import datetime
 from flask import g, request
-from .app import app, db
+from .app import app, db, timestamp
 
 
 def create_user(email, username):
@@ -24,10 +23,6 @@ def verify_password(email, password):
     if not check_password_hash(user["passhash"], password):
         return {"error": "incorrectpassword"}
     return {"user": user, "username": user["username"]}
-
-
-def timestamp():
-    return datetime.utcnow().timestamp()
 
 
 def generate_auth_token(username, expiration=3600 * 24 * 365):

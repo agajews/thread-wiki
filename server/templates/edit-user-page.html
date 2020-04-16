@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Edit: {{ page.name }} - Thread</title>
+    {% include 'scripts.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <h1>Edit: {{ page.name }}</h1>
+    <a href="{{ url_for('page', title=page.username) }}">Back</a>
+    <div id="pagebody" contenteditable="true">{{ page.body|safe }}</div>
+    <button type="button" onclick="submitedit(event)">Submit edit</button>
+    <div id="editerror"></div>
+
+    <script>
+      function submitedit(event) {
+        event.preventDefault();
+        post("{{ url_for('submitedit', title=page.username) }}", {
+          body: document.getElementById("pagebody").innerHTML,
+        }).then((data) => {
+          if (data.success) {
+            window.location.href = "{{ url_for('page', title=page.username) }}";
+          } else {
+            rerender(data.html);
+          }
+        });
+      }
+    </script>
+
+  </body>
+</html>

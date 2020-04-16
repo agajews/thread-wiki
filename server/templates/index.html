@@ -10,8 +10,8 @@
     <h1>Welcome to thread!</h1>
     <h2>Here are our currently registered users:</h2>
     <ul>
-      {% for page in userpages %}
-        <li><a href="{{ url_for('page', title=page.username) }}">{{ page.name }}</a></li>
+      {% for user in users %}
+        <li><a href="{{ url_for('page', title=user.username) }}">{{ user.name }}</a></li>
       {% endfor %}
     </ul>
 
