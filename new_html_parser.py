@@ -43,10 +43,16 @@ class HTMLSequencer(HTMLParser):
         self.context = []
         self.sequence = []
 
+        self.just_closed = None
+
     def handle_starttag(self, tag, attrs):
         if tag in self_closing:
             self.sequence.append(TagToken(tag, self.context.copy(), attrs))
         else:
+            if (tag, attrs) == self.just_closed:
+                self.sequence.append(DataToken("", self.context.copy()))
+            else:
+                self.just_closed = None
             self.context.append((tag, attrs))
 
     def handle_endtag(self, end_tag):
@@ -55,6 +61,7 @@ class HTMLSequencer(HTMLParser):
         start_tag, attrs = self.context.pop()
         if start_tag != end_tag:
             print("Warning: mismatched tag `{}`".format(end_tag))
+        self.just_closed = (start_tag, attrs)
 
     def handle_data(self, data):
         words = split_words(data)
@@ -112,6 +119,7 @@ parser.feed(
     "<div><p>This is the <strong>beginning</strong> of <br><br>my paragraph.</p></div>\n\n"
     "<h2><strong><em>This is a <a href='https://google.com'>sub-header</a></em></strong></h2>\n"
     "<div><p>This is the <em>middle</em> of my document.</p></div>"
+    "<div>This is a bulleted list: <ul><li>yo</li><li>yolo</li></ul></div>"
 )
 print("\n".join(repr(t) for t in parser.sequence))
 print("\n\n===HTML===")

@@ -51,7 +51,6 @@ def submitedit(title):
     if data is None:
         abort(400)
     body = data.get("body")
-    print(body)
     if body is None:
         abort(400)
     if g.user is None:
