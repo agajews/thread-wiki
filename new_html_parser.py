@@ -42,8 +42,6 @@ class DataToken(Token):
         super().__init__((data, context))
         self.data = data
         self.context = context
-        self.inserted = False
-        self.deleted = False
 
     def __repr__(self):
         ins = ""
@@ -62,8 +60,6 @@ class TagToken(Token):
         self.tag = tag
         self.context = context
         self.attrs = attrs
-        self.inserted = False
-        self.deleted = False
 
     def __repr__(self):
         ins = ""
@@ -113,7 +109,7 @@ def list_difference(xs, ys):
         if i in [len(xs), len(ys)] or xs[i] != ys[i]:
             break
         i += 1
-    return xs[i:], ys[i:]
+    return xs[:i], xs[i:], ys[i:]
 
 
 def open_tag(tag, attrs):
@@ -132,7 +128,7 @@ def generate_html(sequence):
     html = []
     context = []
     for token in sequence:
-        to_close, to_open = list_difference(context, token.context)
+        shared, to_close, to_open = list_difference(context, token.context)
         for tag, attrs in reversed(to_close):
             html.append(close_tag(tag))
         for tag, attrs in to_open:
@@ -150,32 +146,21 @@ def generate_html(sequence):
 
 
 def startswith(l, prefix):
-    if prefix is None:
-        return False
     return l[: len(prefix)] == prefix
 
 
-def insert_diff_tags(sequence):
-    insert_prefix = None
-    delete_prefix = None
-    for token in sequence:
-        if token.inserted:
-            if startswith(token.context, insert_prefix):
-                token.context.insert(len(insert_prefix), [("ins", [])])
-            else:
-                insert_prefix = token.context
-                token.context.append(("ins", []))
+def insert_tags(sequence, tag, predicate):
+    prefix = None
+    context = []
+    for add_tag, token in zip(predicate, sequence):
+        if add_tag:
+            if prefix is None or not startswith(token.context, prefix):
+                shared, to_close, to_open = list_difference(context, token.context)
+                prefix = shared
+            token.context.insert(len(prefix), tag)
         else:
-            insert_prefix = None
-
-        if token.deleted:
-            if startswith(token.context, delete_prefix):
-                token.context.insert(len(delete_prefix), [("del", [])])
-            else:
-                delete_prefix = token.context
-                token.context.append(("del", []))
-        else:
-            delete_prefix = None
+            prefix = None
+        context = token.context
 
 
 def get_sequence(data):
@@ -189,20 +174,21 @@ def markup_changes(data_a, data_b):
     sequence_b = get_sequence(data_b)
     matcher = SequenceMatcher(isjunk=None, a=sequence_a, b=sequence_b, autojunk=False)
     merged_sequence = []
+    diff = []
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
             merged_sequence += sequence_b[j1:j2]
+            diff += ["equal"] * (j2 - j1)
         if tag == "replace" or tag == "delete":
-            for token in sequence_a[i1:i2]:
-                token.deleted = True
-                merged_sequence.append(token)
+            merged_sequence += sequence_a[i1:i2]
+            diff += ["del"] * (i2 - i1)
         if tag == "replace" or tag == "insert":
-            for token in sequence_b[j1:j2]:
-                token.inserted = True
-                merged_sequence.append(token)
+            merged_sequence += sequence_b[j1:j2]
+            diff += ["ins"] * (j2 - j1)
+    insert_tags(merged_sequence, ("del", []), (x == "del" for x in diff))
+    insert_tags(merged_sequence, ("ins", []), (x == "ins" for x in diff))
     # print("\n".join(repr(t) for t in merged_sequence))
     # print("=========")
-    insert_diff_tags(merged_sequence)
     return generate_html(merged_sequence)
 
 
