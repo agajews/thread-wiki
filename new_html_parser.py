@@ -181,8 +181,8 @@ def isjunk(token):
     return False
 
 
-def isword(token):
-    return not isjunk(token) and isinstance(token, DataToken)
+# def isword(token):
+#     return not isjunk(token) and isinstance(token, DataToken)
 
 
 def markup_changes(data_a, data_b):
@@ -201,10 +201,10 @@ def markup_change_blocks(data_a, data_b):
     blocks = []
     for opcodes in matcher.get_grouped_opcodes(n=10):
         merged_sequence = add_diff_to_context(opcodes, sequence_a, sequence_b)
-        if isword(merged_sequence[0]):
-            merged_sequence[0].data = "[...] " + merged_sequence[0].data
-        if isword(merged_sequence[-1]):
-            merged_sequence[-1].data += " [...]"
+        # if isword(merged_sequence[0]):
+        #     merged_sequence[0].data = "[...] " + merged_sequence[0].data
+        # if isword(merged_sequence[-1]):
+        #     merged_sequence[-1].data += " [...]"
         blocks.append(generate_html(merged_sequence))
     return blocks
 
