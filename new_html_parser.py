@@ -44,14 +44,7 @@ class DataToken(Token):
         self.context = context
 
     def __repr__(self):
-        ins = ""
-        if self.inserted:
-            ins = "{ins}"
-        elif self.deleted:
-            ins = "{del}"
-        return "{}({}){}".format(
-            repr(self.data), ",".join(t for t, a in self.context), ins
-        )
+        return "{}({})".format(repr(self.data), ",".join(t for t, a in self.context))
 
 
 class TagToken(Token):
@@ -62,12 +55,7 @@ class TagToken(Token):
         self.attrs = attrs
 
     def __repr__(self):
-        ins = ""
-        if self.inserted:
-            ins = "{ins}"
-        elif self.deleted:
-            ins = "{del}"
-        return "<{}>({}){}".format(self.tag, ",".join(t for t, a in self.context), ins)
+        return "<{}>({})".format(self.tag, ",".join(t for t, a in self.context))
 
 
 class HTMLSequencer(HTMLParser):
@@ -169,13 +157,10 @@ def get_sequence(data):
     return parser.sequence
 
 
-def markup_changes(data_a, data_b):
-    sequence_a = get_sequence(data_a)
-    sequence_b = get_sequence(data_b)
-    matcher = SequenceMatcher(isjunk=None, a=sequence_a, b=sequence_b, autojunk=False)
+def add_diff_to_context(opcodes, sequence_a, sequence_b):
     merged_sequence = []
     diff = []
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    for tag, i1, i2, j1, j2 in opcodes:
         if tag == "equal":
             merged_sequence += sequence_b[j1:j2]
             diff += ["equal"] * (j2 - j1)
@@ -187,19 +172,56 @@ def markup_changes(data_a, data_b):
             diff += ["ins"] * (j2 - j1)
     insert_tags(merged_sequence, ("del", []), (x == "del" for x in diff))
     insert_tags(merged_sequence, ("ins", []), (x == "ins" for x in diff))
-    # print("\n".join(repr(t) for t in merged_sequence))
-    # print("=========")
+    return merged_sequence
+
+
+def isjunk(token):
+    if isinstance(token, DataToken) and all(c in whitespace for c in token.data):
+        return True
+    return False
+
+
+def isword(token):
+    return not isjunk(token) and isinstance(token, DataToken)
+
+
+def markup_changes(data_a, data_b):
+    sequence_a = get_sequence(data_a)
+    sequence_b = get_sequence(data_b)
+    matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
+    merged_sequence = add_diff_to_context(matcher.get_opcodes(), sequence_a, sequence_b)
     return generate_html(merged_sequence)
+
+
+def markup_change_blocks(data_a, data_b):
+    sequence_a = get_sequence(data_a)
+    sequence_b = get_sequence(data_b)
+    print(sequence_b)
+    matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
+    blocks = []
+    for opcodes in matcher.get_grouped_opcodes(n=10):
+        merged_sequence = add_diff_to_context(opcodes, sequence_a, sequence_b)
+        if isword(merged_sequence[0]):
+            merged_sequence[0].data = "[...] " + merged_sequence[0].data
+        if isword(merged_sequence[-1]):
+            merged_sequence[-1].data += " [...]"
+        blocks.append(generate_html(merged_sequence))
+    return blocks
 
 
 data_a = """
 <h1>This is just a header</h1>
 <div>This is a body paragraph that goes along with it.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
 
 <h2>This is another header</h2>
 <div>This body paragraph has a bulleted list:
     <ul>
         <li>yo</li>
+        <li>this one is going to be split</li>
         <li>yoyo</li>
         <li>This one is nested:<ul>
             <li>yo</li>
@@ -213,12 +235,18 @@ data_a = """
 data_b = """
 <h1>This is a header</h1>
 <div>This is a related paragraph that goes along with it.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
+<div>This paragzaph was unchanged.</div>
 
 <h2>This is <strong>another</strong> header</h2>
 <div>This is an entirely new <em>body</em> paragraph.</div>
 <div>This body paragraph has a bulleted list:
     <ul>
         <li>yo</li>
+        <li>this one is </li>
+        <li>going to be split</li>
         <li>hyohyo</li>
         <li>This one is nested:<ul><ul>
             <li>yo</li>
@@ -230,8 +258,10 @@ data_b = """
 """
 
 
-print(markup_changes(data_a, data_b))
-
+# print(markup_changes(data_a, data_b))
+for block in markup_change_blocks(data_a, data_b):
+    print("=" * 10)
+    print(block)
 
 # print(split_words("hello world!"))
 # print(split_words("hello world! "))
