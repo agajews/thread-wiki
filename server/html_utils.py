@@ -218,7 +218,7 @@ def markup_change_blocks(data_a, data_b):
     sequence_b = get_sequence(data_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     blocks = []
-    for opcodes in matcher.get_grouped_opcodes(n=10):
+    for opcodes in matcher.get_grouped_opcodes(n=3):
         merged_sequence = add_diff_to_context(opcodes, sequence_a, sequence_b)
         blocks.append(generate_html(merged_sequence))
     return blocks

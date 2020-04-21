@@ -11,7 +11,7 @@ from flask import (
 import re
 import random
 from pymongo.errors import DuplicateKeyError
-from .html_utils import sanitize_html
+from .html_utils import sanitize_html, markup_change_blocks
 from .app import app, db, timestamp
 from .auth import verify_password, generate_auth_token
 
@@ -39,13 +39,13 @@ def find_page(title):
 
 
 def is_valid_email(email):
-    if re.match("[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+.)+edu", email):
+    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+.)+edu$", email):
         return True
     return False
 
 
 def generate_user_template(email):
-    return "<p>The homo sapiens {0} is simply the best.</p><h2>Best Quotes</h2><p>Yoyoyo, it's my boy {0}</p><h2>Early life</h2>One day, our protagonist {0} was born. Later, they went to college.</p>".format(
+    return "<p>The homo sapiens {0} is simply the best.</p><h2>Best Quotes</h2><p>Yoyoyo, it's my boy {0}</p><h2>Early life</h2><p>One day, our protagonist {0} was born. Later, they went to college.</p>".format(
         email
     )
 
@@ -71,6 +71,8 @@ def build_user_title(heading, nickname):
 
 def create_user_page(title):
     nickname = generate_nickname()
+    body = generate_user_template(title)
+    editblocks = ["<ins>{}</ins>".format(body)]
     try:
         db.pages.insert_one(
             {
@@ -78,7 +80,8 @@ def create_user_page(title):
                 "type": "user",
                 "versions": [
                     {
-                        "body": generate_user_template(title),
+                        "body": body,
+                        "editblocks": editblocks,
                         "heading": title,
                         "nickname": nickname,
                         "editor": g.user["_id"],
@@ -96,6 +99,7 @@ def create_user_page(title):
 
 @app.route("/page/<title>/")
 def page(title):
+    # TODO: redirect to latest title
     page = find_page(title)
     if page is not None and page["type"] == "user":
         return render_template(
@@ -118,16 +122,6 @@ def edit(title):
             "edit-user-page.html", version=page["versions"][-1], title=title
         )
     abort(404)
-
-
-# @app.route("/page/<title>/history/")
-# def history(title):
-#     versions = find_userpage_versions(title)
-#     if versions is None:
-#         abort(404)
-#     if g.user is None:
-#         abort(401)
-#     return render_template("user-page-history.html", page=page)
 
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
@@ -163,7 +157,8 @@ def submitedit(title):
         abort(400)
 
     page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": num}}, {"titles": 1, "type": 1}
+        {"titles": title, "versions": {"$size": num}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}},
     )
     if page is None:
         return racecondition()
@@ -174,6 +169,7 @@ def submitedit(title):
 
     sanitized_body = sanitize_html(body)
     newtitle = build_user_title(heading, nickname)
+    editblocks = markup_change_blocks(page["versions"][-1]["body"], sanitized_body)
     try:
         update = db.pages.update_one(
             {"titles": title, "versions": {"$size": num}},
@@ -181,6 +177,7 @@ def submitedit(title):
                 "$push": {
                     "versions": {
                         "body": sanitized_body,
+                        "editblocks": editblocks,
                         "heading": heading,
                         "nickname": nickname,
                         "editor": g.user["_id"],
@@ -196,6 +193,33 @@ def submitedit(title):
     if update.modified_count == 0:
         return racecondition()
     return jsonify({"success": True, "redirect": url_for_title("page", title=newtitle)})
+
+
+@app.route("/page/<title>/version/<int:num>/")
+def version(title, num):
+    page = db.pages.find_one({"titles": title}, {"versions": {"$slice": [num - 1, 1]}})
+    if g.user is None:
+        abort(401)
+    if page is not None and page["type"] == "user" and page["versions"]:
+        return render_template(
+            "user-page-version.html", version=page["versions"][0], title=title
+        )
+    abort(404)
+
+
+@app.route("/page/<title>/history/")
+def history(title):
+    page = db.pages.find_one({"titles": title})
+    if page is None:
+        abort(404)
+    if g.user is None:
+        abort(401)
+    return render_template(
+        "user-page-history.html",
+        currentversion=page["versions"][-1],
+        oldversions=reversed(page["versions"][:-1]),
+        title=title,
+    )
 
 
 @app.route("/authenticate/", methods=["POST"])

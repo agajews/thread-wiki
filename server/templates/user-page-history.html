@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>History: {{ page.name }} - Thread</title>
+    <title>History: {{ currentversion.heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,46 +9,29 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>History: {{ page.name }}</h1>
-    <a href="{{ url_for('page', title=page.username) }}">Back</a>
+    <h1>History: {{ currentversion.heading }}, AKA "{{ currentversion.nickname }}"</h1>
+    <a href="{{ url_for_title('page', title=title) }}">Back</a>
 
     {% macro show_edits(version) %}
       <div class="editchanges">
-        {% for block in version.edit_blocks %}
-          <div class="editblock">{{ block.edits|safe }}</div>
+        {% for block in version.editblocks %}
+          <div class="editblock">{{ block|safe }}</div>
         {% endfor %}
       </div>
     {% endmacro %}
 
-    <h1>{{ currentversion.date }}</h1>
+    <h3>{{ currentversion.timestamp }}</h3>
     <button type="button">Flag and undo</button>
-    {% show_edits(currentversion) %}
-    {% for version in versions %}
+    <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
+    {{ show_edits(currentversion) }}
+    {% for version in oldversions %}
       <hr>
-      <h1>{{ version.date }}</h1>
+      <h3>{{ version.timestamp }}</h3>
       <button type="button">Flag</button>
       <button type="button">Restore</button>
-      <a href="{{ url_for('version', title=page.username, _id=version._id) }}">View</a>
-      {% show_edits(version) %}
+      <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
+      {{ show_edits(version) }}
     {% endfor %}
-    <div id="pagebody" contenteditable="true">{{ page.body|safe }}</div>
-    <button type="button" onclick="submitedit(event)">Submit edit</button>
-    <div id="editerror"></div>
-
-    <script>
-      function submitedit(event) {
-        event.preventDefault();
-        post("{{ url_for('submitedit', title=page.username) }}", {
-          body: document.getElementById("pagebody").innerHTML,
-        }).then((data) => {
-          if (data.success) {
-            window.location.href = "{{ url_for('page', title=page.username) }}";
-          } else {
-            rerender(data.html);
-          }
-        });
-      }
-    </script>
 
   </body>
 </html>
