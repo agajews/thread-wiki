@@ -10,6 +10,7 @@ from flask import (
 )
 import re
 import random
+from pymongo.errors import DuplicateKeyError
 from .html_utils import sanitize_html
 from .app import app, db, timestamp
 from .auth import verify_password, generate_auth_token
@@ -140,28 +141,36 @@ def submitedit(title):
         abort(401)
     sanitized_body = sanitize_html(body)
     newtitle = build_user_title(heading, nickname)
-    update = db.pages.update_one(
-        {"titles": title},
-        {
-            "$push": {
-                "versions": {
-                    "body": sanitized_body,
-                    "heading": heading,
-                    "nickname": nickname,
-                    "editor": g.user["_id"],
-                    "timestamp": timestamp(),
-                }
+    try:
+        update = db.pages.update_one(
+            {"titles": title},
+            {
+                "$push": {
+                    "versions": {
+                        "body": sanitized_body,
+                        "heading": heading,
+                        "nickname": nickname,
+                        "editor": g.user["_id"],
+                        "timestamp": timestamp(),
+                    }
+                },
+                "$addToSet": {"titles": newtitle},
             },
-            "$addToSet": {"titles": newtitle},
-        },
-    )
+        )
+    except DuplicateKeyError:
+        return jsonify(
+            {
+                "success": False,
+                "html": {
+                    "editerror": "Oops, someone with the same name already has that nickname!"
+                },
+            }
+        )
     if update.modified_count > 0:
         return jsonify(
             {"success": True, "redirect": url_for_title("page", title=newtitle)}
         )
-    return jsonify(
-        {"success": False, "html": {"editerror": "Oops, something went wrong :("}}
-    )
+    abort(500)
 
 
 @app.route("/authenticate/", methods=["POST"])
