@@ -11,7 +11,7 @@
 
     <h1>Editing:</h1>
     <hr>
-    <h1 contenteditable="true" id="heading">{{ version.heading }}</h1>
+    <h1><span id="heading" contenteditable=true>{{ version.heading }}</span>, AKA "<span id="nickname" contenteditable=true>{{ version.nickname }}</span>"</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
     <div id="pagebody" contenteditable="true">{{ version.body|safe }}</div>
     <button type="button" onclick="submitedit(event)">Submit edit</button>
@@ -23,6 +23,7 @@
         post("{{ url_for_title('submitedit', title=title) }}", {
           body: document.getElementById("pagebody").innerHTML,
           heading: document.getElementById("heading").innerText,
+          nickname: document.getElementById("nickname").innerText,
         }).then((data) => {
           if (data.success) {
             window.location.href = data.redirect;

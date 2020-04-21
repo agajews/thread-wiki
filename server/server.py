@@ -9,6 +9,7 @@ from flask import (
     url_for,
 )
 import re
+import random
 from .html_utils import sanitize_html
 from .app import app, db, timestamp
 from .auth import verify_password, generate_auth_token
@@ -31,33 +32,9 @@ def index():
     return render_template("index.html", pages=pages)
 
 
-# def find_userpage(username):
-#     pages = db.userpages.find({"username": username}).sort("timestamp", -1).limit(1)
-#     pages = list(pages)
-#     if len(pages) == 0:
-#         return None
-#     return pages[0]
-
-
-# def find_userpage_versions(username):
-#     pages = db.userpages.find({"username": username}).sort("timestamp", -1)
-#     if len(pages) == 0:
-#         return None
-#     return pages
-
-
 def find_page(title):
     page = db.pages.find_one({"titles": title}, {"versions": {"$slice": -1}, "type": 1})
     return page
-
-
-# def encode_title(title):
-#     return title.replace("_", "%5F").replace(" ", "_")
-
-
-# used for creating a new topic page from a url
-# def decode_title(title):
-#     return title.replace("_", " ")
 
 
 def is_valid_email(email):
@@ -72,6 +49,25 @@ def generate_user_template(email):
     )
 
 
+def generate_nickname():
+    return random.choice(
+        [
+            "Benevolent Dictator",
+            "A Reasonable Person",
+            "Mother Away From Home",
+            "I ran out of ideas for nicknames",
+            "The Best Chef This World Has Ever Seen",
+            "Pure Instinct",
+            "Fascinator",
+            "Analyst",
+        ]
+    )
+
+
+def build_user_title(heading, nickname):
+    return (heading + "_" + nickname).replace(" ", "_")
+
+
 @app.route("/page/<title>/")
 def page(title):
     page = find_page(title)
@@ -82,14 +78,16 @@ def page(title):
     if g.user is None:
         abort(404)
     if is_valid_email(title):
+        nickname = generate_nickname()
         db.pages.insert_one(
             {
-                "titles": [title],
+                "titles": [title, build_user_title(title, nickname)],
                 "type": "user",
                 "versions": [
                     {
                         "body": generate_user_template(title),
                         "heading": title,
+                        "nickname": nickname,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                     }
@@ -130,28 +128,33 @@ def submitedit(title):
     data = request.get_json(silent=True)
     if data is None:
         abort(400)
+    page = db.pages.find_one({"titles": title}, {"titles": 1, "type": 1})
+    if page is None or not page["type"] == "user":
+        abort(400)
     body = data.get("body")
     heading = data.get("heading")
-    if body is None or heading is None:
+    nickname = data.get("nickname")
+    if body is None or heading is None or nickname is None:
         abort(400)
     if g.user is None:
         abort(401)
-    page = db.pages.find_one({"titles": title}, {"titles": 1})
-    if page is None:
-        abort(400)
     sanitized_body = sanitize_html(body)
-    push = {
-        "versions": {
-            "body": sanitized_body,
-            "heading": heading,
-            "editor": g.user["_id"],
-            "timestamp": timestamp(),
-        }
-    }
-    newtitle = heading.replace(" ", "_")
-    if newtitle not in page["titles"]:
-        push["titles"] = newtitle
-    update = db.pages.update_one({"titles": title}, {"$push": push})
+    newtitle = build_user_title(heading, nickname)
+    update = db.pages.update_one(
+        {"titles": title},
+        {
+            "$push": {
+                "versions": {
+                    "body": sanitized_body,
+                    "heading": heading,
+                    "nickname": nickname,
+                    "editor": g.user["_id"],
+                    "timestamp": timestamp(),
+                }
+            },
+            "$addToSet": {"titles": newtitle},
+        },
+    )
     if update.modified_count > 0:
         return jsonify(
             {"success": True, "redirect": url_for_title("page", title=newtitle)}

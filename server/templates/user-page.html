@@ -9,7 +9,7 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>{{ version.heading }}</h1>
+    <h1>{{ version.heading }}, AKA "{{ version.nickname }}"</h1>
     <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
     <div>{{ version.body|safe }}</div>
 
