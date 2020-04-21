@@ -69,17 +69,9 @@ def build_user_title(heading, nickname):
     return (heading + "_" + nickname).replace(" ", "_")
 
 
-@app.route("/page/<title>/")
-def page(title):
-    page = find_page(title)
-    if page is not None and page["type"] == "user":
-        return render_template(
-            "user-page.html", version=page["versions"][-1], title=title
-        )
-    if g.user is None:
-        abort(404)
-    if is_valid_email(title):
-        nickname = generate_nickname()
+def create_user_page(title):
+    nickname = generate_nickname()
+    try:
         db.pages.insert_one(
             {
                 "titles": [title, build_user_title(title, nickname)],
@@ -91,14 +83,28 @@ def page(title):
                         "nickname": nickname,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
+                        "num": 1,
                     }
                 ],
             }
         )
-        page = find_page(title)
+    except DuplicateKeyError:
+        pass
+    page = find_page(title)
+    return render_template("user-page.html", version=page["versions"][-1], title=title)
+
+
+@app.route("/page/<title>/")
+def page(title):
+    page = find_page(title)
+    if page is not None and page["type"] == "user":
         return render_template(
             "user-page.html", version=page["versions"][-1], title=title
         )
+    if g.user is None:
+        abort(404)
+    if is_valid_email(title):
+        return create_user_page(title)
     abort(404)  # eventually, create new topic page
 
 
@@ -126,38 +132,17 @@ def edit(title):
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
 def submitedit(title):
-    data = request.get_json(silent=True)
-    if data is None:
-        abort(400)
-    page = db.pages.find_one({"titles": title}, {"titles": 1, "type": 1})
-    if page is None or not page["type"] == "user":
-        abort(400)
-    body = data.get("body")
-    heading = data.get("heading")
-    nickname = data.get("nickname")
-    if body is None or heading is None or nickname is None:
-        abort(400)
-    if g.user is None:
-        abort(401)
-    sanitized_body = sanitize_html(body)
-    newtitle = build_user_title(heading, nickname)
-    try:
-        update = db.pages.update_one(
-            {"titles": title},
+    def racecondition():
+        return jsonify(
             {
-                "$push": {
-                    "versions": {
-                        "body": sanitized_body,
-                        "heading": heading,
-                        "nickname": nickname,
-                        "editor": g.user["_id"],
-                        "timestamp": timestamp(),
-                    }
+                "success": False,
+                "html": {
+                    "editerror": "Oops, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab)."
                 },
-                "$addToSet": {"titles": newtitle},
-            },
+            }
         )
-    except DuplicateKeyError:
+
+    def duplicatekey():
         return jsonify(
             {
                 "success": False,
@@ -166,11 +151,51 @@ def submitedit(title):
                 },
             }
         )
-    if update.modified_count > 0:
-        return jsonify(
-            {"success": True, "redirect": url_for_title("page", title=newtitle)}
+
+    data = request.get_json(silent=True)
+    if data is None:
+        abort(400)
+    body = data.get("body")
+    heading = data.get("heading")
+    nickname = data.get("nickname")
+    num = data.get("num")
+    if body is None or heading is None or nickname is None or num is None:
+        abort(400)
+
+    page = db.pages.find_one(
+        {"titles": title, "versions": {"$size": num}}, {"titles": 1, "type": 1}
+    )
+    if page is None:
+        return racecondition()
+    if not page["type"] == "user":
+        abort(400)
+    if g.user is None:
+        abort(401)
+
+    sanitized_body = sanitize_html(body)
+    newtitle = build_user_title(heading, nickname)
+    try:
+        update = db.pages.update_one(
+            {"titles": title, "versions": {"$size": num}},
+            {
+                "$push": {
+                    "versions": {
+                        "body": sanitized_body,
+                        "heading": heading,
+                        "nickname": nickname,
+                        "editor": g.user["_id"],
+                        "timestamp": timestamp(),
+                        "num": num + 1,
+                    }
+                },
+                "$addToSet": {"titles": newtitle},
+            },
         )
-    abort(500)
+    except DuplicateKeyError:
+        return duplicatekey()
+    if update.modified_count == 0:
+        return racecondition()
+    return jsonify({"success": True, "redirect": url_for_title("page", title=newtitle)})
 
 
 @app.route("/authenticate/", methods=["POST"])

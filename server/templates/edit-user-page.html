@@ -24,6 +24,7 @@
           body: document.getElementById("pagebody").innerHTML,
           heading: document.getElementById("heading").innerText,
           nickname: document.getElementById("nickname").innerText,
+          num: {{ version.num }},
         }).then((data) => {
           if (data.success) {
             window.location.href = data.redirect;
