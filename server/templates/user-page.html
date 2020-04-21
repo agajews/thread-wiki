@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>{{ heading }} - Thread</title>
+    <title>{{ version.heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,9 +9,9 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>{{ heading }}</h1>
+    <h1>{{ version.heading }}</h1>
     <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
-    <div>{{ body|safe }}</div>
+    <div>{{ version.body|safe }}</div>
 
   </body>
 </html>

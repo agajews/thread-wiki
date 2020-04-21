@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Edit: {{ heading }} - Thread</title>
+    <title>Edit: {{ version.heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,9 +9,11 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>Edit: {{ heading }}</h1>
+    <h1>Editing:</h1>
+    <hr>
+    <h1 contenteditable="true" id="heading">{{ version.heading }}</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
-    <div id="pagebody" contenteditable="true">{{ body|safe }}</div>
+    <div id="pagebody" contenteditable="true">{{ version.body|safe }}</div>
     <button type="button" onclick="submitedit(event)">Submit edit</button>
     <div id="editerror"></div>
 
@@ -20,9 +22,10 @@
         event.preventDefault();
         post("{{ url_for_title('submitedit', title=title) }}", {
           body: document.getElementById("pagebody").innerHTML,
+          heading: document.getElementById("heading").innerText,
         }).then((data) => {
           if (data.success) {
-            window.location.href = "{{ url_for_title('page', title=title) }}";
+            window.location.href = data.redirect;
           } else {
             rerender(data.html);
           }
