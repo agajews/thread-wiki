@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <title>History: {{ page.name }} - Thread</title>
+    {% include 'scripts.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <h1>History: {{ page.name }}</h1>
+    <a href="{{ url_for('page', title=page.username) }}">Back</a>
+
+    {% macro show_edits(version) %}
+      <div class="editchanges">
+        {% for block in version.edit_blocks %}
+          <div class="editblock">{{ block.edits|safe }}</div>
+        {% endfor %}
+      </div>
+    {% endmacro %}
+
+    <h1>{{ currentversion.date }}</h1>
+    <button type="button">Flag and undo</button>
+    {% show_edits(currentversion) %}
+    {% for version in versions %}
+      <hr>
+      <h1>{{ version.date }}</h1>
+      <button type="button">Flag</button>
+      <button type="button">Restore</button>
+      <a href="{{ url_for('version', title=page.username, _id=version._id) }}">View</a>
+      {% show_edits(version) %}
+    {% endfor %}
+    <div id="pagebody" contenteditable="true">{{ page.body|safe }}</div>
+    <button type="button" onclick="submitedit(event)">Submit edit</button>
+    <div id="editerror"></div>
+
+    <script>
+      function submitedit(event) {
+        event.preventDefault();
+        post("{{ url_for('submitedit', title=page.username) }}", {
+          body: document.getElementById("pagebody").innerHTML,
+        }).then((data) => {
+          if (data.success) {
+            window.location.href = "{{ url_for('page', title=page.username) }}";
+          } else {
+            rerender(data.html);
+          }
+        });
+      }
+    </script>
+
+  </body>
+</html>

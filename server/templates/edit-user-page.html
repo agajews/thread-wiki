@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Edit: {{ page.name }} - Thread</title>
+    <title>Edit: {{ heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,20 +9,20 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>Edit: {{ page.name }}</h1>
-    <a href="{{ url_for('page', title=page.username) }}">Back</a>
-    <div id="pagebody" contenteditable="true">{{ page.body|safe }}</div>
+    <h1>Edit: {{ heading }}</h1>
+    <a href="{{ url_for_title('page', title=title) }}">Back</a>
+    <div id="pagebody" contenteditable="true">{{ body|safe }}</div>
     <button type="button" onclick="submitedit(event)">Submit edit</button>
     <div id="editerror"></div>
 
     <script>
       function submitedit(event) {
         event.preventDefault();
-        post("{{ url_for('submitedit', title=page.username) }}", {
+        post("{{ url_for_title('submitedit', title=title) }}", {
           body: document.getElementById("pagebody").innerHTML,
         }).then((data) => {
           if (data.success) {
-            window.location.href = "{{ url_for('page', title=page.username) }}";
+            window.location.href = "{{ url_for_title('page', title=title) }}";
           } else {
             rerender(data.html);
           }

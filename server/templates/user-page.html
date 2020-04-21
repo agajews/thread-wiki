@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>{{ page.name }} - Thread</title>
+    <title>{{ heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,9 +9,9 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>{{ page.name }}</h1>
-    <a href="{{ url_for('edit', title=page.username) }}">Edit</a>
-    <div>{{ page.body|safe }}</div>
+    <h1>{{ heading }}</h1>
+    <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
+    <div>{{ body|safe }}</div>
 
   </body>
 </html>
