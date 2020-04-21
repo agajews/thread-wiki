@@ -2,6 +2,17 @@
   <head>
     <title>History: {{ currentversion.heading }} - Thread</title>
     {% include 'scripts.html' %}
+
+    <style>
+      .editblock > :first-child:before {
+        content: "[...] ";
+        color: grey;
+      }
+      .editblock > :last-child:after {
+        content: " [...]";
+        color: grey;
+      }
+    </style>
   </head>
 
   <body>
@@ -32,6 +43,12 @@
       <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
       {{ show_edits(version) }}
     {% endfor %}
+
+    <hr>
+    <h3>{{ initialversion.timestamp }}</h3>
+    <button type="button">Restore</button>
+    <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
+    {{ initialversion.body|safe }}
 
   </body>
 </html>

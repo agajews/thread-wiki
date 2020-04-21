@@ -81,7 +81,6 @@ def create_user_page(title):
                 "versions": [
                     {
                         "body": body,
-                        "editblocks": editblocks,
                         "heading": title,
                         "nickname": nickname,
                         "editor": g.user["_id"],
@@ -217,7 +216,8 @@ def history(title):
     return render_template(
         "user-page-history.html",
         currentversion=page["versions"][-1],
-        oldversions=reversed(page["versions"][:-1]),
+        oldversions=reversed(page["versions"][1:-1]),
+        initialversion=page["versions"][0],
         title=title,
     )
 
