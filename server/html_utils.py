@@ -1,6 +1,7 @@
 import bleach
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
+import itertools
 
 
 self_closing = ["br"]
@@ -218,7 +219,84 @@ def markup_change_blocks(data_a, data_b):
     sequence_b = get_sequence(data_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     blocks = []
-    for opcodes in matcher.get_grouped_opcodes(n=10):
+    for opcodes in matcher.get_grouped_opcodes(n=5):
         merged_sequence = add_diff_to_context(opcodes, sequence_a, sequence_b)
         blocks.append(generate_html(merged_sequence))
     return blocks
+
+
+def is_header(token):
+    return any("h{}".format(x) in token.context for x in range(2, 7))
+
+
+def get_header_level(group):
+    for x in range(2, 7):
+        if "h{}".format(x) in group[0].context:
+            return x
+    return None
+
+
+def extract_text(tokens):
+    text = ""
+    for token in tokens:
+        if isinstance(token, DataToken):
+            text += token.data
+    return text
+
+
+def separate_sections(data):
+    sequence = get_sequence(data)
+    keys, groups = itertools.groupby(sequence, key=is_header)
+    i = 0
+    if keys[0] == False:
+        summary = generate_html(groups[0])
+        i += 1
+    else:
+        summary = ""
+    sections = []
+    while i < len(groups):
+        sections.append(
+            {
+                "header": extract_text(groups[i]),
+                "body": generate_html(groups[i + 1]) if i + 1 < len(groups) else "",
+                "level": get_header_level(groups[i]),
+            }
+        )
+        i += 1
+    return summary, sections
+
+
+class Section(Token):
+    def __init__(self, section):
+        self.header = section["header"]
+        self.body = section["body"]
+        self.level = section["level"]
+        super().__init__((self.header, self.level))
+
+    def to_dict(self):
+        return {"header": section.header, "body": section.body, "level": section.level}
+
+
+def diff_sections(sections_a, sections_b):
+    sequence_a = [Section(section) for section in sections_a]
+    sequence_b = [Section(section) for section in sections_b]
+    matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
+    merged_sequence = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for section_a, section_b in zip(sequence_a[i1:i2], sequence_b[j1:j2]):
+                section_dict = section.to_dict()
+                if section_a.body != section_b.body:
+                    section["diff"] = markup_changes(section_a.body, section_b.body)
+                merged_sequence.append(section_dict)
+        if tag == "replace" or tag == "delete":
+            for section in sequence_a[i1:i2]:
+                section_dict = section.to_dict()
+                section_dict["deleted"] = True
+                merged_sequence.append(section_dict)
+        if tag == "replace" or tag == "insert":
+            for section in sequence_b[j1:j2]:
+                section_dict = section.to_dict()
+                section_dict["inserted"] = True
+                merged_sequence.append(section_dict)
+    return merged_sequence

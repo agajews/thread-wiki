@@ -12,7 +12,14 @@
     <h1>{{ version.heading }}, AKA "{{ version.nickname }}"</h1>
     <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
     <a href="{{ url_for_title('history', title=title) }}">History</a>
-    <div>{{ version.body|safe }}</div>
+
+    <div>{{ version.summary|safe }}</div>
+
+    {% from 'page-utils.html' import header_at_level %}
+    {% for section in version.sections %}
+      {{ header_at_level(section.header, section.level) }}
+      {{ section.body|safe }}
+    {% endfor %}
 
   </body>
 </html>

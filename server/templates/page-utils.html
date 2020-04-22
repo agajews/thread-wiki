@@ -1,0 +1,13 @@
+{% macro header_at_level(header, level) %}
+  {% if level == 2 %}
+    <h2>{{ header }}</h2>
+  {% elif level == 3 %}
+    <h3>{{ header }}</h3>
+  {% elif level == 4 %}
+    <h4>{{ header }}</h4>
+  {% elif level == 5 %}
+    <h5>{{ header }}</h5>
+  {% elif level == 6 %}
+    <h6>{{ header }}</h6>
+  {% endif %}
+{% endmacro %}

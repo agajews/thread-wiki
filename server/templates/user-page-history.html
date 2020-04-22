@@ -23,12 +23,31 @@
     <h1>History: {{ currentversion.heading }}, AKA "{{ currentversion.nickname }}"</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
 
+    {% from 'page-utils.html' import header_at_level %}
     {% macro show_edits(version) %}
-      <div class="editchanges">
-        {% for block in version.editblocks %}
-          <div class="editblock">{{ block|safe }}</div>
-        {% endfor %}
-      </div>
+      {% if version.headingchanged %}
+        <div class="markupnote">Changed name to: {{ version.heading }}</div>
+      {% endif %}
+      {% if version.nicknamechanged %}
+        <div class="markupnote">Changed nickname to: {{ version.nickname }}</div>
+      {% endif %}
+      {% if section.summarychanged %}
+        {{ section.summarydiff }}
+      {% endif %}
+      {% for section in version.diffversion %}
+        {% if section.inserted %}
+          <div class="markupnote">Created section:</div>
+          <ins>{{ header_at_level(section.header, section.level) }}</ins>
+          <ins>{{ section.body|safe }}</ins>
+        {% elif section.deleted %}
+          <div class="markupnote">Deleted section:</div>
+          <del>{{ header_at_level(section.header, section.level) }}</del>
+          <del>{{ section.body|safe }}</del>
+        {% elif section.diff %}
+          {{ header_at_level(section.header, section.level) }}
+          {{ section.diff|safe }}
+        {% endif %}
+      {% endfor %}
     {% endmacro %}
 
     <h3>{{ currentversion.timestamp }}</h3>
@@ -48,7 +67,7 @@
     <h3>{{ initialversion.timestamp }}</h3>
     <button type="button">Restore</button>
     <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
-    {{ initialversion.body|safe }}
+    {{ show_edits(initialversion) }}
 
   </body>
 </html>

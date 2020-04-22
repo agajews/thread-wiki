@@ -71,8 +71,7 @@ def build_user_title(heading, nickname):
 
 def create_user_page(title):
     nickname = generate_nickname()
-    body = generate_user_template(title)
-    editblocks = ["<ins>{}</ins>".format(body)]
+    summary, sections = separate_sections(generate_user_template(title))
     try:
         db.pages.insert_one(
             {
@@ -80,9 +79,15 @@ def create_user_page(title):
                 "type": "user",
                 "versions": [
                     {
-                        "body": body,
+                        "sections": sections,
+                        "diffsections": diff_sections([], sections),
+                        "summary": summary,
+                        "diffsummary": markup_changes("", summary),
+                        "summarychanged": True,
                         "heading": title,
+                        "headingchanged": True,
                         "nickname": nickname,
+                        "nicknamechanged": True,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": 1,
@@ -159,6 +164,7 @@ def submitedit(title):
         {"titles": title, "versions": {"$size": num}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}},
     )
+    oldversion = page["versions"][-1]
     if page is None:
         return racecondition()
     if not page["type"] == "user":
@@ -167,18 +173,25 @@ def submitedit(title):
         abort(401)
 
     sanitized_body = sanitize_html(body)
+    summary, sections = separate_sections(sanitized_body)
     newtitle = build_user_title(heading, nickname)
-    editblocks = markup_change_blocks(page["versions"][-1]["body"], sanitized_body)
+    diffsections = diff_sections(oldversion["sections"], sections)
+    diffsummary = markup_changes(oldversion["summary"], summary)
     try:
         update = db.pages.update_one(
             {"titles": title, "versions": {"$size": num}},
             {
                 "$push": {
                     "versions": {
-                        "body": sanitized_body,
-                        "editblocks": editblocks,
+                        "sections": sections,
+                        "diffsections": diffsections,
+                        "summary": summary,
+                        "diffsummary": diffsummary,
+                        "summarychanged": summary != oldversion["summary"],
                         "heading": heading,
+                        "headingchanged": heading != oldversion["heading"],
                         "nickname": nickname,
+                        "nicknamechanged": nickname != oldversion["nickname"],
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": num + 1,
