@@ -29,7 +29,7 @@ allowed_tags = [
 
 
 def sanitize_html(html):
-    return bleach.clean(html, tags=allowed_tags)
+    return bleach.clean(html, tags=allowed_tags, strip=True)
 
 
 def split_words(data):
@@ -209,9 +209,7 @@ def isjunk(token):
 
 def markup_changes(data_a, data_b):
     sequence_a = get_sequence(data_a)
-    print(sequence_a)
     sequence_b = get_sequence(data_b)
-    print(sequence_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     merged_sequence = add_diff_to_context(matcher.get_opcodes(), sequence_a, sequence_b)
     return generate_html(merged_sequence)
