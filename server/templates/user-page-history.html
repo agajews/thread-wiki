@@ -13,6 +13,10 @@
       .markupnote:after {
         content: "]";
       }
+      .timestamp {
+        font-size: 20;
+        font-weight: bold;
+      }
     </style>
   </head>
 
@@ -51,25 +55,32 @@
       {% endfor %}
     {% endmacro %}
 
-    {% if currentversion.num > 1 %}
-      <h3>{{ currentversion.timestamp }}</h3>
-      <button type="button">Flag and undo</button>
-      <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
+    {% if currentversion.num != 1 %}
+      <div>
+        <span class="timestamp">{{ currentversion.timestamp }}</span>
+        <button type="button">Flag and undo</button>
+        <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
+      </div>
+      
       {{ show_edits(currentversion) }}
       <hr>
     {% endif %}
     {% for version in oldversions %}
-      <h3>{{ version.timestamp }}</h3>
-      <button type="button">Flag</button>
-      <button type="button">Restore</button>
-      <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
+      <div>
+        <span class="timestamp">{{ version.timestamp }}</span>
+        <button type="button">Flag</button>
+        <button type="button">Restore</button>
+        <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
+      </div>
       {{ show_edits(version) }}
       <hr>
     {% endfor %}
 
-    <h3>{{ initialversion.timestamp }}</h3>
-    <button type="button">Restore</button>
-    <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
+    <div>
+      <span class="timestamp">{{ initialversion.timestamp }}</span>
+      <button type="button">Restore</button>
+      <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
+    </div>
     {{ show_edits(initialversion) }}
 
   </body>

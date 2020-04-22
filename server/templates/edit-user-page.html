@@ -9,8 +9,6 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>Editing:</h1>
-    <hr>
     <h1><span id="heading" contenteditable=true>{{ version.heading }}</span>, AKA "<span id="nickname" contenteditable=true>{{ version.nickname }}</span>"</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
     <div id="pagebody" contenteditable="true">
