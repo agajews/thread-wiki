@@ -4,13 +4,14 @@
     {% include 'scripts.html' %}
 
     <style>
-      .editblock > :first-child:before {
-        content: "[...] ";
-        color: grey;
+      .markupnote {
+        color: gray
       }
-      .editblock > :last-child:after {
-        content: " [...]";
-        color: grey;
+      .markupnote:before {
+        content: "[";
+      }
+      .markupnote:after {
+        content: "]";
       }
     </style>
   </head>
@@ -36,11 +37,11 @@
       {% endif %}
       {% for section in version.diffsections %}
         {% if section.inserted %}
-          <div class="markupnote">Created section:</div>
+          <!-- <div class="markupnote">Created section:</div> -->
           <ins>{{ header_at_level(section.header, section.level) }}</ins>
           <ins>{{ section.body|safe }}</ins>
         {% elif section.deleted %}
-          <div class="markupnote">Deleted section:</div>
+          <!-- <div class="markupnote">Deleted section:</div> -->
           <del>{{ header_at_level(section.header, section.level) }}</del>
           <del>{{ section.body|safe }}</del>
         {% elif section.diff %}
