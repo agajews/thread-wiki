@@ -34,7 +34,9 @@ def index():
 
 
 def find_page(title):
-    page = db.pages.find_one({"titles": title}, {"versions": {"$slice": -1}, "type": 1})
+    page = db.pages.find_one(
+        {"titles": title}, {"versions": {"$slice": -1}, "type": 1, "titles": 1}
+    )
     return page
 
 
@@ -103,9 +105,10 @@ def create_user_page(title):
 
 @app.route("/page/<title>/")
 def page(title):
-    # TODO: redirect to latest title
     page = find_page(title)
     if page is not None and page["type"] == "user":
+        if title != page["titles"][-1]:
+            return redirect(url_for_title("page", title=page["titles"][-1]))
         return render_template(
             "user-page.html", version=page["versions"][-1], title=title
         )
@@ -210,8 +213,6 @@ def submitedit(title):
 @app.route("/page/<title>/version/<int:num>/")
 def version(title, num):
     page = db.pages.find_one({"titles": title}, {"versions": {"$slice": [num - 1, 1]}})
-    if g.user is None:
-        abort(401)
     if page is not None and page["type"] == "user" and page["versions"]:
         return render_template(
             "user-page-version.html", version=page["versions"][0], title=title
