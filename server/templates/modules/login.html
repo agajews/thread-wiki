@@ -8,10 +8,13 @@
       <p>{{ g.login_error }}</p>
     {% endif %}
     <form id="loginform" onsubmit="login(event)">
-      <label for="email">Email:</label>
-      <input type="email" name="email">
-      <label for="password">Password:</label>
-      <input type="password" name="password">
+      <span class="formrow">
+        <label for="email">Email:</label>
+        <input type="email" name="email">
+      </span>
+      <span class="formrow">
+        <label for="password">Password:</label>
+        <input type="password" name="password"></span>
       <input type="submit">
     </form>
   {% endif %}
@@ -37,4 +40,10 @@
       });
     }
   </script>
+
+  <style>
+    .formrow {
+      display: inline-block;
+    }
+  </style>
 {% endif %}
