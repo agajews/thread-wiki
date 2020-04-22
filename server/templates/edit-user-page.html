@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Edit: {{ version.heading }} - Thread</title>
+    <title>Edit: {{ version.content.heading }} - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
@@ -9,13 +9,13 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1><span id="heading" contenteditable=true>{{ version.heading }}</span>, AKA "<span id="nickname" contenteditable=true>{{ version.nickname }}</span>"</h1>
+    <h1><span id="heading" contenteditable=true>{{ version.content.heading }}</span>, AKA "<span id="nickname" contenteditable=true>{{ version.content.nickname }}</span>"</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
     <div id="pagebody" contenteditable="true">
-      {{ version.summary|safe }}
+      {{ version.content.summary|safe }}
 
       {% from 'page-utils.html' import header_at_level %}
-      {% for section in version.sections %}
+      {% for section in version.content.sections %}
         {{ header_at_level(section.header, section.level) }}
         {{ section.body|safe }}
       {% endfor %}

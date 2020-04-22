@@ -25,21 +25,21 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>History: {{ currentversion.heading }}, AKA "{{ currentversion.nickname }}"</h1>
+    <h1>History: {{ currentversion.content.heading }}, AKA "{{ currentversion.content.nickname }}"</h1>
     <a href="{{ url_for_title('page', title=title) }}">Back</a>
 
     {% from 'page-utils.html' import header_at_level %}
     {% macro show_edits(version) %}
-      {% if version.headingchanged %}
-        <div class="markupnote">Changed name to: {{ version.heading }}</div>
+      {% if version.diff.headingchanged %}
+        <div class="markupnote">Changed name to: {{ version.content.heading }}</div>
       {% endif %}
-      {% if version.nicknamechanged %}
-        <div class="markupnote">Changed nickname to: {{ version.nickname }}</div>
+      {% if version.diff.nicknamechanged %}
+        <div class="markupnote">Changed nickname to: {{ version.content.nickname }}</div>
       {% endif %}
-      {% if version.summarychanged %}
-        {{ version.diffsummary|safe }}
+      {% if version.diff.summarychanged %}
+        {{ version.diff.summary|safe }}
       {% endif %}
-      {% for section in version.diffsections %}
+      {% for section in version.diff.sections %}
         {% if section.inserted %}
           <!-- <div class="markupnote">Created section:</div> -->
           <ins>{{ header_at_level(section.header, section.level) }}</ins>

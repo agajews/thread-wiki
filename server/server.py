@@ -71,25 +71,38 @@ def build_user_title(heading, nickname):
     return (heading + "_" + nickname).replace(" ", "_")
 
 
+def diff_versions(content_a, content_b):
+    return {
+        "sections": diff_sections(content_a["sections"], content_b["sections"]),
+        "summary": markup_changes(content_a["summary"], content_b["summary"]),
+        "summarychanged": content_a["summary"] != content_b["summary"],
+        "headingchanged": content_a["heading"] != content_b["heading"],
+        "nicknamechanged": content_a["nickname"] != content_b["nickname"],
+    }
+
+
+emptycontent = {"sections": [], "summary": "", "heading": "", "nickname": ""}
+
+
 def create_user_page(title):
     nickname = generate_nickname()
     summary, sections = separate_sections(generate_user_template(title))
+    content = {
+        "sections": sections,
+        "summary": summary,
+        "heading": title,
+        "nickname": nickname,
+    }
     try:
         db.pages.insert_one(
             {
                 "titles": [title, build_user_title(title, nickname)],
                 "type": "user",
+                "owner": title,
                 "versions": [
                     {
-                        "sections": sections,
-                        "diffsections": diff_sections([], sections),
-                        "summary": summary,
-                        "diffsummary": markup_changes("", summary),
-                        "summarychanged": True,
-                        "heading": title,
-                        "headingchanged": True,
-                        "nickname": nickname,
-                        "nicknamechanged": True,
+                        "content": content,
+                        "diff": diff_versions(emptycontent, content),
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": 1,
@@ -178,23 +191,20 @@ def submitedit(title):
     sanitized_body = sanitize_html(body)
     summary, sections = separate_sections(sanitized_body)
     newtitle = build_user_title(heading, nickname)
-    diffsections = diff_sections(oldversion["sections"], sections)
-    diffsummary = markup_changes(oldversion["summary"], summary)
+    content = {
+        "sections": sections,
+        "summary": summary,
+        "heading": heading,
+        "nickname": nickname,
+    }
     try:
         update = db.pages.update_one(
             {"titles": title, "versions": {"$size": num}},
             {
                 "$push": {
                     "versions": {
-                        "sections": sections,
-                        "diffsections": diffsections,
-                        "summary": summary,
-                        "diffsummary": diffsummary,
-                        "summarychanged": summary != oldversion["summary"],
-                        "heading": heading,
-                        "headingchanged": heading != oldversion["heading"],
-                        "nickname": nickname,
-                        "nicknamechanged": nickname != oldversion["nickname"],
+                        "content": content,
+                        "diff": diff_versions(oldversion["content"], content),
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": num + 1,
