@@ -5,6 +5,7 @@ import itertools
 
 
 self_closing = ["br"]
+header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = [" ", "\t", "\n"]
 allowed_tags = [
     "p",
@@ -155,7 +156,7 @@ def generate_html(sequence):
         context = token.context
     for tag, attrs in reversed(context):
         html.append(close_tag(tag))
-    return "".join(html)
+    return "".join(html).strip(" \n")
 
 
 def startswith(l, prefix):
@@ -208,7 +209,9 @@ def isjunk(token):
 
 def markup_changes(data_a, data_b):
     sequence_a = get_sequence(data_a)
+    print(sequence_a)
     sequence_b = get_sequence(data_b)
+    print(sequence_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     merged_sequence = add_diff_to_context(matcher.get_opcodes(), sequence_a, sequence_b)
     return generate_html(merged_sequence)
@@ -226,13 +229,16 @@ def markup_change_blocks(data_a, data_b):
 
 
 def is_header(token):
-    return any("h{}".format(x) in token.context for x in range(2, 7))
+    for (tag, attr) in token.context:
+        if tag in header_tags:
+            return True
+    return False
 
 
 def get_header_level(group):
-    for x in range(2, 7):
-        if "h{}".format(x) in group[0].context:
-            return x
+    for (tag, attr) in group[0].context:
+        if tag in header_tags:
+            return int(tag[1])
     return None
 
 
@@ -246,7 +252,11 @@ def extract_text(tokens):
 
 def separate_sections(data):
     sequence = get_sequence(data)
-    keys, groups = itertools.groupby(sequence, key=is_header)
+    keys = []
+    groups = []
+    for key, group in itertools.groupby(sequence, key=is_header):
+        keys.append(key)
+        groups.append(list(group))
     i = 0
     if keys[0] == False:
         summary = generate_html(groups[0])
@@ -262,7 +272,7 @@ def separate_sections(data):
                 "level": get_header_level(groups[i]),
             }
         )
-        i += 1
+        i += 2
     return summary, sections
 
 
@@ -274,7 +284,7 @@ class Section(Token):
         super().__init__((self.header, self.level))
 
     def to_dict(self):
-        return {"header": section.header, "body": section.body, "level": section.level}
+        return {"header": self.header, "body": self.body, "level": self.level}
 
 
 def diff_sections(sections_a, sections_b):
@@ -285,9 +295,11 @@ def diff_sections(sections_a, sections_b):
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
             for section_a, section_b in zip(sequence_a[i1:i2], sequence_b[j1:j2]):
-                section_dict = section.to_dict()
+                section_dict = section_b.to_dict()
                 if section_a.body != section_b.body:
-                    section["diff"] = markup_changes(section_a.body, section_b.body)
+                    section_dict["diff"] = markup_changes(
+                        section_a.body, section_b.body
+                    )
                 merged_sequence.append(section_dict)
         if tag == "replace" or tag == "delete":
             for section in sequence_a[i1:i2]:

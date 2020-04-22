@@ -11,7 +11,7 @@ from flask import (
 import re
 import random
 from pymongo.errors import DuplicateKeyError
-from .html_utils import sanitize_html, markup_change_blocks
+from .html_utils import sanitize_html, markup_changes, separate_sections, diff_sections
 from .app import app, db, timestamp
 from .auth import verify_password, generate_auth_token
 

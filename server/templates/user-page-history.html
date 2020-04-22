@@ -31,10 +31,10 @@
       {% if version.nicknamechanged %}
         <div class="markupnote">Changed nickname to: {{ version.nickname }}</div>
       {% endif %}
-      {% if section.summarychanged %}
-        {{ section.summarydiff }}
+      {% if version.summarychanged %}
+        {{ version.diffsummary|safe }}
       {% endif %}
-      {% for section in version.diffversion %}
+      {% for section in version.diffsections %}
         {% if section.inserted %}
           <div class="markupnote">Created section:</div>
           <ins>{{ header_at_level(section.header, section.level) }}</ins>
@@ -50,20 +50,22 @@
       {% endfor %}
     {% endmacro %}
 
-    <h3>{{ currentversion.timestamp }}</h3>
-    <button type="button">Flag and undo</button>
-    <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
-    {{ show_edits(currentversion) }}
-    {% for version in oldversions %}
+    {% if currentversion.num > 1 %}
+      <h3>{{ currentversion.timestamp }}</h3>
+      <button type="button">Flag and undo</button>
+      <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
+      {{ show_edits(currentversion) }}
       <hr>
+    {% endif %}
+    {% for version in oldversions %}
       <h3>{{ version.timestamp }}</h3>
       <button type="button">Flag</button>
       <button type="button">Restore</button>
       <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
       {{ show_edits(version) }}
+      <hr>
     {% endfor %}
 
-    <hr>
     <h3>{{ initialversion.timestamp }}</h3>
     <button type="button">Restore</button>
     <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
