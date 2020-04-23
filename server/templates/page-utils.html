@@ -34,11 +34,8 @@
 {% endmacro %}
 
 {% macro showheadingdiff(version) %}
-  {% if version.primarydiff.headingchanged %}
-    <del>{{ version.primarydiff.oldheading }}</del>
-  {% endif %}
-  {% if version.primarydiff.nicknamechanged %}
-    <del>{{ version.primarydiff.oldnickname }}</del>
+  {% if version.primarydiff.headingchanged or version.primarydiff.nicknamechanged %}
+    <h4><del>{{ version.primarydiff.oldheading }}, AKA "{{ version.primarydiff.oldnickname }}"</del></h4>
   {% endif %}
   <h1>{{ version.content.heading }}, AKA "{{ version.content.nickname }}"</h1>
 {% endmacro %}
