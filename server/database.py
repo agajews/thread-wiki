@@ -1,3 +1,4 @@
+import random
 from flask import g
 from pymongo.errors import DuplicateKeyError
 from .app import db, timestamp

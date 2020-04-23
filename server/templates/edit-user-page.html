@@ -10,7 +10,7 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <h1><span id="heading" contenteditable=true>{{ version.content.heading }}</span>, AKA "<span id="nickname" contenteditable=true>{{ version.content.nickname }}</span>"</h1>
-    <a href="{{ url_for_title('page', title=title) }}">Back</a>
+    <a href="{{ url_for('page', title=title) }}">Back</a>
     <div id="pagebody" contenteditable="true">
       {{ version.content.summary|safe }}
 
@@ -26,7 +26,7 @@
     <script>
       function submitedit(event) {
         event.preventDefault();
-        post("{{ url_for_title('submitedit', title=title) }}", {
+        post("{{ url_for('submitedit', title=title) }}", {
           body: document.getElementById("pagebody").innerHTML,
           heading: document.getElementById("heading").innerText,
           nickname: document.getElementById("nickname").innerText,

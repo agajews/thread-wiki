@@ -4,14 +4,23 @@
 # FLASK_SECRET_KEY=<secret_key>
 import os
 from datetime import datetime
-from flask import Flask
+import flask
 from pymongo import MongoClient
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
 client = MongoClient("localhost", 27017)
 db = client.thread_dev
+
+
+def url_for(*args, **kwargs):
+    return flask.url_for(*args, **kwargs).replace("%40", "@")
+
+
+@app.context_processor
+def inject_url_for_title():
+    return dict(url_for=url_for)
 
 
 def timestamp():

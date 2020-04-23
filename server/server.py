@@ -6,23 +6,12 @@ from flask import (
     get_template_attribute,
     g,
     redirect,
-    url_for,
 )
 import re
-import random
-from .app import app, db, timestamp
+from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
 from .html_utils import sanitize_html, separate_sections
 from .database import create_user_page, edit_user_page
-
-
-def url_for_title(*args, **kwargs):
-    return url_for(*args, **kwargs).replace("%40", "@")
-
-
-@app.context_processor
-def inject_url_for_title():
-    return dict(url_for_title=url_for_title)
 
 
 @app.route("/")
@@ -51,7 +40,7 @@ def page(title):
     page = find_page(title)
     if page is not None and page["type"] == "user":
         if title != page["titles"][-1]:
-            return redirect(url_for_title("page", title=page["titles"][-1]))
+            return redirect(url_for("page", title=page["titles"][-1]))
         return render_template(
             "user-page.html", version=page["versions"][-1], title=title
         )
@@ -61,7 +50,7 @@ def page(title):
         create_user_page(title)
         page = find_page(title)
         return render_template(
-            "user-page.html", version=page["versions"][-1], title=email
+            "user-page.html", version=page["versions"][-1], title=title
         )
 
     abort(404)  # eventually, create new topic page
@@ -119,7 +108,7 @@ def submitedit(title):
     if "error" in update:
         return failedit(update["error"])
     return jsonify(
-        {"success": True, "redirect": url_for_title("page", title=update["newtitle"])}
+        {"success": True, "redirect": url_for("page", title=update["newtitle"])}
     )
 
 

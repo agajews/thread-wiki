@@ -12,8 +12,8 @@
 
     {% from 'page-utils.html' import showheadingdiff %}
     {{ showheadingdiff(version) }}
-    <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
-    <a href="{{ url_for_title('history', title=title) }}">History</a>
+    <a href="{{ url_for('edit', title=title) }}">Edit</a>
+    <a href="{{ url_for('history', title=title) }}">History</a>
 
     {% from 'page-utils.html' import showprimarydiff %}
     {{ showprimarydiff(version.primarydiff) }}

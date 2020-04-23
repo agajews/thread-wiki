@@ -32,7 +32,7 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <h1>History: {{ currentversion.content.heading }}, AKA "{{ currentversion.content.nickname }}"</h1>
-    <a href="{{ url_for_title('page', title=title) }}">Back</a>
+    <a href="{{ url_for('page', title=title) }}">Back</a>
 
     {% from 'page-utils.html' import header_at_level %}
     {% macro show_edits(version) %}
@@ -63,7 +63,7 @@
       <div>
         <span class="timestamp">{{ currentversion.timestamp }}</span>
         <button type="button">Flag and undo</button>
-        <a href="{{ url_for_title('version', title=title, num=currentversion.num) }}">View</a>
+        <a href="{{ url_for('version', title=title, num=currentversion.num) }}">View</a>
       </div>
       
       {{ show_edits(currentversion) }}
@@ -74,7 +74,7 @@
         <span class="timestamp">{{ version.timestamp }}</span>
         <button type="button">Flag</button>
         <button type="button">Restore</button>
-        <a href="{{ url_for_title('version', title=title, num=version.num) }}">View</a>
+        <a href="{{ url_for('version', title=title, num=version.num) }}">View</a>
       </div>
       {{ show_edits(version) }}
       <hr>
@@ -83,7 +83,7 @@
     <div>
       <span class="timestamp">{{ initialversion.timestamp }}</span>
       <button type="button">Restore</button>
-      <a href="{{ url_for_title('version', title=title, num=initialversion.num) }}">View</a>
+      <a href="{{ url_for('version', title=title, num=initialversion.num) }}">View</a>
     </div>
     {{ show_edits(initialversion) }}
 
