@@ -1,5 +1,5 @@
 import random
-from flask import g
+from flask import g, abort
 from pymongo.errors import DuplicateKeyError
 from .app import db, timestamp
 from .html_utils import sanitize_html, markup_changes, separate_sections, diff_sections
@@ -50,6 +50,9 @@ def diff_versions(content_a, content_b, concise=False):
 
 
 def create_user_page(email):
+    if g.user is None:
+        abort(404)
+
     nickname = generate_nickname()
     summary, sections = separate_sections(generate_user_template(email))
     content = {
@@ -85,6 +88,9 @@ def create_user_page(email):
 
 
 def edit_user_page(page, content):
+    if g.user is None:
+        abort(401)
+
     num = page["versions"][-1]["num"]
     isprimary = page["owner"] == g.user["email"]
     primary = content if isprimary else page["primary"]

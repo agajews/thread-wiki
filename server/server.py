@@ -1,12 +1,4 @@
-from flask import (
-    render_template,
-    abort,
-    request,
-    jsonify,
-    get_template_attribute,
-    g,
-    redirect,
-)
+from flask import render_template, abort, request, jsonify, g, redirect
 import re
 from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
@@ -44,8 +36,6 @@ def page(title):
         return render_template(
             "user-page.html", version=page["versions"][-1], title=title
         )
-    if g.user is None:
-        abort(404)
     if is_valid_email(title):
         create_user_page(title)
         page = find_page(title)
@@ -87,9 +77,6 @@ def failedit(errorkey):
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
 def submitedit(title):
-    if g.user is None:
-        abort(401)
-
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
