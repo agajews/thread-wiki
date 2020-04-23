@@ -10,10 +10,10 @@ from flask import (
 )
 import re
 import random
-from pymongo.errors import DuplicateKeyError
-from .html_utils import sanitize_html, markup_changes, separate_sections, diff_sections
 from .app import app, db, timestamp
 from .auth import verify_password, generate_auth_token
+from .html_utils import sanitize_html, separate_sections
+from .database import create_user_page, edit_user_page
 
 
 def url_for_title(*args, **kwargs):
@@ -46,87 +46,6 @@ def is_valid_email(email):
     return False
 
 
-def generate_user_template(email):
-    return "<p>The homo sapiens {0} is simply the best.</p><h2>Best Quotes</h2><p>Yoyoyo, it's my boy {0}</p><h2>Early life</h2><p>One day, our protagonist {0} was born. Later, they went to college.</p>".format(
-        email
-    )
-
-
-def generate_nickname():
-    return random.choice(
-        [
-            "Benevolent Dictator",
-            "A Reasonable Person",
-            "Mother Away From Home",
-            "I ran out of ideas for nicknames",
-            "The Best Chef This World Has Ever Seen",
-            "Pure Instinct",
-            "Fascinator",
-            "Analyst",
-        ]
-    )
-
-
-def build_user_title(heading, nickname):
-    return (heading + "_" + nickname).replace(" ", "_")
-
-
-def diff_versions(content_a, content_b, concise=False):
-    return {
-        "sections": diff_sections(
-            content_a["sections"], content_b["sections"], concise=concise
-        ),
-        "summary": markup_changes(
-            content_a["summary"], content_b["summary"], concise=concise
-        ),
-        "summarychanged": content_a["summary"] != content_b["summary"],
-        "headingchanged": content_a["heading"] != content_b["heading"],
-        "nicknamechanged": content_a["nickname"] != content_b["nickname"],
-        "oldheading": content_a["heading"],
-        "oldnickname": content_a["nickname"],
-    }
-
-
-emptycontent = {"sections": [], "summary": "", "heading": "", "nickname": ""}
-
-
-def create_user_page(email):
-    nickname = generate_nickname()
-    summary, sections = separate_sections(generate_user_template(email))
-    content = {
-        "sections": sections,
-        "summary": summary,
-        "heading": email,
-        "nickname": nickname,
-    }
-    try:
-        db.pages.insert_one(
-            {
-                "titles": [email, build_user_title(email, nickname)],
-                "type": "user",
-                "owner": email,
-                "primary": emptycontent,
-                "versions": [
-                    {
-                        "content": content,
-                        "diff": diff_versions(emptycontent, content),
-                        "primarydiff": diff_versions(
-                            emptycontent, content, concise=True
-                        ),
-                        "isprimary": False,
-                        "editor": g.user["_id"],
-                        "timestamp": timestamp(),
-                        "num": 1,
-                    }
-                ],
-            }
-        )
-    except DuplicateKeyError:
-        pass
-    page = find_page(email)
-    return render_template("user-page.html", version=page["versions"][-1], title=email)
-
-
 @app.route("/page/<title>/")
 def page(title):
     page = find_page(title)
@@ -139,7 +58,12 @@ def page(title):
     if g.user is None:
         abort(404)
     if is_valid_email(title):
-        return create_user_page(title)
+        create_user_page(title)
+        page = find_page(title)
+        return render_template(
+            "user-page.html", version=page["versions"][-1], title=email
+        )
+
     abort(404)  # eventually, create new topic page
 
 
@@ -155,79 +79,48 @@ def edit(title):
     abort(404)
 
 
-@app.route("/page/<title>/submitedit/", methods=["POST"])
-def submitedit(title):
+def get_param(key):
+    data = request.get_json(silent=True)
+    if data is None or key not in data:
+        abort(400)
+    return data[key]
+
+
+def failedit(errorkey):
     errors = {
         "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab).",
         "duplicatekey": "Lel, someone with the same name already has that nickname!",
         "emptyedit": "Lel, doesn't look like you changed anything.",
     }
 
-    def failedit(errorkey):
-        return jsonify({"success": False, "html": {"editerror": errors[errorkey]}})
+    return jsonify({"success": False, "html": {"editerror": errors[errorkey]}})
 
-    data = request.get_json(silent=True)
-    if data is None:
-        abort(400)
-    body = data.get("body")
-    heading = data.get("heading")
-    nickname = data.get("nickname")
-    num = data.get("num")
-    if body is None or heading is None or nickname is None or num is None:
-        abort(400)
+
+@app.route("/page/<title>/submitedit/", methods=["POST"])
+def submitedit(title):
     if g.user is None:
         abort(401)
 
     page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": num}},
+        {"titles": title, "versions": {"$size": get_param("num")}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
     )
     if page is None:
         return failedit("racecondition")
-    if not page["type"] == "user":
-        abort(400)
-    oldversion = page["versions"][-1]
-    isprimary = page["owner"] == g.user["email"]
 
-    sanitized_body = sanitize_html(body)
-    summary, sections = separate_sections(sanitized_body)
-    newtitle = build_user_title(heading, nickname)
+    summary, sections = separate_sections(sanitize_html(get_param("body")))
     content = {
         "sections": sections,
         "summary": summary,
-        "heading": heading,
-        "nickname": nickname,
+        "heading": get_param("heading"),
+        "nickname": get_param("nickname"),
     }
-    if content == oldversion["content"]:
-        return failedit("emptyedit")
-    try:
-        update = db.pages.update_one(
-            {"titles": title, "versions": {"$size": num}},
-            {
-                "$set": {"primary": content if isprimary else page["primary"]},
-                "$push": {
-                    "versions": {
-                        "content": content,
-                        "diff": diff_versions(oldversion["content"], content),
-                        "primarydiff": diff_versions(
-                            content if isprimary else page["primary"],
-                            content,
-                            concise=True,
-                        ),
-                        "isprimary": isprimary,
-                        "editor": g.user["_id"],
-                        "timestamp": timestamp(),
-                        "num": num + 1,
-                    }
-                },
-                "$addToSet": {"titles": newtitle},
-            },
-        )
-    except DuplicateKeyError:
-        return failedit("duplicatekey")
-    if update.modified_count == 0:
-        return failedit("racecondition")
-    return jsonify({"success": True, "redirect": url_for_title("page", title=newtitle)})
+    update = edit_user_page(page, content)
+    if "error" in update:
+        return failedit(update["error"])
+    return jsonify(
+        {"success": True, "redirect": url_for_title("page", title=update["newtitle"])}
+    )
 
 
 @app.route("/page/<title>/version/<int:num>/")
@@ -258,10 +151,7 @@ def history(title):
 
 @app.route("/authenticate/", methods=["POST"])
 def authenticate():
-    data = request.get_json(silent=True)
-    if data is None:
-        abort(400)
-    verified = verify_password(data.get("email"), data.get("password"))
+    verified = verify_password(get_param("email"), get_param("password"))
     g.user = verified.get("user")
     g.reissue_token = True
     g.login_error = verified.get("error")

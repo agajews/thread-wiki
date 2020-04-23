@@ -246,7 +246,6 @@ def stretched_opcodes(matcher, sequence_a, sequence_b, n=5, depth=0, maxdepth=3)
     opcodes = matcher.get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:
         if tag == "equal" and (j2 - j1) < n:
-            print(sequence_b[j1:j2])
             for token in sequence_b[j1:j2]:
                 marked_dirty = True
                 token.mark_dirty()
