@@ -124,7 +124,36 @@ def sectionedit(title, idx):
     return jsonify(
         {
             "success": True,
+            "increment": True,
             "innerhtml": {errorid: "", "section-diff-{}".format(idx): updated_diff},
+        }
+    )
+
+
+@app.route("/page/<title>/summaryedit/", methods=["POST"])
+def summaryedit(title):
+    page = db.pages.find_one(
+        {"titles": title, "versions": {"$size": get_param("num")}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+    )
+    if page is None:
+        return failedit("racecondition", "summaryerror")
+
+    content = deepcopy(page["versions"][-1]["content"])
+    content["summary"] = get_param("body")
+    update = edit_user_page(page, content)
+    if "error" in update:
+        if update["error"] == "emptyedit":
+            return jsonify({"success": True, "increment": False, "innerhtml": {}})
+        return failedit(update["error"], "summaryerror")
+    return jsonify(
+        {
+            "success": True,
+            "increment": True,
+            "innerhtml": {
+                "summaryerror": "",
+                "summary-diff": update["primarydiff"]["summary"],
+            },
         }
     )
 

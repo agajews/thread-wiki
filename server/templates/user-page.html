@@ -7,6 +7,7 @@
 
   <script>
     window.num = {{ version.num }};
+
     function editsection(idx, url) {
       let button = document.getElementById("edit-section-" + idx);
       if (button.innerText == 'Edit') {
@@ -30,6 +31,30 @@
         });
       }
     }
+
+    function editsummary(url) {
+      let button = document.getElementById("edit-summary");
+      if (button.innerText == 'Edit') {
+        button.innerText = 'Done';
+        document.getElementById('summary-body').removeAttribute('hidden');
+        document.getElementById('summary-diff').setAttribute('hidden', true);
+      } else {
+        post(url, {
+          body: document.getElementById('summary-body').innerHTML,
+          num: window.num,
+        }).then((data) => {
+          rerender(data.innerhtml, true);
+          if (data.success) {
+            if (data.increment) {
+              window.num += 1;
+            }
+            button.innerText = 'Edit';
+            document.getElementById('summary-body').setAttribute('hidden', true);
+            document.getElementById('summary-diff').removeAttribute('hidden');
+          }
+        });
+      }
+    }
   </script>
 
   <body>
@@ -42,7 +67,9 @@
     <a href="{{ url_for('edit', title=title) }}">Edit page</a>
     <a href="{{ url_for('history', title=title) }}">History</a>
 
-    <div>{{ version.primarydiff.summary|safe }}</div>
+    <div id="summary-diff">{{ version.primarydiff.summary|safe }}</div>
+    <div id="summary-body" contenteditable="true" hidden="true">{{ version.content.summary|safe }}</div>
+    <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
 
     {% from 'page-utils.html' import header_at_level %}
     {% for section in version.primarydiff.sections %}
