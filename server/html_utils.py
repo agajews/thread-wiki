@@ -6,7 +6,7 @@ import itertools
 
 self_closing = ["br"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
-whitespace = [" ", "\t", "\n"]
+whitespace = " \t\n\xa0"
 allowed_tags = [
     "p",
     "div",
@@ -32,6 +32,19 @@ def sanitize_html(html):
     return bleach.clean(html, tags=allowed_tags, strip=True)
 
 
+def splitstrip(s):
+    print(s)
+    lstripped = s.lstrip(whitespace)
+    rstripped = s.rstrip(whitespace)
+    lwhitespace = len(s) - len(lstripped)
+    rwhitespace = len(rstripped)
+    return s[:lwhitespace], s[lwhitespace:rwhitespace], s[rwhitespace:]
+
+
+def is_word(s):
+    return len(s.strip(whitespace)) > 0
+
+
 def split_words(data):
     words = []
     start = 0
@@ -39,7 +52,11 @@ def split_words(data):
         if i == len(data) - 1:
             words.append(data[start:])
             break
-        if data[i] in whitespace and data[i + 1] not in whitespace:
+        if (
+            data[i] in whitespace
+            and data[i + 1] not in whitespace
+            and is_word(data[start : i + 1])
+        ):
             words.append(data[start : i + 1])
             start = i + 1
     return words
@@ -65,7 +82,7 @@ class Token:
 
 class DataToken(Token):
     def __init__(self, data, context):
-        super().__init__((data, context))
+        super().__init__((data.strip(whitespace), context))
         self.data = data
         self.context = context
 
@@ -198,22 +215,11 @@ def add_diff_to_context(opcodes, sequence_a, sequence_b):
     return merged_sequence
 
 
-def splitstrip(s, chars=" \n\t"):
-    lstripped = s.lstrip(chars)
-    rstripped = s.rstrip(chars)
-    lwhitespace = len(s) - len(lstripped)
-    rwhitespace = len(rstripped)
-    return s[:lwhitespace], s[lwhitespace:rwhitespace], s[rwhitespace:]
-
-
-def is_word(s, chars=" \n\t"):
-    return len(s.strip(chars)) > 0
-
-
 def wrap_brackets(tokens):
     for token in tokens:
         if isinstance(token, DataToken) and is_word(token.data):
             l, s, r = splitstrip(token.data)
+            print(repr((l, s, r)))
             token.data = l + "[" + s + r
             break
     for token in reversed(tokens):
@@ -229,6 +235,7 @@ def empty_brackets(token):
 
 
 def add_concise_diff_to_context(opcodes, sequence_a, sequence_b):
+    print(sequence_b)
     merged_sequence = []
     diff = []
     for tag, i1, i2, j1, j2 in opcodes:

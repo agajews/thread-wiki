@@ -12,7 +12,7 @@
     <ul>
       {% for page in pages %}
         <li><a href="{{ url_for('page', title=page.titles[-1]) }}">
-          {{ page.versions[-1].heading }}
+          {{ page.versions[-1].content.heading }}
         </a></li>
       {% endfor %}
     </ul>
