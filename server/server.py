@@ -115,7 +115,8 @@ def sectionedit(title, idx):
     content["sections"][idx]["body"] = get_param("body")
     update = edit_user_page(page, content)
     if "error" in update:
-        # TODO: ignore empty edits here
+        if update["error"] == "emptyedit":
+            return jsonify({"success": True, "increment": False, "innerhtml": {}})
         return failedit(update["error"], errorid)
     for section in update["primarydiff"]["sections"]:
         if section["idx"] == idx:

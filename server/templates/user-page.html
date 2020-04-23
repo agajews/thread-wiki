@@ -20,7 +20,9 @@
         }).then((data) => {
           rerender(data.innerhtml, true);
           if (data.success) {
-            window.num += 1;
+            if (data.increment) {
+              window.num += 1;
+            }
             button.innerText = 'Edit';
             document.getElementById('section-body-' + idx).setAttribute('hidden', true);
             document.getElementById('section-diff-' + idx).removeAttribute('hidden');
@@ -37,7 +39,7 @@
 
     {% from 'page-utils.html' import showheadingdiff %}
     {{ showheadingdiff(version) }}
-    <a href="{{ url_for('edit', title=title) }}">Edit</a>
+    <a href="{{ url_for('edit', title=title) }}">Edit page</a>
     <a href="{{ url_for('history', title=title) }}">History</a>
 
     <div>{{ version.primarydiff.summary|safe }}</div>
@@ -47,15 +49,16 @@
       {% if section.deleted %}
         <div><del>[]</del></div>
       {% else %}
-        {% if section.inserted %}
-          {% set insertedheader %}
+        {% set header %}
+          {% if section.inserted %}
             <ins>[{{ section.header }}]</ins>
-          {% endset %}
-          {{ header_at_level(insertedheader, section.level) }}
-        {% else %}
-          {{ header_at_level(section.header, section.level) }}
-        {% endif %}
-        <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+          {% else %}
+            {{ section.header }}
+          {% endif %}
+          <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+        {% endset %}
+
+        {{ header_at_level(header, section.level) }}
         <div id="editerror-section-{{ section.idx }}"></div>
         <div id="section-diff-{{ section.idx }}">{{ section.diff|safe }}</div>
         <div id="section-body-{{ section.idx }}" contenteditable="true" hidden="true">{{ section.body|safe }}</div>
