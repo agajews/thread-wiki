@@ -12,29 +12,6 @@
   {% endif %}
 {% endmacro %}
 
-{% macro showprimarydiff(primarydiff) %}
-  <div>{{ primarydiff.summary|safe }}</div>
-
-  {% from 'page-utils.html' import header_at_level %}
-  {% for section in primarydiff.sections %}
-    {% if section.inserted %}
-      {% set insertedheader %}
-        <ins>[{{ section.header }}]</ins>
-      {% endset %}
-      {{ header_at_level(insertedheader, section.level) }}
-      {{ section.diff|safe }}
-    {% elif section.deleted %}
-      <del>[]</del>
-    {% elif section.edited %}
-      {{ header_at_level(section.header, section.level) }}
-      {{ section.diff|safe }}
-    {% else %}
-      {{ header_at_level(section.header, section.level) }}
-      {{ section.body|safe }}
-    {% endif %}
-  {% endfor %}
-{% endmacro %}
-
 {% macro showheadingdiff(version) %}
   {% if version.primarydiff.headingchanged or version.primarydiff.nicknamechanged %}
     <ins><h1>[{{ version.content.heading }}, AKA "{{ version.content.nickname }}"]</h1></ins>

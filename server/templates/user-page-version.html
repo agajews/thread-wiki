@@ -17,8 +17,24 @@
     <a href="{{ url_for('history', title=title) }}">History</a>
     <a href="{{ url_for('page', title=title) }}">Latest version</a>
 
-    {% from 'page-utils.html' import showprimarydiff %}
-    {{ showprimarydiff(version.primarydiff) }}
+    <div>{{ version.primarydiff.summary|safe }}</div>
+
+    {% from 'page-utils.html' import header_at_level %}
+    {% for section in version.primarydiff.sections %}
+      {% if section.deleted %}
+        <div><del>[]</del></div>
+      {% else %}
+        {% if section.inserted %}
+          {% set insertedheader %}
+            <ins>[{{ section.header }}]</ins>
+          {% endset %}
+          {{ header_at_level(insertedheader, section.level) }}
+        {% else %}
+          {{ header_at_level(section.header, section.level) }}
+        {% endif %}
+        {{ section.diff|safe }}
+      {% endif %}
+    {% endfor %}
 
   </body>
 </html>

@@ -5,6 +5,31 @@
     {% include 'diffstyles.html' %}
   </head>
 
+  <script>
+    window.num = {{ version.num }};
+    function editsection(idx, url) {
+      let button = document.getElementById("edit-section-" + idx);
+      if (button.innerText == 'Edit') {
+        button.innerText = 'Done';
+        document.getElementById('section-body-' + idx).removeAttribute('hidden');
+        document.getElementById('section-diff-' + idx).setAttribute('hidden', true);
+      } else {
+        post(url, {
+          body: document.getElementById("section-body-" + idx).innerHTML,
+          num: window.num,
+        }).then((data) => {
+          rerender(data.innerhtml, true);
+          if (data.success) {
+            window.num += 1;
+            button.innerText = 'Edit';
+            document.getElementById('section-body-' + idx).setAttribute('hidden', true);
+            document.getElementById('section-diff-' + idx).removeAttribute('hidden');
+          }
+        });
+      }
+    }
+  </script>
+
   <body>
     {% include 'modules/login.html' %}
 
@@ -15,8 +40,27 @@
     <a href="{{ url_for('edit', title=title) }}">Edit</a>
     <a href="{{ url_for('history', title=title) }}">History</a>
 
-    {% from 'page-utils.html' import showprimarydiff %}
-    {{ showprimarydiff(version.primarydiff) }}
+    <div>{{ version.primarydiff.summary|safe }}</div>
+
+    {% from 'page-utils.html' import header_at_level %}
+    {% for section in version.primarydiff.sections %}
+      {% if section.deleted %}
+        <div><del>[]</del></div>
+      {% else %}
+        {% if section.inserted %}
+          {% set insertedheader %}
+            <ins>[{{ section.header }}]</ins>
+          {% endset %}
+          {{ header_at_level(insertedheader, section.level) }}
+        {% else %}
+          {{ header_at_level(section.header, section.level) }}
+        {% endif %}
+        <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+        <div id="editerror-section-{{ section.idx }}"></div>
+        <div id="section-diff-{{ section.idx }}">{{ section.diff|safe }}</div>
+        <div id="section-body-{{ section.idx }}" contenteditable="true" hidden="true">{{ section.body|safe }}</div>
+      {% endif %}
+    {% endfor %}
 
   </body>
 </html>

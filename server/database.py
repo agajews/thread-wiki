@@ -99,6 +99,8 @@ def edit_user_page(page, content):
     oldcontent = page["versions"][-1]["content"]
     if content == oldcontent:
         return {"error": "emptyedit"}
+    diff = diff_versions(oldcontent, content)
+    primarydiff = diff_versions(primary, content, concise=True)
 
     try:
         update = db.pages.update_one(
@@ -108,8 +110,8 @@ def edit_user_page(page, content):
                 "$push": {
                     "versions": {
                         "content": content,
-                        "diff": diff_versions(oldcontent, content),
-                        "primarydiff": diff_versions(primary, content, concise=True),
+                        "diff": diff,
+                        "primarydiff": primarydiff,
                         "isprimary": isprimary,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
@@ -123,4 +125,9 @@ def edit_user_page(page, content):
         return {"error": "duplicatekey"}
     if update.modified_count == 0:
         return {"error": "racecondition"}
-    return {"newtitle": newtitle}
+    return {
+        "newtitle": newtitle,
+        "diff": diff,
+        "primarydiff": primarydiff,
+        "isprimary": isprimary,
+    }

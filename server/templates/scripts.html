@@ -11,11 +11,15 @@
     }).then(res => res.json());
   }
 
-  function rerender(elements) {
+  function rerender(elements, inner) {
     Object.entries(elements).forEach(([id, html]) => {
       let element = document.getElementById(id);
       if (element) {
-        element.outerHTML = html;
+        if (inner) {
+          element.innerHTML = html;
+        } else {
+          element.outerHTML = html;
+        }
       }
     });
   }

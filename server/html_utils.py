@@ -366,13 +366,16 @@ def diff_sections(sections_a, sections_b, concise=False):
     merged_sequence = []
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
-            for section_a, section_b in zip(sequence_a[i1:i2], sequence_b[j1:j2]):
+            for i, j in zip(range(i1, i2), range(j1, j2)):
+                section_a = sequence_a[i]
+                section_b = sequence_b[j]
                 section_dict = section_b.to_dict()
                 if section_a.body != section_b.body:
                     section_dict["edited"] = True
-                    section_dict["diff"] = markup_changes(
-                        section_a.body, section_b.body, concise=concise
-                    )
+                section_dict["diff"] = markup_changes(
+                    section_a.body, section_b.body, concise=concise
+                )
+                section_dict["idx"] = j
                 merged_sequence.append(section_dict)
         if tag == "replace" or tag == "delete":
             for section in sequence_a[i1:i2]:
@@ -381,9 +384,11 @@ def diff_sections(sections_a, sections_b, concise=False):
                 section_dict["diff"] = markup_changes(section.body, "", concise=concise)
                 merged_sequence.append(section_dict)
         if tag == "replace" or tag == "insert":
-            for section in sequence_b[j1:j2]:
+            for j in range(j1, j2):
+                section = sequence_b[j]
                 section_dict = section.to_dict()
                 section_dict["inserted"] = True
                 section_dict["diff"] = markup_changes("", section.body, concise=concise)
+                section_dict["idx"] = j
                 merged_sequence.append(section_dict)
     return merged_sequence

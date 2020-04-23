@@ -1,5 +1,6 @@
 from flask import render_template, abort, request, jsonify, g, redirect
 import re
+from copy import deepcopy
 from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
 from .html_utils import sanitize_html, separate_sections
@@ -65,14 +66,13 @@ def get_param(key):
     return data[key]
 
 
-def failedit(errorkey):
-    errors = {
+def failedit(errorkey, errorid):
+    editerrors = {
         "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab).",
         "duplicatekey": "Lel, someone with the same name already has that nickname!",
         "emptyedit": "Lel, doesn't look like you changed anything.",
     }
-
-    return jsonify({"success": False, "html": {"editerror": errors[errorkey]}})
+    return jsonify({"success": False, "innerhtml": {errorid: editerrors[errorkey]}})
 
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
@@ -82,7 +82,7 @@ def submitedit(title):
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
     )
     if page is None:
-        return failedit("racecondition")
+        return failedit("duplicatekey", "editerror")
 
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     content = {
@@ -93,9 +93,38 @@ def submitedit(title):
     }
     update = edit_user_page(page, content)
     if "error" in update:
-        return failedit(update["error"])
+        return failedit(update["error"], "editerror")
     return jsonify(
         {"success": True, "redirect": url_for("page", title=update["newtitle"])}
+    )
+
+
+@app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
+def sectionedit(title, idx):
+    page = db.pages.find_one(
+        {"titles": title, "versions": {"$size": get_param("num")}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+    )
+    errorid = "editerror-section-{}".format(idx)
+    if page is None:
+        return failedit("duplicatekey", errorid)
+
+    content = deepcopy(page["versions"][-1]["content"])
+    if idx >= len(content["sections"]):
+        abort(400)
+    content["sections"][idx]["body"] = get_param("body")
+    update = edit_user_page(page, content)
+    if "error" in update:
+        # TODO: ignore empty edits here
+        return failedit(update["error"], errorid)
+    for section in update["primarydiff"]["sections"]:
+        if section["idx"] == idx:
+            updated_diff = section["diff"]
+    return jsonify(
+        {
+            "success": True,
+            "innerhtml": {errorid: "", "section-diff-{}".format(idx): updated_diff},
+        }
     )
 
 
