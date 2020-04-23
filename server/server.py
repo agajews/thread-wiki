@@ -71,10 +71,14 @@ def build_user_title(heading, nickname):
     return (heading + "_" + nickname).replace(" ", "_")
 
 
-def diff_versions(content_a, content_b):
+def diff_versions(content_a, content_b, concise=False):
     return {
-        "sections": diff_sections(content_a["sections"], content_b["sections"]),
-        "summary": markup_changes(content_a["summary"], content_b["summary"]),
+        "sections": diff_sections(
+            content_a["sections"], content_b["sections"], concise=concise
+        ),
+        "summary": markup_changes(
+            content_a["summary"], content_b["summary"], concise=concise
+        ),
         "summarychanged": content_a["summary"] != content_b["summary"],
         "headingchanged": content_a["heading"] != content_b["heading"],
         "nicknamechanged": content_a["nickname"] != content_b["nickname"],
@@ -106,7 +110,9 @@ def create_user_page(email):
                     {
                         "content": content,
                         "diff": diff_versions(emptycontent, content),
-                        "primarydiff": diff_versions(emptycontent, content),
+                        "primarydiff": diff_versions(
+                            emptycontent, content, concise=True
+                        ),
                         "isprimary": False,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
@@ -204,7 +210,9 @@ def submitedit(title):
                         "content": content,
                         "diff": diff_versions(oldversion["content"], content),
                         "primarydiff": diff_versions(
-                            content if isprimary else page["primary"], content
+                            content if isprimary else page["primary"],
+                            content,
+                            concise=True,
                         ),
                         "isprimary": isprimary,
                         "editor": g.user["_id"],

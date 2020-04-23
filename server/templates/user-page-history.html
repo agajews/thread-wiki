@@ -46,7 +46,7 @@
         {% elif section.deleted %}
           <del>{{ header_at_level(section.header, section.level) }}</del>
           <del>{{ section.body|safe }}</del>
-        {% elif section.diff %}
+        {% elif section.edited %}
           {{ header_at_level(section.header, section.level) }}
           {{ section.diff|safe }}
         {% endif %}

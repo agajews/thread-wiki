@@ -165,16 +165,13 @@ def startswith(l, prefix):
 
 def insert_tags(sequence, tag, predicate):
     prefix = None
-    context = []
     for add_tag, token in zip(predicate, sequence):
         if add_tag:
             if prefix is None or not startswith(token.context, prefix):
-                shared, to_close, to_open = list_difference(context, token.context)
-                prefix = shared
+                prefix = token.context
             token.context.insert(len(prefix), tag)
         else:
             prefix = None
-        context = token.context
 
 
 def get_sequence(data):
@@ -201,29 +198,67 @@ def add_diff_to_context(opcodes, sequence_a, sequence_b):
     return merged_sequence
 
 
+def splitstrip(s, chars=" \n\t"):
+    lstripped = s.lstrip(chars)
+    rstripped = s.rstrip(chars)
+    lwhitespace = len(s) - len(lstripped)
+    rwhitespace = len(rstripped)
+    return s[:lwhitespace], s[lwhitespace:rwhitespace], s[rwhitespace:]
+
+
+def is_word(s, chars=" \n\t"):
+    return len(s.strip(chars)) > 0
+
+
+def wrap_brackets(tokens):
+    for token in tokens:
+        if isinstance(token, DataToken) and is_word(token.data):
+            l, s, r = splitstrip(token.data)
+            token.data = l + "[" + s + r
+            break
+    for token in reversed(tokens):
+        if isinstance(token, DataToken) and is_word(token.data):
+            l, s, r = splitstrip(token.data)
+            token.data = l + s + "]" + r
+            break
+    return tokens
+
+
+def empty_brackets(token):
+    return DataToken("[]", token.context)
+
+
+def add_concise_diff_to_context(opcodes, sequence_a, sequence_b):
+    merged_sequence = []
+    diff = []
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal":
+            merged_sequence += sequence_b[j1:j2]
+            diff += ["equal"] * (j2 - j1)
+        if tag == "delete":
+            merged_sequence += [empty_brackets(sequence_a[j1])]
+            diff += ["del"]
+        if tag == "replace" or tag == "insert":
+            merged_sequence += wrap_brackets(sequence_b[j1:j2])
+            diff += ["ins"] * (j2 - j1)
+    insert_tags(merged_sequence, ("del", []), (x == "del" for x in diff))
+    insert_tags(merged_sequence, ("ins", []), (x == "ins" for x in diff))
+    return merged_sequence
+
+
 def isjunk(token):
     if isinstance(token, DataToken) and all(c in whitespace for c in token.data):
         return True
     return False
 
 
-def markup_changes(data_a, data_b):
+def markup_changes(data_a, data_b, concise=False):
     sequence_a = get_sequence(data_a)
     sequence_b = get_sequence(data_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
-    merged_sequence = add_diff_to_context(matcher.get_opcodes(), sequence_a, sequence_b)
+    diff_fn = add_concise_diff_to_context if concise else add_diff_to_context
+    merged_sequence = diff_fn(matcher.get_opcodes(), sequence_a, sequence_b)
     return generate_html(merged_sequence)
-
-
-def markup_change_blocks(data_a, data_b):
-    sequence_a = get_sequence(data_a)
-    sequence_b = get_sequence(data_b)
-    matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
-    blocks = []
-    for opcodes in matcher.get_grouped_opcodes(n=5):
-        merged_sequence = add_diff_to_context(opcodes, sequence_a, sequence_b)
-        blocks.append(generate_html(merged_sequence))
-    return blocks
 
 
 def is_header(token):
@@ -285,7 +320,7 @@ class Section(Token):
         return {"header": self.header, "body": self.body, "level": self.level}
 
 
-def diff_sections(sections_a, sections_b):
+def diff_sections(sections_a, sections_b, concise=False):
     sequence_a = [Section(section) for section in sections_a]
     sequence_b = [Section(section) for section in sections_b]
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
@@ -295,18 +330,21 @@ def diff_sections(sections_a, sections_b):
             for section_a, section_b in zip(sequence_a[i1:i2], sequence_b[j1:j2]):
                 section_dict = section_b.to_dict()
                 if section_a.body != section_b.body:
+                    section_dict["edited"] = True
                     section_dict["diff"] = markup_changes(
-                        section_a.body, section_b.body
+                        section_a.body, section_b.body, concise=concise
                     )
                 merged_sequence.append(section_dict)
         if tag == "replace" or tag == "delete":
             for section in sequence_a[i1:i2]:
                 section_dict = section.to_dict()
                 section_dict["deleted"] = True
+                section_dict["diff"] = markup_changes(section.body, "", concise=concise)
                 merged_sequence.append(section_dict)
         if tag == "replace" or tag == "insert":
             for section in sequence_b[j1:j2]:
                 section_dict = section.to_dict()
                 section_dict["inserted"] = True
+                section_dict["diff"] = markup_changes("", section.body, concise=concise)
                 merged_sequence.append(section_dict)
     return merged_sequence
