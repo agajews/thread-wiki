@@ -68,7 +68,7 @@ def get_param(key):
 
 def failedit(errorkey, errorid):
     editerrors = {
-        "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab).",
+        "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening edit page in a new tab).",
         "duplicatekey": "Lel, someone with the same name already has that nickname!",
         "emptyedit": "Lel, doesn't look like you changed anything.",
     }
@@ -82,7 +82,7 @@ def submitedit(title):
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
     )
     if page is None:
-        return failedit("duplicatekey", "editerror")
+        return failedit("racecondition", "editerror")
 
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     content = {
@@ -107,7 +107,7 @@ def sectionedit(title, idx):
     )
     errorid = "editerror-section-{}".format(idx)
     if page is None:
-        return failedit("duplicatekey", errorid)
+        return failedit("racecondition", errorid)
 
     content = deepcopy(page["versions"][-1]["content"])
     if idx >= len(content["sections"]):
