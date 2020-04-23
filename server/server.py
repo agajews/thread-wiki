@@ -78,31 +78,36 @@ def diff_versions(content_a, content_b):
         "summarychanged": content_a["summary"] != content_b["summary"],
         "headingchanged": content_a["heading"] != content_b["heading"],
         "nicknamechanged": content_a["nickname"] != content_b["nickname"],
+        "oldheading": content_a["heading"],
+        "oldnickname": content_a["nickname"],
     }
 
 
 emptycontent = {"sections": [], "summary": "", "heading": "", "nickname": ""}
 
 
-def create_user_page(title):
+def create_user_page(email):
     nickname = generate_nickname()
-    summary, sections = separate_sections(generate_user_template(title))
+    summary, sections = separate_sections(generate_user_template(email))
     content = {
         "sections": sections,
         "summary": summary,
-        "heading": title,
+        "heading": email,
         "nickname": nickname,
     }
     try:
         db.pages.insert_one(
             {
-                "titles": [title, build_user_title(title, nickname)],
+                "titles": [email, build_user_title(email, nickname)],
                 "type": "user",
-                "owner": title,
+                "owner": email,
+                "primary": emptycontent,
                 "versions": [
                     {
                         "content": content,
                         "diff": diff_versions(emptycontent, content),
+                        "primarydiff": diff_versions(emptycontent, content),
+                        "isprimary": False,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": 1,
@@ -112,8 +117,8 @@ def create_user_page(title):
         )
     except DuplicateKeyError:
         pass
-    page = find_page(title)
-    return render_template("user-page.html", version=page["versions"][-1], title=title)
+    page = find_page(email)
+    return render_template("user-page.html", version=page["versions"][-1], title=email)
 
 
 @app.route("/page/<title>/")
@@ -146,25 +151,14 @@ def edit(title):
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
 def submitedit(title):
-    def racecondition():
-        return jsonify(
-            {
-                "success": False,
-                "html": {
-                    "editerror": "Oops, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab)."
-                },
-            }
-        )
+    errors = {
+        "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening this edit page in a new tab).",
+        "duplicatekey": "Lel, someone with the same name already has that nickname!",
+        "emptyedit": "Lel, doesn't look like you changed anything.",
+    }
 
-    def duplicatekey():
-        return jsonify(
-            {
-                "success": False,
-                "html": {
-                    "editerror": "Oops, someone with the same name already has that nickname!"
-                },
-            }
-        )
+    def failedit(errorkey):
+        return jsonify({"success": False, "html": {"editerror": errors[errorkey]}})
 
     data = request.get_json(silent=True)
     if data is None:
@@ -175,18 +169,19 @@ def submitedit(title):
     num = data.get("num")
     if body is None or heading is None or nickname is None or num is None:
         abort(400)
+    if g.user is None:
+        abort(401)
 
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": num}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
     )
-    oldversion = page["versions"][-1]
     if page is None:
-        return racecondition()
+        return failedit("racecondition")
     if not page["type"] == "user":
         abort(400)
-    if g.user is None:
-        abort(401)
+    oldversion = page["versions"][-1]
+    isprimary = page["owner"] == g.user["email"]
 
     sanitized_body = sanitize_html(body)
     summary, sections = separate_sections(sanitized_body)
@@ -197,14 +192,21 @@ def submitedit(title):
         "heading": heading,
         "nickname": nickname,
     }
+    if content == oldversion["content"]:
+        return failedit("emptyedit")
     try:
         update = db.pages.update_one(
             {"titles": title, "versions": {"$size": num}},
             {
+                "$set": {"primary": content if isprimary else page["primary"]},
                 "$push": {
                     "versions": {
                         "content": content,
                         "diff": diff_versions(oldversion["content"], content),
+                        "primarydiff": diff_versions(
+                            content if isprimary else page["primary"], content
+                        ),
+                        "isprimary": isprimary,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": num + 1,
@@ -214,9 +216,9 @@ def submitedit(title):
             },
         )
     except DuplicateKeyError:
-        return duplicatekey()
+        return failedit("duplicatekey")
     if update.modified_count == 0:
-        return racecondition()
+        return failedit("racecondition")
     return jsonify({"success": True, "redirect": url_for_title("page", title=newtitle)})
 
 

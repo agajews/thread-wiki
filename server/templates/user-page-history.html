@@ -41,11 +41,9 @@
       {% endif %}
       {% for section in version.diff.sections %}
         {% if section.inserted %}
-          <!-- <div class="markupnote">Created section:</div> -->
           <ins>{{ header_at_level(section.header, section.level) }}</ins>
           <ins>{{ section.body|safe }}</ins>
         {% elif section.deleted %}
-          <!-- <div class="markupnote">Deleted section:</div> -->
           <del>{{ header_at_level(section.header, section.level) }}</del>
           <del>{{ section.body|safe }}</del>
         {% elif section.diff %}

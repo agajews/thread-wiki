@@ -9,18 +9,15 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>{{ version.content.heading }}, AKA "{{ version.content.nickname }}"</h1>
+    {% from 'page-utils.html' import showheadingdiff %}
+    {{ showheadingdiff(version) }}
     <h3>{{ version.timestamp }}</h3>
     <a href="{{ url_for_title('edit', title=title) }}">Edit</a>
     <a href="{{ url_for_title('history', title=title) }}">History</a>
+    <a href="{{ url_for_title('page', title=title) }}">Latest version</a>
 
-    <div>{{ version.content.summary|safe }}</div>
-
-    {% from 'page-utils.html' import header_at_level %}
-    {% for section in version.content.sections %}
-      {{ header_at_level(section.header, section.level) }}
-      {{ section.body|safe }}
-    {% endfor %}
+    {% from 'page-utils.html' import showprimarydiff %}
+    {{ showprimarydiff(version.primarydiff) }}
 
   </body>
 </html>

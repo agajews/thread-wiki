@@ -1,6 +1,6 @@
 <div id="loginmodule">
   {% if g.user %}
-    <p>Welcome, {{ g.user.name }}!
+    <p>Welcome, {{ g.user.email }}!
       <button type="button" onclick="logout(event)">Logout</button>
     </p>
   {% else %}
