@@ -10,7 +10,6 @@ whitespace = " \t\n\xa0"
 allowed_tags = [
     "p",
     "div",
-    "span",
     "br",
     "h2",
     "h3",
@@ -33,7 +32,6 @@ def sanitize_html(html):
 
 
 def splitstrip(s):
-    print(s)
     lstripped = s.lstrip(whitespace)
     rstripped = s.rstrip(whitespace)
     lwhitespace = len(s) - len(lstripped)
@@ -72,6 +70,9 @@ def immutify(data):
 class Token:
     def __init__(self, identity):
         self.identity = immutify(identity)
+
+    def mark_dirty(self):
+        self.identity = (self.identity, True)
 
     def __eq__(self, other):
         return self.identity == other.identity
@@ -197,10 +198,10 @@ def get_sequence(data):
     return parser.sequence
 
 
-def add_diff_to_context(opcodes, sequence_a, sequence_b):
+def add_diff_to_context(matcher, sequence_a, sequence_b):
     merged_sequence = []
     diff = []
-    for tag, i1, i2, j1, j2 in opcodes:
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
             merged_sequence += sequence_b[j1:j2]
             diff += ["equal"] * (j2 - j1)
@@ -219,7 +220,6 @@ def wrap_brackets(tokens):
     for token in tokens:
         if isinstance(token, DataToken) and is_word(token.data):
             l, s, r = splitstrip(token.data)
-            print(repr((l, s, r)))
             token.data = l + "[" + s + r
             break
     for token in reversed(tokens):
@@ -234,17 +234,50 @@ def empty_brackets(token):
     return DataToken("[]", token.context)
 
 
-def add_concise_diff_to_context(opcodes, sequence_a, sequence_b):
-    print(sequence_b)
+def contains_word(tokens):
+    for token in tokens:
+        if isinstance(token, DataToken) and is_word(token.data):
+            return True
+    return False
+
+
+def stretched_opcodes(matcher, sequence_a, sequence_b, n=5, depth=0, maxdepth=3):
+    marked_dirty = False
+    opcodes = matcher.get_opcodes()
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal" and (j2 - j1) < n:
+            print(sequence_b[j1:j2])
+            for token in sequence_b[j1:j2]:
+                marked_dirty = True
+                token.mark_dirty()
+    if not marked_dirty:
+        return opcodes
+    stretched_matcher = SequenceMatcher(
+        isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False
+    )
+    if depth >= maxdepth:
+        return stretched_matcher.get_opcodes()
+    return stretched_opcodes(
+        stretched_matcher,
+        sequence_a,
+        sequence_b,
+        n=n,
+        depth=depth + 1,
+        maxdepth=maxdepth,
+    )
+
+
+def add_concise_diff_to_context(matcher, sequence_a, sequence_b):
     merged_sequence = []
     diff = []
-    for tag, i1, i2, j1, j2 in opcodes:
+    for tag, i1, i2, j1, j2 in stretched_opcodes(matcher, sequence_a, sequence_b):
         if tag == "equal":
             merged_sequence += sequence_b[j1:j2]
             diff += ["equal"] * (j2 - j1)
         if tag == "delete":
-            merged_sequence += [empty_brackets(sequence_a[j1])]
-            diff += ["del"]
+            if contains_word(sequence_a[i1:i2]):
+                merged_sequence += [empty_brackets(sequence_a[i1])]
+                diff += ["del"]
         if tag == "replace" or tag == "insert":
             merged_sequence += wrap_brackets(sequence_b[j1:j2])
             diff += ["ins"] * (j2 - j1)
@@ -264,7 +297,7 @@ def markup_changes(data_a, data_b, concise=False):
     sequence_b = get_sequence(data_b)
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     diff_fn = add_concise_diff_to_context if concise else add_diff_to_context
-    merged_sequence = diff_fn(matcher.get_opcodes(), sequence_a, sequence_b)
+    merged_sequence = diff_fn(matcher, sequence_a, sequence_b)
     return generate_html(merged_sequence)
 
 
