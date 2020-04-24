@@ -112,7 +112,7 @@ def sectionedit(title, idx):
     content = deepcopy(page["versions"][-1]["content"])
     if idx >= len(content["sections"]):
         abort(400)
-    content["sections"][idx]["body"] = get_param("body")
+    content["sections"][idx]["body"] = sanitize_html(get_param("body"))
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
@@ -140,7 +140,7 @@ def summaryedit(title):
         return failedit("racecondition", "summaryerror")
 
     content = deepcopy(page["versions"][-1]["content"])
-    content["summary"] = get_param("body")
+    content["summary"] = sanitize_html(get_param("body"))
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
