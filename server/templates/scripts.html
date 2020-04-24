@@ -11,15 +11,26 @@
     }).then(res => res.json());
   }
 
-  function rerender(elements, inner) {
+  function rerender(elements) {
     Object.entries(elements).forEach(([id, html]) => {
       let element = document.getElementById(id);
       if (element) {
-        if (inner) {
-          element.innerHTML = html;
-        } else {
-          element.outerHTML = html;
-        }
+        element.innerHTML = html;
+      }
+    });
+  }
+
+  function signal(url, body) {
+    return post(url, body).then(data => {
+      if (data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
+      if (data.html) {
+        rerender(data.html);
+      }
+      if (data.response) {
+        return data.response;
       }
     });
   }

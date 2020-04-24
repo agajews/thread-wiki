@@ -4,9 +4,7 @@
       <button type="button" onclick="logout(event)">Logout</button>
     </p>
   {% else %}
-    {% if g.login_error %}
-      <p>{{ g.login_error }}</p>
-    {% endif %}
+    <div id="loginerror"></div>
     <form id="loginform" onsubmit="login(event)">
       <span class="formrow">
         <label for="email">Email:</label>
@@ -20,30 +18,25 @@
   {% endif %}
 </div>
 
-{% if not g.rerender %}
-  <script>
-    function login(event) {
-      event.preventDefault();
-      let form = document.getElementById("loginform");
-      post("{{ url_for('authenticate') }}", {
-          email: form.elements["email"].value,
-          password: form.elements["password"].value,
-      }).then(data => {
-        rerender(data.html);
-      });
-    }
+<script>
+  function login(event) {
+    event.preventDefault();
+    let form = document.getElementById("loginform");
+    signal("{{ url_for('authenticate') }}", {
+        email: form.elements["email"].value,
+        password: form.elements["password"].value,
+        href: window.location.href,
+    });
+  }
 
-    function logout(event) {
-      event.preventDefault()
-      post("{{ url_for('logout') }}").then((data) => {
-        rerender(data.html);
-      });
-    }
-  </script>
+  function logout(event) {
+    event.preventDefault();
+    signal("{{ url_for('logout') }}", {href: window.location.href});
+  }
+</script>
 
-  <style>
-    .formrow {
-      display: inline-block;
-    }
-  </style>
-{% endif %}
+<style>
+  .formrow {
+    display: inline-block;
+  }
+</style>

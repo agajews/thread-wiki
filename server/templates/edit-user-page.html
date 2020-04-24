@@ -26,17 +26,11 @@
     <script>
       function submitedit(event) {
         event.preventDefault();
-        post("{{ url_for('submitedit', title=title) }}", {
+        signal("{{ url_for('submitedit', title=title) }}", {
           body: document.getElementById("pagebody").innerHTML,
           heading: document.getElementById("heading").innerText,
           nickname: document.getElementById("nickname").innerText,
           num: {{ version.num }},
-        }).then((data) => {
-          if (data.success) {
-            window.location.href = data.redirect;
-          } else {
-            rerender(data.innerhtml, true);
-          }
         });
       }
     </script>

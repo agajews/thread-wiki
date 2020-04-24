@@ -8,52 +8,35 @@
   <script>
     window.num = {{ version.num }};
 
-    function editsection(idx, url) {
-      let button = document.getElementById("edit-section-" + idx);
+    function editelem(buttonid, plainid, diffid, url) {
+      let button = document.getElementById(buttonid);
       if (button.innerText == 'Edit') {
         button.innerText = 'Done';
-        document.getElementById('section-body-' + idx).removeAttribute('hidden');
-        document.getElementById('section-diff-' + idx).setAttribute('hidden', true);
+        document.getElementById(plainid).removeAttribute('hidden');
+        document.getElementById(diffid).setAttribute('hidden', true);
       } else {
-        post(url, {
-          body: document.getElementById("section-body-" + idx).innerHTML,
+        signal(url, {
+          body: document.getElementById(plainid).innerHTML,
           num: window.num,
-        }).then((data) => {
-          rerender(data.innerhtml, true);
-          if (data.success) {
-            if (data.increment) {
-              window.num += 1;
-            }
+        }).then((response) => {
+          if (response.increment) {
+            window.num += 1;
+          }
+          if (response.done) {
             button.innerText = 'Edit';
-            document.getElementById('section-body-' + idx).setAttribute('hidden', true);
-            document.getElementById('section-diff-' + idx).removeAttribute('hidden');
+            document.getElementById(plainid).setAttribute('hidden', true);
+            document.getElementById(diffid).removeAttribute('hidden');
           }
         });
       }
     }
 
+    function editsection(idx, url) {
+      editelem("edit-section-" + idx, 'section-body-' + idx, 'section-diff-' + idx, url);
+    }
+
     function editsummary(url) {
-      let button = document.getElementById("edit-summary");
-      if (button.innerText == 'Edit') {
-        button.innerText = 'Done';
-        document.getElementById('summary-body').removeAttribute('hidden');
-        document.getElementById('summary-diff').setAttribute('hidden', true);
-      } else {
-        post(url, {
-          body: document.getElementById('summary-body').innerHTML,
-          num: window.num,
-        }).then((data) => {
-          rerender(data.innerhtml, true);
-          if (data.success) {
-            if (data.increment) {
-              window.num += 1;
-            }
-            button.innerText = 'Edit';
-            document.getElementById('summary-body').setAttribute('hidden', true);
-            document.getElementById('summary-diff').removeAttribute('hidden');
-          }
-        });
-      }
+      editelem('edit-summary', 'summary-body', 'summary-diff', url);
     }
   </script>
 
@@ -69,7 +52,9 @@
 
     <div id="summary-diff">{{ version.primarydiff.summary|safe }}</div>
     <div id="summary-body" contenteditable="true" hidden="true">{{ version.content.summary|safe }}</div>
-    <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
+    {% if g.user %}
+      <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
+    {% endif %}
 
     {% from 'page-utils.html' import header_at_level %}
     {% for section in version.primarydiff.sections %}
@@ -82,7 +67,9 @@
           {% else %}
             {{ section.header }}
           {% endif %}
-          <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+          {% if g.user %}
+            <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+          {% endif %}
         {% endset %}
 
         {{ header_at_level(header, section.level) }}

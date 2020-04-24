@@ -66,13 +66,17 @@ def get_param(key):
     return data[key]
 
 
+def signal(response=None, redirect=None, html=None):
+    return jsonify({"response": response, "redirect": redirect, "html": html})
+
+
 def failedit(errorkey, errorid):
     editerrors = {
         "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening edit page in a new tab).",
         "duplicatekey": "Lel, someone with the same name already has that nickname!",
         "emptyedit": "Lel, doesn't look like you changed anything.",
     }
-    return jsonify({"success": False, "innerhtml": {errorid: editerrors[errorkey]}})
+    return signal(html={errorid: editerrors[errorkey]})
 
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
@@ -94,9 +98,7 @@ def submitedit(title):
     update = edit_user_page(page, content)
     if "error" in update:
         return failedit(update["error"], "editerror")
-    return jsonify(
-        {"success": True, "redirect": url_for("page", title=update["newtitle"])}
-    )
+    return signal(redirect=url_for("page", title=update["newtitle"]))
 
 
 @app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
@@ -116,17 +118,14 @@ def sectionedit(title, idx):
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
-            return jsonify({"success": True, "increment": False, "innerhtml": {}})
+            return signal(response={"done": True})
         return failedit(update["error"], errorid)
     for section in update["primarydiff"]["sections"]:
         if section["idx"] == idx:
             updated_diff = section["diff"]
-    return jsonify(
-        {
-            "success": True,
-            "increment": True,
-            "innerhtml": {errorid: "", "section-diff-{}".format(idx): updated_diff},
-        }
+    return signal(
+        response={"done": True, "increment": True},
+        html={errorid: "", "section-diff-{}".format(idx): updated_diff},
     )
 
 
@@ -144,17 +143,11 @@ def summaryedit(title):
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
-            return jsonify({"success": True, "increment": False, "innerhtml": {}})
+            return signal(response={"done": True})
         return failedit(update["error"], "summaryerror")
-    return jsonify(
-        {
-            "success": True,
-            "increment": True,
-            "innerhtml": {
-                "summaryerror": "",
-                "summary-diff": update["primarydiff"]["summary"],
-            },
-        }
+    return signal(
+        response={"done": True, "increment": True},
+        html={"summaryerror": "", "summary-diff": update["primarydiff"]["summary"]},
     )
 
 
@@ -189,13 +182,13 @@ def authenticate():
     verified = verify_password(get_param("email"), get_param("password"))
     g.user = verified.get("user")
     g.reissue_token = True
-    g.login_error = verified.get("error")
-    g.rerender = True
-    return jsonify(html={"loginmodule": render_template("modules/login.html")})
+    if g.user is None:
+        return signal(html={"loginerror": verified["error"]})
+    return signal(redirect=get_param("href"))
 
 
 @app.route("/logout/", methods=["POST"])
 def logout():
     g.user = None
     g.rerender = True
-    return jsonify(html={"loginmodule": render_template("modules/login.html")})
+    return signal(redirect=get_param("href"))
