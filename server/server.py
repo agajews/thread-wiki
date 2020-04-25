@@ -33,8 +33,6 @@ def page(title):
     print("Finding page {}".format(title))
     page = find_page(title)
     if page is not None and page["type"] == "user":
-        if title != page["titles"][-1]:
-            return redirect(url_for("page", title=page["titles"][-1]))
         return render_template(
             "user-page.html", version=page["versions"][-1], title=title
         )
@@ -108,9 +106,8 @@ def sectionedit(title, idx):
         {"titles": title, "versions": {"$size": get_param("num")}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
     )
-    errorid = "editerror-section-{}".format(idx)
     if page is None:
-        return failedit("racecondition", errorid)
+        return failedit("racecondition", "sectionerror-{}".format(idx))
 
     content = deepcopy(page["versions"][-1]["content"])
     if idx >= len(content["sections"]):
@@ -120,13 +117,16 @@ def sectionedit(title, idx):
     if "error" in update:
         if update["error"] == "emptyedit":
             return signal(response={"done": True})
-        return failedit(update["error"], errorid)
+        return failedit(update["error"], "sectionerror-{}".format(idx))
     for section in update["version"]["primarydiff"]["sections"]:
         if section["idx"] == idx:
             updated_diff = section["diff"]
     return signal(
         response={"done": True, "increment": True},
-        html={errorid: "", "section-diff-{}".format(idx): updated_diff},
+        html={
+            "sectionerror-{}".format(idx): "",
+            "section-diff-{}".format(idx): updated_diff,
+        },
     )
 
 
@@ -165,8 +165,8 @@ def headingedit(title):
         return failedit("racecondition", "headingerror")
 
     content = deepcopy(page["versions"][-1]["content"])
-    content["heading"] = sanitize_html(get_param("heading"))
-    content["nickname"] = sanitize_html(get_param("nickname"))
+    content["heading"] = get_param("heading")
+    content["nickname"] = get_param("nickname")
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
@@ -181,6 +181,24 @@ def headingedit(title):
             ),
         },
     )
+
+
+@app.route("/page/<title>/restore/<int:num>/", methods=["POST"])
+def restore(title, num):
+    page = db.pages.find_one(
+        {"titles": title, "versions": {"$size": get_param("num")}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+    )
+    if page is None:
+        return failedit("racecondition", "versionerror-{}".format(num))
+    newpage = db.pages.find_one(
+        {"titles": title}, {"versions": {"$slice": [num - 1, 1]}}
+    )
+
+    update = edit_user_page(page, newpage["versions"][0]["content"])
+    if "error" in update:
+        return failedit(update["error"], "versionerror-{}".format(num))
+    return signal(redirect=url_for("history", title=title))
 
 
 @app.route("/page/<title>/version/<int:num>/")

@@ -106,7 +106,7 @@
         {% endset %}
 
         {{ header_at_level(header, section.level) }}
-        <div id="editerror-section-{{ section.idx }}"></div>
+        <div id="sectionerror-{{ section.idx }}"></div>
         <div id="section-diff-{{ section.idx }}">{{ section.diff|safe }}</div>
         <div id="section-body-{{ section.idx }}" contenteditable="true" hidden="true">{{ section.body|safe }}</div>
       {% endif %}

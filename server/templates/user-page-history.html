@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>History: {{ currentversion.heading }} - Thread</title>
+    <title>History: {{ currentversion.content.heading }} - Thread</title>
     {% include 'scripts.html' %}
 
     <style>
@@ -24,6 +24,14 @@
         color: grey;
       }
     </style>
+
+    <script>
+      function restore(url) {
+        signal(url, {
+          num: {{ currentversion.num }},
+        });
+      }
+    </script>
   </head>
 
   <body>
@@ -61,7 +69,7 @@
 
     {% if currentversion.num != 1 %}
       <div>
-        <span class="timestamp">{{ currentversion.timestamp }}</span>
+        <span class="timestamp">Version {{ currentversion.num }}</span>
         <button type="button">Flag and undo</button>
         <a href="{{ url_for('version', title=title, num=currentversion.num) }}">View</a>
       </div>
@@ -71,20 +79,22 @@
     {% endif %}
     {% for version in oldversions %}
       <div>
-        <span class="timestamp">{{ version.timestamp }}</span>
+        <span class="timestamp">Version {{ version.num }}</span>
         <button type="button">Flag</button>
-        <button type="button">Restore</button>
+        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Restore</button>
         <a href="{{ url_for('version', title=title, num=version.num) }}">View</a>
       </div>
+      <div id="versionerror-{{ version.num }}"></div>
       {{ show_edits(version) }}
       <hr>
     {% endfor %}
 
     <div>
-      <span class="timestamp">{{ initialversion.timestamp }}</span>
-      <button type="button">Restore</button>
+      <span class="timestamp">Version {{ initialversion.num }}</span>
+      <button type="button" onclick="restore('{{ url_for('restore', title=title, num=initialversion.num) }}')">Restore</button>
       <a href="{{ url_for('version', title=title, num=initialversion.num) }}">View</a>
     </div>
+    <div id="versionerror-{{ initialversion.num }}"></div>
     {{ show_edits(initialversion) }}
 
   </body>
