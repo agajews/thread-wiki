@@ -28,6 +28,7 @@ allowed_tags = [
 
 
 def sanitize_html(html):
+    # TODO: linkify as well
     return bleach.clean(html, tags=allowed_tags, strip=True)
 
 
@@ -241,7 +242,7 @@ def contains_word(tokens):
     return False
 
 
-def stretched_opcodes(matcher, sequence_a, sequence_b, n=5, depth=0, maxdepth=3):
+def stretched_opcodes(matcher, sequence_a, sequence_b, n=3, depth=0, maxdepth=3):
     marked_dirty = False
     opcodes = matcher.get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:

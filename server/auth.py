@@ -1,12 +1,21 @@
 from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo.errors import DuplicateKeyError
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import g, request
 from bson import ObjectId
 from .app import app, db, timestamp
 
 
-def create_user(email, password):
-    db.users.insert({"email": email, "passhash": generate_password_hash(password)})
+def create_user(email):
+    inserted = db.users.insert_one({"email": email})
+    return inserted.inserted_id
+
+
+def create_or_return_user(email):
+    try:
+        return create_user(email)
+    except DuplicateKeyError:
+        return db.users.find_one({"email": email})["_id"]
 
 
 def set_password(email, password):

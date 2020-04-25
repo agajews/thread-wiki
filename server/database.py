@@ -2,6 +2,7 @@ import random
 from flask import g, abort
 from pymongo.errors import DuplicateKeyError
 from .app import db, timestamp
+from .auth import create_or_return_user
 from .html_utils import sanitize_html, markup_changes, separate_sections, diff_sections
 
 
@@ -62,11 +63,12 @@ def create_user_page(email):
         "nickname": nickname,
     }
     try:
+        owner_id = create_or_return_user(email)
         db.pages.insert_one(
             {
                 "titles": [email, build_user_title(email, nickname)],
                 "type": "user",
-                "owner": email,
+                "owner": owner_id,
                 "primary": emptycontent,
                 "versions": [
                     {
@@ -88,11 +90,12 @@ def create_user_page(email):
 
 
 def edit_user_page(page, content):
+    # TODO: check isprimary against user._id instead of user.email
     if g.user is None:
         abort(401)
 
     num = page["versions"][-1]["num"]
-    isprimary = page["owner"] == g.user["email"]
+    isprimary = page["owner"] == g.user["_id"]
     primary = content if isprimary else page["primary"]
     newtitle = build_user_title(content["heading"], content["nickname"])
 

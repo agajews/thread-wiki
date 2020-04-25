@@ -30,6 +30,7 @@ def is_valid_email(email):
 
 @app.route("/page/<title>/")
 def page(title):
+    print("Finding page {}".format(title))
     page = find_page(title)
     if page is not None and page["type"] == "user":
         if title != page["titles"][-1]:
