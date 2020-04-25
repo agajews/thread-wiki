@@ -11,11 +11,3 @@
     <h6>{{ header }}</h6>
   {% endif %}
 {% endmacro %}
-
-{% macro showheadingdiff(version) %}
-  {% if version.primarydiff.headingchanged or version.primarydiff.nicknamechanged %}
-    <ins><h1>[{{ version.content.heading }}, AKA "{{ version.content.nickname }}"]</h1></ins>
-  {% else %}
-    <h1>{{ version.content.heading }}, AKA "{{ version.content.nickname }}"</h1>
-  {% endif %}
-{% endmacro %}

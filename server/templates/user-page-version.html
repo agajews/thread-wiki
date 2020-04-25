@@ -10,8 +10,12 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    {% from 'page-utils.html' import showheadingdiff %}
-    {{ showheadingdiff(version) }}
+    {% if version.primarydiff.headingchanged or version.primarydiff.nicknamechanged %}
+      <ins><h1>[{{ version.content.heading }}, AKA "{{ version.content.nickname }}"]</h1></ins>
+    {% else %}
+      <h1>{{ version.content.heading }}, AKA "{{ version.content.nickname }}"</h1>
+    {% endif %}
+
     <h3>{{ version.timestamp }}</h3>
     <a href="{{ url_for('edit', title=title) }}">Edit page</a>
     <a href="{{ url_for('history', title=title) }}">History</a>

@@ -121,7 +121,7 @@ def sectionedit(title, idx):
         if update["error"] == "emptyedit":
             return signal(response={"done": True})
         return failedit(update["error"], errorid)
-    for section in update["primarydiff"]["sections"]:
+    for section in update["version"]["primarydiff"]["sections"]:
         if section["idx"] == idx:
             updated_diff = section["diff"]
     return signal(
@@ -148,7 +148,38 @@ def summaryedit(title):
         return failedit(update["error"], "summaryerror")
     return signal(
         response={"done": True, "increment": True},
-        html={"summaryerror": "", "summary-diff": update["primarydiff"]["summary"]},
+        html={
+            "summaryerror": "",
+            "summary-diff": update["version"]["primarydiff"]["summary"],
+        },
+    )
+
+
+@app.route("/page/<title>/headingedit/", methods=["POST"])
+def headingedit(title):
+    page = db.pages.find_one(
+        {"titles": title, "versions": {"$size": get_param("num")}},
+        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+    )
+    if page is None:
+        return failedit("racecondition", "headingerror")
+
+    content = deepcopy(page["versions"][-1]["content"])
+    content["heading"] = sanitize_html(get_param("heading"))
+    content["nickname"] = sanitize_html(get_param("nickname"))
+    update = edit_user_page(page, content)
+    if "error" in update:
+        if update["error"] == "emptyedit":
+            return signal(response={"done": True})
+        return failedit(update["error"], "headingerror")
+    return signal(
+        response={"done": True, "increment": True},
+        html={
+            "headingerror": "",
+            "heading-diff": render_template(
+                "heading-diff.html", version=update["version"]
+            ),
+        },
     )
 
 

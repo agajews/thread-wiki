@@ -38,6 +38,30 @@
     function editsummary(url) {
       editelem('edit-summary', 'summary-body', 'summary-diff', url);
     }
+
+    function editheading(url) {
+      let button = document.getElementById('edit-heading');
+      if (button.innerText == 'Edit name') {
+        button.innerText = 'Done';
+        document.getElementById('heading-body').removeAttribute('hidden');
+        document.getElementById('heading-diff').setAttribute('hidden', true);
+      } else {
+        signal(url, {
+          heading: document.getElementById('heading-content').innerHTML,
+          nickname: document.getElementById('nickname-content').innerHTML,
+          num: window.num,
+        }).then((response) => {
+          if (response.increment) {
+            window.num += 1;
+          }
+          if (response.done) {
+            button.innerText = 'Edit name';
+            document.getElementById('heading-body').setAttribute('hidden', true);
+            document.getElementById('heading-diff').removeAttribute('hidden');
+          }
+        });
+      }
+    }
   </script>
 
   <body>
@@ -45,8 +69,16 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    {% from 'page-utils.html' import showheadingdiff %}
-    {{ showheadingdiff(version) }}
+    <h1>
+      <span id="heading-diff">{% include 'heading-diff.html' %}</span>
+      <span id="heading-body" hidden="true">
+        <span id="heading-content" contenteditable="true">{{ version.content.heading }}</span>, AKA "<span id="nickname-content" contenteditable="true">{{ version.content.nickname }}</span>"
+      </span>
+      {% if g.user %}
+        <button type="button" id="edit-heading" onclick="editheading('{{ url_for('headingedit', title=title) }}')">Edit name</button>
+      {% endif %}
+    </h1>
+    <div id="headingerror"></div>
     <a href="{{ url_for('edit', title=title) }}">Edit page</a>
     <a href="{{ url_for('history', title=title) }}">History</a>
 
@@ -55,6 +87,7 @@
     {% if g.user %}
       <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
     {% endif %}
+    <div id="summaryerror"></div>
 
     {% from 'page-utils.html' import header_at_level %}
     {% for section in version.primarydiff.sections %}

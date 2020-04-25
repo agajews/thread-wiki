@@ -1,0 +1,5 @@
+{% if version.primarydiff.headingchanged or version.primarydiff.nicknamechanged %}
+  <ins>[{{ version.content.heading }}, AKA "{{ version.content.nickname }}"]</ins>
+{% else %}
+  {{ version.content.heading }}, AKA "{{ version.content.nickname }}"
+{% endif %}
