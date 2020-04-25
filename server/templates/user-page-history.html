@@ -67,10 +67,10 @@
       {% endfor %}
     {% endmacro %}
 
-    {% if currentversion.num != 1 %}
+    {% if currentversion.num != 1 and not currentversion.isempty %}
       <div>
-        <span class="timestamp">Version {{ currentversion.num }}</span>
-        <button type="button">Flag and undo</button>
+        <span class="timestamp">{{ currentversion.timestamp }}</span>
+        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=currentversion.num) }}')">Flag and undo</button>
         <a href="{{ url_for('version', title=title, num=currentversion.num) }}">View</a>
       </div>
       
@@ -78,19 +78,21 @@
       <hr>
     {% endif %}
     {% for version in oldversions %}
-      <div>
-        <span class="timestamp">Version {{ version.num }}</span>
-        <button type="button">Flag</button>
-        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Restore</button>
-        <a href="{{ url_for('version', title=title, num=version.num) }}">View</a>
-      </div>
-      <div id="versionerror-{{ version.num }}"></div>
-      {{ show_edits(version) }}
-      <hr>
+      {% if not version.isempty %}
+        <div>
+          <span class="timestamp">{{ version.timestamp }}</span>
+          <button type="button">Flag</button>
+          <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Restore</button>
+          <a href="{{ url_for('version', title=title, num=version.num) }}">View</a>
+        </div>
+        <div id="versionerror-{{ version.num }}"></div>
+        {{ show_edits(version) }}
+        <hr>
+      {% endif %}
     {% endfor %}
 
     <div>
-      <span class="timestamp">Version {{ initialversion.num }}</span>
+      <span class="timestamp">{{ initialversion.timestamp }}</span>
       <button type="button" onclick="restore('{{ url_for('restore', title=title, num=initialversion.num) }}')">Restore</button>
       <a href="{{ url_for('version', title=title, num=initialversion.num) }}">View</a>
     </div>

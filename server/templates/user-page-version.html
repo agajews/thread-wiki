@@ -16,7 +16,7 @@
       <h1>{{ version.content.heading }}, AKA "{{ version.content.nickname }}"</h1>
     {% endif %}
 
-    <h3>Version {{ version.num }}</h3>
+    <h3>{{ version.timestamp }}</h3>
     <a href="{{ url_for('edit', title=title) }}">Edit page</a>
     <a href="{{ url_for('history', title=title) }}">History</a>
     <a href="{{ url_for('page', title=title) }}">Latest version</a>

@@ -78,6 +78,7 @@ def create_user_page(email):
                             emptycontent, content, concise=True
                         ),
                         "isprimary": False,
+                        "isempty": False,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": 1,
@@ -100,7 +101,8 @@ def edit_user_page(page, content):
     newtitle = build_user_title(content["heading"], content["nickname"])
 
     oldcontent = page["versions"][-1]["content"]
-    if content == oldcontent:
+    isempty = content == oldcontent
+    if isempty and page["versions"][-1]["isprimary"] == isprimary:
         return {"error": "emptyedit"}
     diff = diff_versions(oldcontent, content)
     primarydiff = diff_versions(primary, content, concise=True)
@@ -110,6 +112,7 @@ def edit_user_page(page, content):
         "diff": diff,
         "primarydiff": primarydiff,
         "isprimary": isprimary,
+        "isempty": isempty,
         "editor": g.user["_id"],
         "timestamp": timestamp(),
         "num": num + 1,
