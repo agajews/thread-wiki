@@ -67,6 +67,7 @@ def create_user_page(email):
         db.pages.insert_one(
             {
                 "titles": [email, build_user_title(email, nickname)],
+                "currenttitle": email,
                 "type": "user",
                 "owner": owner_id,
                 "primary": emptycontent,
@@ -111,12 +112,16 @@ def accept_user_version(page):
     version["isprimary"] = True
     version["primarydiff"] = diff_versions(content, content, concise=True)
     update = db.pages.update_one(
-        {"titles": page["titles"][-1], "versions": {"$size": num}, "versions.num": num},
+        {
+            "titles": page["currenttitle"],
+            "versions": {"$size": num},
+            "versions.num": num,
+        },
         {"$set": {"primary": content, "versions.$": version}},
     )
     if update.modified_count == 0:
         return {"error": "racecondition"}
-    return {"title": page["titles"][-1], "version": version}
+    return {"currenttitle": page["currenttitle"], "version": version}
 
 
 def add_user_version(page, content):
@@ -140,9 +145,9 @@ def add_user_version(page, content):
     }
     try:
         update = db.pages.update_one(
-            {"titles": page["titles"][-1], "versions": {"$size": num}},
+            {"titles": page["currenttitle"], "versions": {"$size": num}},
             {
-                "$set": {"primary": primary},
+                "$set": {"primary": primary, "currenttitle": newtitle},
                 "$push": {"versions": version},
                 "$addToSet": {"titles": newtitle},
             },
@@ -151,4 +156,4 @@ def add_user_version(page, content):
         return {"error": "duplicatekey"}
     if update.modified_count == 0:
         return {"error": "racecondition"}
-    return {"title": newtitle, "version": version}
+    return {"currenttitle": newtitle, "version": version}

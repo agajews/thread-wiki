@@ -17,7 +17,7 @@ def index():
 
 def find_page(title):
     page = db.pages.find_one(
-        {"titles": title}, {"versions": {"$slice": -1}, "type": 1, "titles": 1}
+        {"titles": title}, {"versions": {"$slice": -1}, "type": 1, "currenttitle": 1}
     )
     return page
 
@@ -81,7 +81,13 @@ def failedit(errorkey, errorid):
 def submitedit(title):
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+        {
+            "currenttitle": 1,
+            "type": 1,
+            "versions": {"$slice": -1},
+            "owner": 1,
+            "primary": 1,
+        },
     )
     if page is None:
         return failedit("racecondition", "editerror")
@@ -96,14 +102,20 @@ def submitedit(title):
     update = edit_user_page(page, content)
     if "error" in update:
         return failedit(update["error"], "editerror")
-    return signal(redirect=url_for("page", title=update["title"]))
+    return signal(redirect=url_for("page", title=update["currenttitle"]))
 
 
 @app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
 def sectionedit(title, idx):
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+        {
+            "currenttitle": 1,
+            "type": 1,
+            "versions": {"$slice": -1},
+            "owner": 1,
+            "primary": 1,
+        },
     )
     if page is None:
         return failedit("racecondition", "sectionerror-{}".format(idx))
@@ -135,7 +147,13 @@ def sectionedit(title, idx):
 def summaryedit(title):
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+        {
+            "currenttitle": 1,
+            "type": 1,
+            "versions": {"$slice": -1},
+            "owner": 1,
+            "primary": 1,
+        },
     )
     if page is None:
         return failedit("racecondition", "summaryerror")
@@ -161,7 +179,13 @@ def summaryedit(title):
 def headingedit(title):
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+        {
+            "currenttitle": 1,
+            "type": 1,
+            "versions": {"$slice": -1},
+            "owner": 1,
+            "primary": 1,
+        },
     )
     if page is None:
         return failedit("racecondition", "headingerror")
@@ -187,7 +211,13 @@ def headingedit(title):
 def restore(title, num):
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
-        {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
+        {
+            "currenttitle": 1,
+            "type": 1,
+            "versions": {"$slice": -1},
+            "owner": 1,
+            "primary": 1,
+        },
     )
     if page is None:
         return failedit("racecondition", "versionerror-{}".format(num))

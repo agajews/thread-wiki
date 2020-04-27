@@ -306,15 +306,15 @@ def markup_changes(data_a, data_b, concise=False):
     return generate_html(merged_sequence)
 
 
-def is_header(token):
-    for (tag, attr) in token.context:
-        if tag in header_tags:
-            return True
-    return False
+# def is_header(token):
+#     for (tag, attr) in token.context:
+#         if tag in header_tags:
+#             return True
+#     return False
 
 
-def get_header_level(group):
-    for (tag, attr) in group[0].context:
+def get_header_level(tag):
+    for (tag, attr) in tag.context:
         if tag in header_tags:
             return int(tag[1])
     return None
@@ -332,25 +332,27 @@ def separate_sections(data):
     sequence = get_sequence(data)
     keys = []
     groups = []
-    for key, group in itertools.groupby(sequence, key=is_header):
+    for key, group in itertools.groupby(sequence, key=get_header_level):
         keys.append(key)
         groups.append(list(group))
     i = 0
-    if keys[0] == False:
+    if keys[0] is None:
         summary = generate_html(groups[0])
         i += 1
     else:
         summary = ""
     sections = []
     while i < len(groups):
+        hasbody = i + 1 < len(groups) and keys[i + 1] is None
+        body = generate_html(groups[i + 1]) if hasbody else ""
         sections.append(
             {
                 "header": extract_text(groups[i]),
-                "body": generate_html(groups[i + 1]) if i + 1 < len(groups) else "",
-                "level": get_header_level(groups[i]),
+                "body": body,
+                "level": get_header_level(groups[i][0]),
             }
         )
-        i += 2
+        i += 2 if hasbody else 1
     return summary, sections
 
 
