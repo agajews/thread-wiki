@@ -69,14 +69,8 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1>
-      <span id="heading-diff">{% include 'heading-diff.html' %}</span>
-      <span id="heading-body" hidden="true">
-        <span id="heading-content" contenteditable="true">{{ version.content.heading }}</span>, AKA "<span id="nickname-content" contenteditable="true">{{ version.content.nickname }}</span>"
-      </span>
-      {% if g.user %}
-        <button type="button" id="edit-heading" onclick="editheading('{{ url_for('headingedit', title=title) }}')">Edit name</button>
-      {% endif %}
+    <h1 id="heading">
+      {% include 'heading.html' %}
     </h1>
     <div id="headingerror"></div>
     <a href="{{ url_for('edit', title=title) }}">Edit page</a>

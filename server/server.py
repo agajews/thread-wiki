@@ -3,7 +3,7 @@ import re
 from copy import deepcopy
 from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
-from .html_utils import sanitize_html, separate_sections
+from .html_utils import sanitize_html, sanitize_text, separate_sections
 from .database import create_user_page, edit_user_page
 
 
@@ -91,8 +91,8 @@ def submitedit(title):
     content = {
         "sections": sections,
         "summary": summary,
-        "heading": get_param("heading"),
-        "nickname": get_param("nickname"),
+        "heading": sanitize_text(get_param("heading")),
+        "nickname": sanitize_text(get_param("nickname")),
     }
     update = edit_user_page(page, content)
     if "error" in update:
@@ -102,6 +102,7 @@ def submitedit(title):
 
 @app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
 def sectionedit(title, idx):
+    # TODO: send back body version too
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},
@@ -112,7 +113,8 @@ def sectionedit(title, idx):
     content = deepcopy(page["versions"][-1]["content"])
     if idx >= len(content["sections"]):
         abort(400)
-    content["sections"][idx]["body"] = sanitize_html(get_param("body"))
+    updated_body = sanitize_html(get_param("body"))
+    content["sections"][idx]["body"] = updated_body
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
@@ -126,6 +128,7 @@ def sectionedit(title, idx):
         html={
             "sectionerror-{}".format(idx): "",
             "section-diff-{}".format(idx): updated_diff,
+            "section-body-{}".format(idx): updated_body,
         },
     )
 
@@ -151,6 +154,7 @@ def summaryedit(title):
         html={
             "summaryerror": "",
             "summary-diff": update["version"]["primarydiff"]["summary"],
+            "summary-body": update["version"]["content"]["summary"],
         },
     )
 
@@ -165,8 +169,8 @@ def headingedit(title):
         return failedit("racecondition", "headingerror")
 
     content = deepcopy(page["versions"][-1]["content"])
-    content["heading"] = get_param("heading")
-    content["nickname"] = get_param("nickname")
+    content["heading"] = sanitize_text(get_param("heading"))
+    content["nickname"] = sanitize_text(get_param("nickname"))
     update = edit_user_page(page, content)
     if "error" in update:
         if update["error"] == "emptyedit":
@@ -176,9 +180,7 @@ def headingedit(title):
         response={"done": True, "increment": True},
         html={
             "headingerror": "",
-            "heading-diff": render_template(
-                "heading-diff.html", version=update["version"]
-            ),
+            "heading": render_template("heading.html", version=update["version"]),
         },
     )
 

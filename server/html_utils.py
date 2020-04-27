@@ -32,6 +32,11 @@ def sanitize_html(html):
     return bleach.clean(html, tags=allowed_tags, strip=True)
 
 
+def sanitize_text(text):
+    # TODO: linkify as well
+    return bleach.clean(text, tags=[], strip=True)
+
+
 def splitstrip(s):
     lstripped = s.lstrip(whitespace)
     rstripped = s.rstrip(whitespace)
