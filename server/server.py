@@ -30,7 +30,6 @@ def is_valid_email(email):
 
 @app.route("/page/<title>/")
 def page(title):
-    print("Finding page {}".format(title))
     page = find_page(title)
     if page is not None and page["type"] == "user":
         return render_template(
@@ -97,12 +96,11 @@ def submitedit(title):
     update = edit_user_page(page, content)
     if "error" in update:
         return failedit(update["error"], "editerror")
-    return signal(redirect=url_for("page", title=update["newtitle"]))
+    return signal(redirect=url_for("page", title=update["title"]))
 
 
 @app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
 def sectionedit(title, idx):
-    # TODO: send back body version too
     page = db.pages.find_one(
         {"titles": title, "versions": {"$size": get_param("num")}},
         {"titles": 1, "type": 1, "versions": {"$slice": -1}, "owner": 1, "primary": 1},

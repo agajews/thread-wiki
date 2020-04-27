@@ -91,19 +91,41 @@ def create_user_page(email):
 
 
 def edit_user_page(page, content):
-    # TODO: check isprimary against user._id instead of user.email
     if g.user is None:
         abort(401)
 
+    isprimary = page["owner"] == g.user["_id"]
+    oldcontent = page["versions"][-1]["content"]
+
+    if content == oldcontent and isprimary > page["versions"][-1]["isprimary"]:
+        return accept_user_version(page)
+    elif content == oldcontent:
+        return {"error": "emptyedit"}
+    return add_user_version(page, content)
+
+
+def accept_user_version(page):
+    version = page["versions"][-1]
+    content = version["content"]
+    num = version["num"]
+    version["isprimary"] = True
+    version["primarydiff"] = diff_versions(content, content, concise=True)
+    update = db.pages.update_one(
+        {"titles": page["titles"][-1], "versions": {"$size": num}, "versions.num": num},
+        {"$set": {"primary": content, "versions.$": version}},
+    )
+    if update.modified_count == 0:
+        return {"error": "racecondition"}
+    return {"title": page["titles"][-1], "version": version}
+
+
+def add_user_version(page, content):
     num = page["versions"][-1]["num"]
     isprimary = page["owner"] == g.user["_id"]
+    oldcontent = page["versions"][-1]["content"]
     primary = content if isprimary else page["primary"]
     newtitle = build_user_title(content["heading"], content["nickname"])
 
-    oldcontent = page["versions"][-1]["content"]
-    isempty = content == oldcontent
-    if isempty and page["versions"][-1]["isprimary"] == isprimary:
-        return {"error": "emptyedit"}
     diff = diff_versions(oldcontent, content)
     primarydiff = diff_versions(primary, content, concise=True)
 
@@ -112,7 +134,6 @@ def edit_user_page(page, content):
         "diff": diff,
         "primarydiff": primarydiff,
         "isprimary": isprimary,
-        "isempty": isempty,
         "editor": g.user["_id"],
         "timestamp": timestamp(),
         "num": num + 1,
@@ -130,4 +151,4 @@ def edit_user_page(page, content):
         return {"error": "duplicatekey"}
     if update.modified_count == 0:
         return {"error": "racecondition"}
-    return {"newtitle": newtitle, "version": version}
+    return {"title": newtitle, "version": version}
