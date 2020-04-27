@@ -31,7 +31,7 @@ emptycontent = {"sections": [], "summary": "", "heading": "", "nickname": ""}
 
 
 def build_user_title(heading, nickname):
-    return (heading + "_" + nickname).replace(" ", "_")
+    return (heading + "_" + nickname).replace(" ", "_").replace("/", "|")
 
 
 def diff_versions(content_a, content_b, concise=False):

@@ -16,7 +16,7 @@ db = client.thread_dev
 
 
 def url_for(*args, **kwargs):
-    return flask.url_for(*args, **kwargs).replace("%40", "@")
+    return flask.url_for(*args, **kwargs).replace("%40", "@").replace("%7C", "|")
 
 
 @app.context_processor
