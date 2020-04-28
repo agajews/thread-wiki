@@ -90,6 +90,7 @@ def failedit(errorkey, errorid):
         "emptyedit": "Lel, doesn't look like you changed anything.",
         "flagyourself": "Lel, can't flag yourself.",
         "alreadyflagged": "Lel, someone else flagged this already.",
+        "notallowed": "Lel, looks like you're not allowed to do that.",
     }
     return signal(html={errorid: editerrors[errorkey]})
 
