@@ -2,7 +2,7 @@ import random
 from copy import deepcopy
 from flask import g, abort
 from pymongo.errors import DuplicateKeyError
-from .app import db, timestamp
+from .app import db, timestamp, app
 from .auth import create_or_return_user
 from .html_utils import sanitize_html, markup_changes, separate_sections, diff_sections
 
@@ -94,7 +94,7 @@ def create_user_page(email):
 
 
 def edit_user_page(page, content):
-    if g.user is None:
+    if not can_edit(page):
         abort(401)
 
     isprimary = page["owner"] == g.user["_id"]
@@ -166,7 +166,7 @@ def add_user_version(page, content):
 
 
 def flag_version(page):
-    if g.user is None:
+    if not can_edit(page):
         abort(401)
     num = page["versions"][0]["num"]
     recipient = page["versions"][0]["editor"]
@@ -248,3 +248,28 @@ def update_flags(recipient):
     update = db.flags.update_one(
         flags, {"$set": {"banneduntil": banneduntil, "dirty": False}}
     )
+
+
+def can_edit(page):
+    if g.user is None:
+        return False
+    if is_owner(page):
+        return True
+    flags = db.flags.find_one({"user": g.user["_id"]}, {"banneduntil": 1})
+    if flags is None:
+        return True
+    banneduntil = flags.get("banneduntil")
+    if banneduntil is None:
+        return True
+    return timestamp() > banneduntil
+
+
+def is_owner(page):
+    if g.user is None:
+        return False
+    return page["owner"] == g.user["_id"]
+
+
+@app.context_processor
+def inject_permissions():
+    return dict(can_edit=can_edit, is_owner=is_owner)

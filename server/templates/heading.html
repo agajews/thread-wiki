@@ -8,10 +8,8 @@
 <span id="heading-body" hidden="true">
   <span id="heading-content" contenteditable="true">{{ version.content.heading }}</span>, AKA "<span id="nickname-content" contenteditable="true">{{ version.content.nickname }}</span>"
 </span>
-{% if g.user %}
-  {% if g.user._id == owner and not version.isprimary %}
-    <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
-  {% else %}
-    <button type="button" id="edit-heading" onclick="editheading('{{ url_for('headingedit', title=title) }}')">Edit name</button>
-  {% endif %}
+{% if is_owner(page) and not version.isprimary %}
+  <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
+{% elif can_edit(page) %}
+  <button type="button" id="edit-heading" onclick="editheading('{{ url_for('headingedit', title=title) }}')">Edit name</button>
 {% endif %}

@@ -4,7 +4,13 @@ from copy import deepcopy
 from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
 from .html_utils import sanitize_html, sanitize_text, separate_sections
-from .database import create_user_page, edit_user_page, flag_version, unflag_version
+from .database import (
+    create_user_page,
+    edit_user_page,
+    flag_version,
+    unflag_version,
+    can_edit,
+)
 
 
 @app.route("/")
@@ -34,19 +40,13 @@ def page(title):
     page = find_page(title)
     if page is not None and page["type"] == "user":
         return render_template(
-            "user-page.html",
-            version=page["versions"][-1],
-            title=title,
-            owner=page["owner"],
+            "user-page.html", version=page["versions"][-1], title=title, page=page
         )
     if is_valid_email(title):
         create_user_page(title)
         page = find_page(title)
         return render_template(
-            "user-page.html",
-            version=page["versions"][-1],
-            title=title,
-            owner=page["owner"],
+            "user-page.html", version=page["versions"][-1], title=title, page=page
         )
 
     abort(404)  # eventually, create new topic page
@@ -55,7 +55,7 @@ def page(title):
 @app.route("/page/<title>/edit/")
 def edit(title):
     page = find_page(title)
-    if g.user is None:
+    if not can_edit(page):
         abort(401)
     if page is not None and page["type"] == "user":
         return render_template(
@@ -211,7 +211,9 @@ def headingedit(title):
         response={"done": True, "increment": True},
         html={
             "headingerror": "",
-            "heading": render_template("heading.html", version=update["version"]),
+            "heading": render_template(
+                "heading.html", version=update["version"], page=page
+            ),
         },
     )
 
@@ -244,7 +246,12 @@ def restore(title, num):
 def flag(title, num):
     page = db.pages.find_one(
         {"titles": title},
-        {"versions": {"$slice": [num - 1, 1]}, "currenttitle": 1, "numversions": 1},
+        {
+            "versions": {"$slice": [num - 1, 1]},
+            "currenttitle": 1,
+            "numversions": 1,
+            "owner": 1,
+        },
     )
     if page is None:
         abort(400)
@@ -265,7 +272,12 @@ def flag(title, num):
 def unflag(title, num):
     page = db.pages.find_one(
         {"titles": title},
-        {"versions": {"$slice": [num - 1, 1]}, "currenttitle": 1, "numversions": 1},
+        {
+            "versions": {"$slice": [num - 1, 1]},
+            "currenttitle": 1,
+            "numversions": 1,
+            "owner": 1,
+        },
     )
     if page is None:
         abort(400)
@@ -280,7 +292,9 @@ def unflag(title, num):
 
 @app.route("/page/<title>/version/<int:num>/")
 def version(title, num):
-    page = db.pages.find_one({"titles": title}, {"versions": {"$slice": [num - 1, 1]}})
+    page = db.pages.find_one(
+        {"titles": title}, {"versions": {"$slice": [num - 1, 1]}, "owner": 1, "type": 1}
+    )
     if page is not None and page["type"] == "user" and page["versions"]:
         return render_template(
             "user-page-version.html", version=page["versions"][0], title=title
@@ -293,7 +307,7 @@ def history(title):
     page = db.pages.find_one({"titles": title})
     if page is None:
         abort(404)
-    if g.user is None:
+    if not can_edit(page):
         abort(401)
     return render_template(
         "user-page-history.html",
@@ -301,7 +315,7 @@ def history(title):
         oldversions=reversed(page["versions"][1:-1]),
         initialversion=page["versions"][0],
         title=title,
-        owner=page["owner"],
+        page=page,
     )
 
 

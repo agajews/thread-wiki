@@ -85,12 +85,10 @@
 
     <div id="summary-diff">{{ version.primarydiff.summary|safe }}</div>
     <div id="summary-body" contenteditable="true" hidden="true">{{ version.content.summary|safe }}</div>
-    {% if g.user %}
-      {% if g.user._id == owner and not version.isprimary %}
-        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
-      {% else %}
-        <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
-      {% endif %}
+    {% if is_owner(page) and not version.isprimary %}
+      <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
+    {% elif can_edit(page) %}
+      <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
     {% endif %}
     <div id="summaryerror"></div>
 
@@ -105,12 +103,10 @@
           {% else %}
             {{ section.header }}
           {% endif %}
-          {% if g.user %}
-            {% if g.user._id == owner and not version.isprimary %}
-              <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
-            {% else %}
-              <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
-            {% endif %}
+          {% if is_owner(page) and not version.isprimary %}
+            <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
+          {% elif can_edit(page) %}
+            <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
           {% endif %}
         {% endset %}
 

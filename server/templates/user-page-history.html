@@ -97,7 +97,7 @@
 
     {% if currentversion.num != 1 %}
       {% set buttons %}
-        {% if g.user._id == owner and not currentversion.isprimary %}
+        {% if is_owner(page) and not currentversion.isprimary %}
           <button type="button" onclick="restore('{{ url_for('restore', title=title, num=currentversion.num) }}')">Accept this version</button>
         {% endif %}
       {% endset %}
