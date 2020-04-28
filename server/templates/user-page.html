@@ -19,8 +19,8 @@
           body: document.getElementById(plainid).innerHTML,
           num: window.num,
         }).then((response) => {
-          if (response.increment) {
-            window.num += 1;
+          if (response.num) {
+            window.num = response.num;
           }
           if (response.done) {
             button.innerText = 'Edit';
@@ -51,8 +51,8 @@
           nickname: document.getElementById('nickname-content').innerHTML,
           num: window.num,
         }).then((response) => {
-          if (response.increment) {
-            window.num += 1;
+          if (response.num) {
+            window.num = response.num;
           }
           if (response.done) {
             button.innerText = 'Edit name';

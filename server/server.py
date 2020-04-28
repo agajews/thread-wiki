@@ -23,17 +23,28 @@ def index():
     return render_template("index.html", pages=pages)
 
 
-def find_page(title):
-    page = db.pages.find_one(
-        {"titles": title},
-        {
-            "versions": {"$slice": -1},
-            "type": 1,
-            "currenttitle": 1,
-            "owner": 1,
-            "isfrozen": 1,
-        },
-    )
+def find_page(title, version="latest", primary=False):
+    if version == "latest":
+        versionsproj = {"$slice": -1}
+    elif version == "all":
+        versionsproj = 1
+    elif isinstance(version, int):
+        versionsproj = {"$slice": [version - 1, version]}
+    else:
+        raise Exception("Oops, something went wrong")
+    projection = {
+        "versions": versionsproj,
+        "numversions": 1,
+        "type": 1,
+        "currenttitle": 1,
+        "owner": 1,
+        "isfrozen": 1,
+    }
+    if primary:
+        projection["primary"] = 1
+    page = db.pages.find_one({"titles": title}, projection)
+    if page is None or len(page["versions"]) == 0:
+        abort(404)
     return page
 
 
@@ -97,19 +108,7 @@ def failedit(errorkey, errorid):
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
 def submitedit(title):
-    page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": get_param("num")}},
-        {
-            "currenttitle": 1,
-            "type": 1,
-            "versions": {"$slice": -1},
-            "owner": 1,
-            "primary": 1,
-        },
-    )
-    if page is None:
-        return failedit("racecondition", "editerror")
-
+    page = find_page(title, primary=True)
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     content = {
         "sections": sections,
@@ -125,34 +124,20 @@ def submitedit(title):
 
 @app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
 def sectionedit(title, idx):
-    page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": get_param("num")}},
-        {
-            "currenttitle": 1,
-            "type": 1,
-            "versions": {"$slice": -1},
-            "owner": 1,
-            "primary": 1,
-        },
-    )
-    if page is None:
-        return failedit("racecondition", "sectionerror-{}".format(idx))
-
+    page = find_page(title, primary=True)
     content = deepcopy(page["versions"][-1]["content"])
     if idx >= len(content["sections"]):
-        abort(400)
+        return failedit("racecondition", "sectionerror-{}".format(idx))
     updated_body = sanitize_html(get_param("body"))
     content["sections"][idx]["body"] = updated_body
-    update = edit_user_page(page, content)
+    update = edit_user_page(page, content, emptyallowed=True)
     if "error" in update:
-        if update["error"] == "emptyedit":
-            return signal(response={"done": True})
         return failedit(update["error"], "sectionerror-{}".format(idx))
     for section in update["version"]["primarydiff"]["sections"]:
         if section["idx"] == idx:
             updated_diff = section["diff"]
     return signal(
-        response={"done": True, "increment": True},
+        response={"done": True, "num": update["version"]["num"]},
         html={
             "sectionerror-{}".format(idx): "",
             "section-diff-{}".format(idx): updated_diff,
@@ -163,28 +148,14 @@ def sectionedit(title, idx):
 
 @app.route("/page/<title>/summaryedit/", methods=["POST"])
 def summaryedit(title):
-    page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": get_param("num")}},
-        {
-            "currenttitle": 1,
-            "type": 1,
-            "versions": {"$slice": -1},
-            "owner": 1,
-            "primary": 1,
-        },
-    )
-    if page is None:
-        return failedit("racecondition", "summaryerror")
-
+    pade = find_page(title, primary=True)
     content = deepcopy(page["versions"][-1]["content"])
     content["summary"] = sanitize_html(get_param("body"))
-    update = edit_user_page(page, content)
+    update = edit_user_page(page, content, emptyallowed=True)
     if "error" in update:
-        if update["error"] == "emptyedit":
-            return signal(response={"done": True})
         return failedit(update["error"], "summaryerror")
     return signal(
-        response={"done": True, "increment": True},
+        response={"done": True, "num": update["version"]["num"]},
         html={
             "summaryerror": "",
             "summary-diff": update["version"]["primarydiff"]["summary"],
@@ -195,29 +166,15 @@ def summaryedit(title):
 
 @app.route("/page/<title>/headingedit/", methods=["POST"])
 def headingedit(title):
-    page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": get_param("num")}},
-        {
-            "currenttitle": 1,
-            "type": 1,
-            "versions": {"$slice": -1},
-            "owner": 1,
-            "primary": 1,
-        },
-    )
-    if page is None:
-        return failedit("racecondition", "headingerror")
-
+    pade = find_page(title, primary=True)
     content = deepcopy(page["versions"][-1]["content"])
     content["heading"] = sanitize_text(get_param("heading"))
     content["nickname"] = sanitize_text(get_param("nickname"))
-    update = edit_user_page(page, content)
+    update = edit_user_page(page, content, emptyallowed=True)
     if "error" in update:
-        if update["error"] == "emptyedit":
-            return signal(response={"done": True})
         return failedit(update["error"], "headingerror")
     return signal(
-        response={"done": True, "increment": True},
+        response={"done": True, "num": update["version"]["num"]},
         html={
             "headingerror": "",
             "heading": render_template(
@@ -229,22 +186,8 @@ def headingedit(title):
 
 @app.route("/page/<title>/restore/<int:num>/", methods=["POST"])
 def restore(title, num):
-    page = db.pages.find_one(
-        {"titles": title, "versions": {"$size": get_param("num")}},
-        {
-            "currenttitle": 1,
-            "type": 1,
-            "versions": {"$slice": -1},
-            "owner": 1,
-            "primary": 1,
-        },
-    )
-    if page is None:
-        return failedit("racecondition", "versionerror-{}".format(num))
-    newpage = db.pages.find_one(
-        {"titles": title}, {"versions": {"$slice": [num - 1, 1]}}
-    )
-
+    page = find_page(title, primary=True)
+    newpage = find_page(title, version=num)
     update = edit_user_page(page, newpage["versions"][0]["content"])
     if "error" in update:
         return failedit(update["error"], "versionerror-{}".format(num))
@@ -253,20 +196,7 @@ def restore(title, num):
 
 @app.route("/page/<title>/flag/<int:num>/", methods=["POST"])
 def flag(title, num):
-    page = db.pages.find_one(
-        {"titles": title},
-        {
-            "versions": {"$slice": [num - 1, 1]},
-            "currenttitle": 1,
-            "numversions": 1,
-            "owner": 1,
-        },
-    )
-    if page is None:
-        abort(400)
-    if not 1 < num < page["numversions"]:
-        abort(400)
-
+    page = find_page(title, version=num)
     update = flag_version(page)
     if "error" in update:
         return failedit(update["error"], "versionerror-{}".format(num))
@@ -275,20 +205,7 @@ def flag(title, num):
 
 @app.route("/page/<title>/unflag/<int:num>/", methods=["POST"])
 def unflag(title, num):
-    page = db.pages.find_one(
-        {"titles": title},
-        {
-            "versions": {"$slice": [num - 1, 1]},
-            "currenttitle": 1,
-            "numversions": 1,
-            "owner": 1,
-        },
-    )
-    if page is None:
-        abort(400)
-    if not 1 < num < page["numversions"]:
-        abort(400)
-
+    page = find_page(title, version=num)
     update = unflag_version(page)
     if "error" in update:
         return failedit(update["error"], "versionerror-{}".format(num))
@@ -297,25 +214,15 @@ def unflag(title, num):
 
 @app.route("/page/<title>/version/<int:num>/")
 def version(title, num):
-    page = db.pages.find_one(
-        {"titles": title},
-        {"versions": {"$slice": [num - 1, 1]}, "owner": 1, "type": 1, "isfrozen": 1},
+    page = find_page(title, version=num)
+    return render_template(
+        "user-page-version.html", version=page["versions"][0], title=title, page=page
     )
-    if page is not None and page["type"] == "user" and page["versions"]:
-        return render_template(
-            "user-page-version.html",
-            version=page["versions"][0],
-            title=title,
-            page=page,
-        )
-    abort(404)
 
 
 @app.route("/page/<title>/history/")
 def history(title):
     page = db.pages.find_one({"titles": title})
-    if page is None:
-        abort(404)
     if not can_edit(page):
         abort(401)
     return render_template(
@@ -331,8 +238,6 @@ def history(title):
 @app.route("/page/<title>/freeze/", methods=["POST"])
 def freeze(title):
     page = db.pages.find_one({"titles": title}, {"owner": 1, "currenttitle": 1})
-    if page is None:
-        abort(400)
     freeze_page(page)
     return signal(redirect=url_for("page", title=title))
 
@@ -340,8 +245,6 @@ def freeze(title):
 @app.route("/page/<title>/unfreeze/", methods=["POST"])
 def unfreeze(title):
     page = db.pages.find_one({"titles": title}, {"owner": 1, "currenttitle": 1})
-    if page is None:
-        abort(400)
     unfreeze_page(page)
     return signal(redirect=url_for("page", title=title))
 

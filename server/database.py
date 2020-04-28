@@ -57,6 +57,7 @@ def create_user_page(email):
 
     nickname = generate_nickname()
     summary, sections = separate_sections(generate_user_template(email))
+    owner_id = create_or_return_user(email)
     content = {
         "sections": sections,
         "summary": summary,
@@ -64,7 +65,6 @@ def create_user_page(email):
         "nickname": nickname,
     }
     try:
-        owner_id = create_or_return_user(email)
         db.pages.insert_one(
             {
                 "titles": [email, build_user_title(email, nickname)],
@@ -93,16 +93,21 @@ def create_user_page(email):
         pass
 
 
-def edit_user_page(page, content):
+def edit_user_page(page, content, emptyallowed=False):
     if not can_edit(page):
         return {"error": "notallowed"}
 
     isprimary = page["owner"] == g.user["_id"]
     oldcontent = page["versions"][-1]["content"]
 
-    if content == oldcontent and isprimary > page["versions"][-1]["isprimary"]:
-        return accept_user_version(page)
-    elif content == oldcontent:
+    if content == oldcontent:
+        if isprimary > page["versions"][-1]["isprimary"] and is_owner(page):
+            return accept_user_version(page)
+        elif emptyallowed:
+            return {
+                "currenttitle": page["currenttitle"],
+                "version": page["versions"][-1],
+            }
         return {"error": "emptyedit"}
     return add_user_version(page, content)
 
@@ -170,7 +175,11 @@ def flag_version(page):
         return {"error": "notallowed"}
     if g.user["_id"] == page["versions"][0]["editor"]:
         return {"error": "flagyourself"}
+
     num = page["versions"][0]["num"]
+    if not 1 < num < page["numversions"]:
+        abort(400)
+
     recipient = page["versions"][0]["editor"]
     flagtime = timestamp()
     update = db.pages.update_one(
@@ -211,11 +220,12 @@ def flag_version(page):
 
 def unflag_version(page):
     if not page["versions"][0].get("isflagged"):
-        abort(400)
-    num = page["versions"][0]["num"]
-    recipient = page["versions"][0]["editor"]
+        return {"success": True}
     if g.user is None or g.user["_id"] != page["versions"][0]["flagsender"]:
         return {"error": "notallowed"}
+
+    num = page["versions"][0]["num"]
+    recipient = page["versions"][0]["editor"]
     db.pages.update_one(
         {"titles": page["currenttitle"]},
         {
