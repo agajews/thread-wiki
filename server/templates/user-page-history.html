@@ -29,6 +29,21 @@
       function restore(url) {
         signal(url, {
           num: {{ currentversion.num }},
+          href: window.location.href,
+        });
+      }
+
+      function flag(url) {
+        signal(url, {
+          num: {{ currentversion.num }},
+          href: window.location.href,
+        });
+      }
+
+      function unflag(url) {
+        signal(url, {
+          num: {{ currentversion.num }},
+          href: window.location.href,
         });
       }
     </script>
@@ -43,59 +58,69 @@
     <a href="{{ url_for('page', title=title) }}">Back</a>
 
     {% from 'page-utils.html' import header_at_level %}
-    {% macro show_edits(version) %}
-      {% if version.diff.headingchanged %}
-        <div class="markupnote">Changed name to: {{ version.content.heading }}</div>
-      {% endif %}
-      {% if version.diff.nicknamechanged %}
-        <div class="markupnote">Changed nickname to: {{ version.content.nickname }}</div>
-      {% endif %}
-      {% if version.diff.summarychanged %}
-        {{ version.diff.summary|safe }}
-      {% endif %}
-      {% for section in version.diff.sections %}
-        {% if section.inserted %}
-          <ins>{{ header_at_level(section.header, section.level) }}</ins>
-          <ins>{{ section.body|safe }}</ins>
-        {% elif section.deleted %}
-          <del>{{ header_at_level(section.header, section.level) }}</del>
-          <del>{{ section.body|safe }}</del>
-        {% elif section.edited %}
-          {{ header_at_level(section.header, section.level) }}
-          {{ section.diff|safe }}
-        {% endif %}
-      {% endfor %}
-    {% endmacro %}
-
-    {% if currentversion.num != 1 %}
-      <div>
-        <span class="timestamp">{{ currentversion.timestamp }}</span>
-        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=currentversion.num) }}')">Flag and undo</button>
-        <a href="{{ url_for('version', title=title, num=currentversion.num) }}">View</a>
-      </div>
-      
-      {{ show_edits(currentversion) }}
-      <hr>
-    {% endif %}
-    {% for version in oldversions %}
+    {% macro show_version(version, buttons) %}
       <div>
         <span class="timestamp">{{ version.timestamp }}</span>
-        <button type="button">Flag</button>
-        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Restore</button>
+        {{ buttons }}
         <a href="{{ url_for('version', title=title, num=version.num) }}">View</a>
       </div>
       <div id="versionerror-{{ version.num }}"></div>
-      {{ show_edits(version) }}
+
+      {% if version.isflagged %}
+        <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>
+      {% else %}
+
+        {% if version.diff.headingchanged %}
+          <div class="markupnote">Changed name to: {{ version.content.heading }}</div>
+        {% endif %}
+        {% if version.diff.nicknamechanged %}
+          <div class="markupnote">Changed nickname to: {{ version.content.nickname }}</div>
+        {% endif %}
+        {% if version.diff.summarychanged %}
+          {{ version.diff.summary|safe }}
+        {% endif %}
+        {% for section in version.diff.sections %}
+          {% if section.inserted %}
+            <ins>{{ header_at_level(section.header, section.level) }}</ins>
+            <ins>{{ section.body|safe }}</ins>
+          {% elif section.deleted %}
+            <del>{{ header_at_level(section.header, section.level) }}</del>
+            <del>{{ section.body|safe }}</del>
+          {% elif section.edited %}
+            {{ header_at_level(section.header, section.level) }}
+            {{ section.diff|safe }}
+          {% endif %}
+        {% endfor %}
+
+      {% endif %}
+    {% endmacro %}
+
+    {% if currentversion.num != 1 %}
+      {% set buttons %}
+        {% if g.user._id == owner and not currentversion.isprimary %}
+          <button type="button" onclick="restore('{{ url_for('restore', title=title, num=currentversion.num) }}')">Accept this version</button>
+        {% endif %}
+      {% endset %}
+      {{ show_version(currentversion, buttons) }}
+      <hr>
+    {% endif %}
+
+    {% for version in oldversions %}
+      {% set buttons %}
+        {% if not version.isflagged %}
+          <button type="button" onclick="flag('{{ url_for('flag', title=title, num=version.num) }}')">Flag</button>
+        {% elif version.flagsender == g.user._id %}
+          <button type="button" onclick="unflag('{{ url_for('unflag', title=title, num=version.num) }}')">Unflag</button>
+        {% endif %}
+        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Restore</button>
+      {% endset %}
+      {{ show_version(version, buttons) }}
       <hr>
     {% endfor %}
 
-    <div>
-      <span class="timestamp">{{ initialversion.timestamp }}</span>
+    {% set buttons %}
       <button type="button" onclick="restore('{{ url_for('restore', title=title, num=initialversion.num) }}')">Restore</button>
-      <a href="{{ url_for('version', title=title, num=initialversion.num) }}">View</a>
-    </div>
-    <div id="versionerror-{{ initialversion.num }}"></div>
-    {{ show_edits(initialversion) }}
-
+    {% endset %}
+    {{ show_version(initialversion, buttons) }}
   </body>
 </html>

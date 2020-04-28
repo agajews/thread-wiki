@@ -4,7 +4,7 @@ from copy import deepcopy
 from .app import app, db, timestamp, url_for
 from .auth import verify_password, generate_auth_token
 from .html_utils import sanitize_html, sanitize_text, separate_sections
-from .database import create_user_page, edit_user_page
+from .database import create_user_page, edit_user_page, flag_version, unflag_version
 
 
 @app.route("/")
@@ -17,7 +17,8 @@ def index():
 
 def find_page(title):
     page = db.pages.find_one(
-        {"titles": title}, {"versions": {"$slice": -1}, "type": 1, "currenttitle": 1}
+        {"titles": title},
+        {"versions": {"$slice": -1}, "type": 1, "currenttitle": 1, "owner": 1},
     )
     return page
 
@@ -33,13 +34,19 @@ def page(title):
     page = find_page(title)
     if page is not None and page["type"] == "user":
         return render_template(
-            "user-page.html", version=page["versions"][-1], title=title
+            "user-page.html",
+            version=page["versions"][-1],
+            title=title,
+            owner=page["owner"],
         )
     if is_valid_email(title):
         create_user_page(title)
         page = find_page(title)
         return render_template(
-            "user-page.html", version=page["versions"][-1], title=title
+            "user-page.html",
+            version=page["versions"][-1],
+            title=title,
+            owner=page["owner"],
         )
 
     abort(404)  # eventually, create new topic page
@@ -73,6 +80,8 @@ def failedit(errorkey, errorid):
         "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening edit page in a new tab).",
         "duplicatekey": "Lel, someone with the same name already has that nickname!",
         "emptyedit": "Lel, doesn't look like you changed anything.",
+        "flagyourself": "Lel, can't flag yourself.",
+        "alreadyflagged": "Lel, someone else flagged this already.",
     }
     return signal(html={errorid: editerrors[errorkey]})
 
@@ -228,7 +237,45 @@ def restore(title, num):
     update = edit_user_page(page, newpage["versions"][0]["content"])
     if "error" in update:
         return failedit(update["error"], "versionerror-{}".format(num))
-    return signal(redirect=url_for("history", title=title))
+    return signal(redirect=get_param("href"))
+
+
+@app.route("/page/<title>/flag/<int:num>/", methods=["POST"])
+def flag(title, num):
+    page = db.pages.find_one(
+        {"titles": title},
+        {"versions": {"$slice": [num - 1, 1]}, "currenttitle": 1, "numversions": 1},
+    )
+    if page is None:
+        abort(400)
+    if not 1 < num < page["numversions"]:
+        abort(400)
+    if g.user is None:
+        abort(401)
+    if g.user["_id"] == page["versions"][0]["editor"]:
+        return failedit("flagyourself", "versionerror-{}".format(num))
+
+    update = flag_version(page)
+    if "error" in update:
+        return failedit(update["error"], "versionerror-{}".format(num))
+    return signal(redirect=get_param("href"))
+
+
+@app.route("/page/<title>/unflag/<int:num>/", methods=["POST"])
+def unflag(title, num):
+    page = db.pages.find_one(
+        {"titles": title},
+        {"versions": {"$slice": [num - 1, 1]}, "currenttitle": 1, "numversions": 1},
+    )
+    if page is None:
+        abort(400)
+    if not 1 < num < page["numversions"]:
+        abort(400)
+
+    update = unflag_version(page)
+    if "error" in update:
+        return failedit(update["error"], "versionerror-{}".format(num))
+    return signal(redirect=get_param("href"))
 
 
 @app.route("/page/<title>/version/<int:num>/")
@@ -254,6 +301,7 @@ def history(title):
         oldversions=reversed(page["versions"][1:-1]),
         initialversion=page["versions"][0],
         title=title,
+        owner=page["owner"],
     )
 
 

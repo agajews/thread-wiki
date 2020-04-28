@@ -1,4 +1,5 @@
 import random
+from copy import deepcopy
 from flask import g, abort
 from pymongo.errors import DuplicateKeyError
 from .app import db, timestamp
@@ -71,6 +72,7 @@ def create_user_page(email):
                 "type": "user",
                 "owner": owner_id,
                 "primary": emptycontent,
+                "numversions": 1,
                 "versions": [
                     {
                         "content": content,
@@ -147,7 +149,11 @@ def add_user_version(page, content):
         update = db.pages.update_one(
             {"titles": page["currenttitle"], "versions": {"$size": num}},
             {
-                "$set": {"primary": primary, "currenttitle": newtitle},
+                "$set": {
+                    "primary": primary,
+                    "currenttitle": newtitle,
+                    "numversions": num + 1,
+                },
                 "$push": {"versions": version},
                 "$addToSet": {"titles": newtitle},
             },
@@ -157,3 +163,88 @@ def add_user_version(page, content):
     if update.modified_count == 0:
         return {"error": "racecondition"}
     return {"currenttitle": newtitle, "version": version}
+
+
+def flag_version(page):
+    if g.user is None:
+        abort(401)
+    num = page["versions"][0]["num"]
+    recipient = page["versions"][0]["editor"]
+    flagtime = timestamp()
+    update = db.pages.update_one(
+        {
+            "titles": page["currenttitle"],
+            "versions.{}.isflagged".format(num - 1): {"$ne": True},
+        },
+        {
+            "$set": {
+                "versions.{}.isflagged".format(num - 1): True,
+                "versions.{}.flagsender".format(num - 1): g.user["_id"],
+                "versions.{}.flagtime".format(num - 1): flagtime,
+            }
+        },
+    )
+    if update.modified_count == 0:
+        return {"error": "alreadyflagged"}
+
+    db.flags.update_one(
+        {"user": recipient},
+        {
+            "$push": {
+                "flags": {
+                    "flagtime": flagtime,
+                    "flagsender": g.user["_id"],
+                    "page": page["_id"],
+                    "num": num,
+                }
+            },
+            "$set": {"dirty": True},
+        },
+        upsert=True,
+    )
+
+    update_flags(recipient)
+    return {"success": True}
+
+
+def unflag_version(page):
+    if not page["versions"][0].get("isflagged"):
+        abort(400)
+    num = page["versions"][0]["num"]
+    recipient = page["versions"][0]["editor"]
+    if g.user is None or g.user["_id"] != page["versions"][0]["flagsender"]:
+        abort(401)
+    db.pages.update_one(
+        {"titles": page["currenttitle"]},
+        {
+            "$set": {
+                "versions.{}.isflagged".format(num - 1): False,
+                "versions.{}.flagsender".format(num - 1): None,
+                "versions.{}.flagtime".format(num - 1): None,
+            }
+        },
+    )
+    db.flags.update_one(
+        {"user": recipient},
+        {
+            "$pull": {"flags": {"page": page["_id"], "num": num}},
+            "$set": {"dirty": True},
+        },
+    )
+    update_flags(recipient)
+    return {"success": True}
+
+
+def update_flags(recipient):
+    flags = db.flags.find_one({"user": recipient})
+    first = None
+    banneduntil = None
+    for flag in flags["flags"]:
+        if first is None:
+            first = flag["flagsender"]
+        elif first != flag["flagsender"]:
+            first = None
+            banneduntil = flag["flagtime"] + 3600 * 24
+    update = db.flags.update_one(
+        flags, {"$set": {"banneduntil": banneduntil, "dirty": False}}
+    )

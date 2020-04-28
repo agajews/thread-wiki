@@ -2,7 +2,11 @@
 # FLASK_ENV=development
 # FLASK_APP=server/server.py
 # FLASK_SECRET_KEY=<secret_key>
-# remember to create the page.titles and users.email indexes
+# remember to create indexes for:
+#   1. page.titles
+#   2. (page.versions.isflagged, page.versions.editor) (maybe not)
+#   3. users.email
+
 import os
 from datetime import datetime
 import flask
