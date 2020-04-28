@@ -9,6 +9,8 @@ from .database import (
     edit_user_page,
     flag_version,
     unflag_version,
+    freeze_page,
+    unfreeze_page,
     can_edit,
 )
 
@@ -24,7 +26,13 @@ def index():
 def find_page(title):
     page = db.pages.find_one(
         {"titles": title},
-        {"versions": {"$slice": -1}, "type": 1, "currenttitle": 1, "owner": 1},
+        {
+            "versions": {"$slice": -1},
+            "type": 1,
+            "currenttitle": 1,
+            "owner": 1,
+            "isfrozen": 1,
+        },
     )
     return page
 
@@ -293,11 +301,15 @@ def unflag(title, num):
 @app.route("/page/<title>/version/<int:num>/")
 def version(title, num):
     page = db.pages.find_one(
-        {"titles": title}, {"versions": {"$slice": [num - 1, 1]}, "owner": 1, "type": 1}
+        {"titles": title},
+        {"versions": {"$slice": [num - 1, 1]}, "owner": 1, "type": 1, "isfrozen": 1},
     )
     if page is not None and page["type"] == "user" and page["versions"]:
         return render_template(
-            "user-page-version.html", version=page["versions"][0], title=title
+            "user-page-version.html",
+            version=page["versions"][0],
+            title=title,
+            page=page,
         )
     abort(404)
 
@@ -317,6 +329,24 @@ def history(title):
         title=title,
         page=page,
     )
+
+
+@app.route("/page/<title>/freeze/", methods=["POST"])
+def freeze(title):
+    page = db.pages.find_one({"titles": title}, {"owner": 1, "currenttitle": 1})
+    if page is None:
+        abort(400)
+    freeze_page(page)
+    return signal(redirect=url_for("page", title=title))
+
+
+@app.route("/page/<title>/unfreeze/", methods=["POST"])
+def unfreeze(title):
+    page = db.pages.find_one({"titles": title}, {"owner": 1, "currenttitle": 1})
+    if page is None:
+        abort(400)
+    unfreeze_page(page)
+    return signal(redirect=url_for("page", title=title))
 
 
 @app.route("/authenticate/", methods=["POST"])

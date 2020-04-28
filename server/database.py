@@ -250,11 +250,25 @@ def update_flags(recipient):
     )
 
 
+def freeze_page(page):
+    if not is_owner(page):
+        abort(401)
+    db.pages.update_one({"titles": page["currenttitle"]}, {"$set": {"isfrozen": True}})
+
+
+def unfreeze_page(page):
+    if not is_owner(page):
+        abort(401)
+    db.pages.update_one({"titles": page["currenttitle"]}, {"$set": {"isfrozen": False}})
+
+
 def can_edit(page):
     if g.user is None:
         return False
     if is_owner(page):
         return True
+    if page.get("isfrozen"):
+        return False
     flags = db.flags.find_one({"user": g.user["_id"]}, {"banneduntil": 1})
     if flags is None:
         return True

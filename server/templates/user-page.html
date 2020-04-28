@@ -69,6 +69,14 @@
         href: window.location.href,
       });
     }
+
+    function freeze(url) {
+      signal(url);
+    }
+
+    function unfreeze(url) {
+      signal(url);
+    }
   </script>
 
   <body>
@@ -80,8 +88,19 @@
       {% include 'heading.html' %}
     </h1>
     <div id="headingerror"></div>
-    <a href="{{ url_for('edit', title=title) }}">Edit page</a>
-    <a href="{{ url_for('history', title=title) }}">History</a>
+
+    {% if can_edit(page) %}
+      <a href="{{ url_for('edit', title=title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=title) }}">History</a>
+    {% endif %}
+
+    {% if is_owner(page) %}
+      {% if page.isfrozen %}
+        <button type="button" onclick="unfreeze('{{ url_for('unfreeze', title=title) }}')">Unfreeze page</button>
+      {% else %}
+        <button type="button" onclick="freeze('{{ url_for('freeze', title=title) }}')">Freeze page</button>
+      {% endif %}
+    {% endif %}
 
     <div id="summary-diff">{{ version.primarydiff.summary|safe }}</div>
     <div id="summary-body" contenteditable="true" hidden="true">{{ version.content.summary|safe }}</div>
