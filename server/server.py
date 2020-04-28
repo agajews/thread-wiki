@@ -265,10 +265,6 @@ def flag(title, num):
         abort(400)
     if not 1 < num < page["numversions"]:
         abort(400)
-    if g.user is None:
-        abort(401)
-    if g.user["_id"] == page["versions"][0]["editor"]:
-        return failedit("flagyourself", "versionerror-{}".format(num))
 
     update = flag_version(page)
     if "error" in update:

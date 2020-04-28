@@ -95,7 +95,7 @@ def create_user_page(email):
 
 def edit_user_page(page, content):
     if not can_edit(page):
-        abort(401)
+        return {"error": "notallowed"}
 
     isprimary = page["owner"] == g.user["_id"]
     oldcontent = page["versions"][-1]["content"]
@@ -167,7 +167,9 @@ def add_user_version(page, content):
 
 def flag_version(page):
     if not can_edit(page):
-        abort(401)
+        return {"error": "notallowed"}
+    if g.user["_id"] == page["versions"][0]["editor"]:
+        return {"error": "flagyourself"}
     num = page["versions"][0]["num"]
     recipient = page["versions"][0]["editor"]
     flagtime = timestamp()
@@ -213,7 +215,7 @@ def unflag_version(page):
     num = page["versions"][0]["num"]
     recipient = page["versions"][0]["editor"]
     if g.user is None or g.user["_id"] != page["versions"][0]["flagsender"]:
-        abort(401)
+        return {"error": "notallowed"}
     db.pages.update_one(
         {"titles": page["currenttitle"]},
         {
@@ -252,13 +254,13 @@ def update_flags(recipient):
 
 def freeze_page(page):
     if not is_owner(page):
-        abort(401)
+        return  # implicitly reloading the page so the user can see they're not logged in
     db.pages.update_one({"titles": page["currenttitle"]}, {"$set": {"isfrozen": True}})
 
 
 def unfreeze_page(page):
     if not is_owner(page):
-        abort(401)
+        return  # implicitly reloading the page so the user can see they're not logged in
     db.pages.update_one({"titles": page["currenttitle"]}, {"$set": {"isfrozen": False}})
 
 
