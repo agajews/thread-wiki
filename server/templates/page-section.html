@@ -1,0 +1,28 @@
+{% from 'page-utils.html' import header_at_level %}
+{% if section.deleted %}
+  <div><del>[]</del></div>
+{% else %}
+  {% set header %}
+    {% if section.inserted %}
+      <ins>[{{ section.header }}]</ins>
+    {% else %}
+      {{ section.header }}
+    {% endif %}
+    {% if not hidebuttons %}
+      {% if is_owner(page) and not version.isprimary %}
+        <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
+      {% elif can_edit(page) %}
+        <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
+      {% endif %}
+    {% endif %}
+  {% endset %}
+
+  {{ header_at_level(header, section.level) }}
+  <div id="sectionerror-{{ section.idx }}"></div>
+  {% if page['type'] == 'user' %}
+    <div id="section-diff-{{ section.idx }}">{{ section.diff|safe }}</div>
+  {% elif page['type'] == 'topic' %}
+    <div id="section-diff-{{ section.idx }}">{{ section.body|safe }}</div>
+  {% endif %}
+  <div id="section-body-{{ section.idx }}" contenteditable="true" hidden="true">{{ section.body|safe }}</div>
+{% endif %}

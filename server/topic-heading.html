@@ -1,0 +1,12 @@
+<h1 id="heading">
+  <span id="heading-diff">{{ version.content.heading }}</span>
+  <span id="heading-body" hidden="true" contenteditable="true">{{ version.content.heading }}</span>
+  {% if not hidebuttons %}
+    {% if is_owner(page) and not version.isprimary %}
+      <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
+    {% elif can_edit(page) %}
+      <button type="button" id="edit-heading" onclick="editheading('{{ url_for('headingedit', title=title) }}')">Edit name</button>
+    {% endif %}
+  {% endif %}
+</h1>
+<div id="headingerror"></div>

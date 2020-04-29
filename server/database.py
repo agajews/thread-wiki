@@ -35,6 +35,10 @@ def build_user_title(heading, nickname):
     return (heading + "_" + nickname).replace(" ", "_").replace("/", "|")
 
 
+def build_topic_title(heading):
+    return heading.replace(" ", "_").replace("/", "|")
+
+
 def diff_versions(content_a, content_b, concise=False):
     return {
         "sections": diff_sections(
@@ -49,6 +53,60 @@ def diff_versions(content_a, content_b, concise=False):
         "oldheading": content_a["heading"],
         "oldnickname": content_a["nickname"],
     }
+
+
+def find_page(title, version="latest", primary=False, noneallowed=False):
+    if version == "latest":
+        versionsproj = {"$slice": -1}
+    elif version == "all":
+        versionsproj = 1
+    elif isinstance(version, int):
+        versionsproj = {"$slice": [version - 1, version]}
+    else:
+        raise Exception("Oops, something went wrong")
+    projection = {
+        "versions": versionsproj,
+        "numversions": 1,
+        "type": 1,
+        "currenttitle": 1,
+        "owner": 1,
+        "isfrozen": 1,
+    }
+    if primary:
+        projection["primary"] = 1
+    page = db.pages.find_one({"titles": title}, projection)
+    if not noneallowed and (page is None or len(page["versions"]) == 0):
+        abort(404)
+    return page
+
+
+def create_topic_page(title):
+    if g.user is None:
+        abort(404)
+
+    summary, sections = separate_sections(generate_topic_template(title))
+    heading = title.replace("_", " ").replace("|", "/")
+    content = {"sections": sections, "summary": summary, "heading": heading}
+    try:
+        db.pages.insert_one(
+            {
+                "titles": [title],
+                "currenttitle": title,
+                "type": "topic",
+                "numversions": 1,
+                "versions": [
+                    {
+                        "content": content,
+                        "diff": diff_versions(emptycontent, content),
+                        "editor": g.user["_id"],
+                        "timestamp": timestamp(),
+                        "num": 1,
+                    }
+                ],
+            }
+        )
+    except DuplicateKeyError:
+        pass
 
 
 def create_user_page(email):
@@ -81,7 +139,6 @@ def create_user_page(email):
                             emptycontent, content, concise=True
                         ),
                         "isprimary": False,
-                        "isempty": False,
                         "editor": g.user["_id"],
                         "timestamp": timestamp(),
                         "num": 1,
@@ -107,6 +164,7 @@ def edit_user_page(page, content, emptyallowed=False):
             return {
                 "currenttitle": page["currenttitle"],
                 "version": page["versions"][-1],
+                "updated": False,
             }
         return {"error": "emptyedit"}
     return add_user_version(page, content)
@@ -167,7 +225,52 @@ def add_user_version(page, content):
         return {"error": "duplicatekey"}
     if update.modified_count == 0:
         return {"error": "racecondition"}
-    return {"currenttitle": newtitle, "version": version}
+    return {"currenttitle": newtitle, "version": version, "updated": True}
+
+
+def edit_topic_page(page, content, emptyallowed=False):
+    if not can_edit(page):
+        return {"error": "notallowed"}
+
+    oldcontent = page["versions"][-1]["content"]
+    if content == oldcontent:
+        if emptyallowed:
+            return {
+                "currenttitle": page["currenttitle"],
+                "version": page["versions"][-1],
+                "updated": False,
+            }
+        return {"error": "emptyedit"}
+    return add_topic_version(page, content)
+
+
+def add_topic_version(page, content):
+    num = page["versions"][-1]["num"]
+    oldcontent = page["versions"][-1]["content"]
+    newtitle = build_topic_title(content["heading"])
+    diff = diff_versions(oldcontent, content)
+
+    version = {
+        "content": content,
+        "diff": diff,
+        "editor": g.user["_id"],
+        "timestamp": timestamp(),
+        "num": num + 1,
+    }
+    try:
+        update = db.pages.update_one(
+            {"titles": page["currenttitle"], "versions": {"$size": num}},
+            {
+                "$set": {"currenttitle": newtitle, "numversions": num + 1},
+                "$push": {"versions": version},
+                "$addToSet": {"titles": newtitle},
+            },
+        )
+    except DuplicateKeyError:
+        return {"error": "duplicatekey"}
+    if update.modified_count == 0:
+        return {"error": "racecondition"}
+    return {"currenttitle": newtitle, "version": version, "updated": True}
 
 
 def flag_version(page):
@@ -293,7 +396,7 @@ def can_edit(page):
 def is_owner(page):
     if g.user is None:
         return False
-    return page["owner"] == g.user["_id"]
+    return page.get("owner") == g.user["_id"]
 
 
 @app.context_processor

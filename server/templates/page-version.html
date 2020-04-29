@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <title>{{ version.content.heading }} - Thread</title>
+    {% include 'scripts.html' %}
+    {% include 'diffstyles.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <div id="heading">
+      {% if page['type'] == 'user' %}
+        {% include 'user-heading.html' with hidebuttons=True %}
+      {% elif page['type'] == 'topic' %}
+        {% include 'topic-heading.html' with hidebuttons=True %}
+      {% endif %}
+    </div>
+
+    <h3>{{ version.timestamp }}</h3>
+
+    {% if can_edit(page) %}
+      <a href="{{ url_for('edit', title=title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=title) }}">History</a>
+    {% endif %}
+    <a href="{{ url_for('page', title=title) }}">Latest version</a>
+
+
+    <div id="summary">
+      {% include 'page-summary.html' with hidebuttons=True %}
+    </div>
+
+    {% for section in version.primarydiff.sections %}
+      <div id="section-{{ section.idx }}">
+        {% include 'page-section.html' with section=section with hidebuttons=True %}
+      </div>
+    {% endfor %}
+
+  </body>
+</html>

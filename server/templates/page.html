@@ -48,7 +48,9 @@
       } else {
         signal(url, {
           heading: document.getElementById('heading-content').innerHTML,
-          nickname: document.getElementById('nickname-content').innerHTML,
+          {% if page['type'] == 'user' %}
+            nickname: document.getElementById('nickname-content').innerHTML,
+          {% endif %}
           num: window.num,
         }).then((response) => {
           if (response.num) {
@@ -84,10 +86,13 @@
 
     <a href="{{ url_for('index') }}">Home</a>
 
-    <h1 id="heading">
-      {% include 'heading.html' %}
-    </h1>
-    <div id="headingerror"></div>
+    <div id="heading">
+      {% if page['type'] == 'user' %}
+        {% include 'user-heading.html' %}
+      {% elif page['type'] == 'topic' %}
+        {% include 'topic-heading.html' %}
+      {% endif %}
+    </div>
 
     {% if can_edit(page) %}
       <a href="{{ url_for('edit', title=title) }}">Edit page</a>
@@ -102,38 +107,14 @@
       {% endif %}
     {% endif %}
 
-    <div id="summary-diff">{{ version.primarydiff.summary|safe }}</div>
-    <div id="summary-body" contenteditable="true" hidden="true">{{ version.content.summary|safe }}</div>
-    {% if is_owner(page) and not version.isprimary %}
-      <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
-    {% elif can_edit(page) %}
-      <button type="button" id="edit-summary" onclick="editsummary('{{ url_for('summaryedit', title=title) }}')">Edit</button>
-    {% endif %}
-    <div id="summaryerror"></div>
+    <div id="summary">
+      {% include 'page-summary.html' %}
+    </div>
 
-    {% from 'page-utils.html' import header_at_level %}
     {% for section in version.primarydiff.sections %}
-      {% if section.deleted %}
-        <div><del>[]</del></div>
-      {% else %}
-        {% set header %}
-          {% if section.inserted %}
-            <ins>[{{ section.header }}]</ins>
-          {% else %}
-            {{ section.header }}
-          {% endif %}
-          {% if is_owner(page) and not version.isprimary %}
-            <button type="button" onclick="restore('{{ url_for('restore', title=title, num=version.num) }}')">Accept this version</button>
-          {% elif can_edit(page) %}
-            <button type="button" id="edit-section-{{ section.idx }}" onclick="editsection({{ section.idx }}, '{{ url_for('sectionedit', title=title, idx=section.idx) }}')">Edit</button>
-          {% endif %}
-        {% endset %}
-
-        {{ header_at_level(header, section.level) }}
-        <div id="sectionerror-{{ section.idx }}"></div>
-        <div id="section-diff-{{ section.idx }}">{{ section.diff|safe }}</div>
-        <div id="section-body-{{ section.idx }}" contenteditable="true" hidden="true">{{ section.body|safe }}</div>
-      {% endif %}
+      <div id="section-{{ section.idx }}">
+        {% include 'page-section.html' with section=section %}
+      </div>
     {% endfor %}
 
   </body>
