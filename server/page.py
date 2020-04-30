@@ -205,11 +205,6 @@ class LazyVersions:
 
 
 class Page:
-    Flag = FlagVersion
-    Unflag = UnflagVersion
-    FlagAndUndo = FlagAndUndoPage
-    Restore = RestoreVersion
-
     @staticmethod
     def find(
         title, preload_version=-1, preload_all_versions=False, preload_primary=False
