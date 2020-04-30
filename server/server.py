@@ -16,7 +16,28 @@ from .database import (
 )
 
 
+def is_valid_email(email):
+    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+.)+edu$", email):
+        return True
+    return False
+
+
+def create_user_page(email):
+    summary, sections = separate_sections(generate_user_template(email))
+    owner = User.create_or_return(email)
+    heading = UserPageHeading(email, generate_aka(email))
+    content = UserPageContent(heading, summary, sections)
+    return UserPage.create_or_return(
+        title=email,
+        owner=owner._id,
+        content=content,
+        editor=g.user._id,
+        timestamp=timestamp(),
+    )
+
+
 @app.route("/")
+@error_handling
 def index():
     pages = db.pages.find(
         {}, {"titles": {"$slice": -1}, "versions.heading": {"$slice": -1}}
@@ -24,237 +45,128 @@ def index():
     return render_template("index.html", pages=pages)
 
 
-def is_valid_email(email):
-    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+.)+edu$", email):
-        return True
-    return False
-
-
 @app.route("/page/<title>/")
+@error_handling
 def page(title):
-    page = find_page(title, noneallowed=True)
-    if page is None:
+    try:
+        page = Page.find(title)
+    except PageNotFound as e:
+        if g.user is None:
+            raise e
         if is_valid_email(title):
-            create_user_page(title)
+            page = create_user_page(title)
         else:
-            create_topic_page(title)
-        page = find_page(title)
-    return render_template(
-        "page.html", version=page["versions"][-1], title=title, page=page
-    )
+            page = create_topic_page(title)
+    return page.View(page).run()
+
+
+def error_handling(fun):
+    def wrapped_fun(*args, **kwargs):
+        try:
+            fun(*args, **kwargs)
+        except Malformed:
+            abort(400)
+        except NotAllowed:
+            abort(401)
+        except (PageNotFound, VersionNotFound):
+            abort(404)
+
+    return wrapped_fun
 
 
 @app.route("/page/<title>/edit/")
+@error_handling
 def edit(title):
-    page = find_page(title)
-    if not can_edit(page):
-        abort(401)
-    return render_template("edit-page.html", version=page["versions"][-1], title=title)
-
-
-def get_param(key):
-    data = request.get_json(silent=True)
-    if data is None or key not in data:
-        abort(400)
-    return data[key]
-
-
-def signal(response=None, redirect=None, html=None):
-    return jsonify({"response": response, "redirect": redirect, "html": html})
-
-
-def failedit(errorkey, errorid):
-    editerrors = {
-        "racecondition": "Lel, someone else submitted an edit while you were working on this one. Try merging your edits into that version instead (e.g. by opening edit page in a new tab).",
-        "duplicatekey": "Lel, someone with the same name already has that nickname!",
-        "emptyedit": "Lel, doesn't look like you changed anything.",
-        "flagyourself": "Lel, can't flag yourself.",
-        "alreadyflagged": "Lel, someone else flagged this already.",
-        "notallowed": "Lel, looks like you're not allowed to do that.",
-    }
-    return signal(html={errorid: editerrors[errorkey]})
+    page = Page.find(title)
+    return page.ViewEdit(page).run()
 
 
 @app.route("/page/<title>/submitedit/", methods=["POST"])
+@error_handling
 def submitedit(title):
-    page = find_page(title, primary=True)
-    summary, sections = separate_sections(sanitize_html(get_param("body")))
-    if page["type"] == "user":
-        content = {
-            "sections": sections,
-            "summary": summary,
-            "heading": sanitize_text(get_param("heading")),
-            "nickname": sanitize_text(get_param("nickname")),
-        }
-        update = edit_user_page(page, content)
-    elif page["type"] == "topic":
-        content = {
-            "sections": sections,
-            "summary": summary,
-            "heading": sanitize_text(get_param("heading")),
-        }
-        update = edit_topic_page(page, content)
-    if "error" in update:
-        return failedit(update["error"], "editerror")
-    return signal(redirect=url_for("page", title=update["currenttitle"]))
+    page = Page.find(title, preload_primary=True)
+    return page.SubmitEdit(page).run()
 
 
-@app.route("/page/<title>/sectionedit/<int:idx>/", methods=["POST"])
-def sectionedit(title, idx):
-    page = find_page(title, primary=True)
-    content = deepcopy(page["versions"][-1]["content"])
-    if idx >= len(content["sections"]):
-        return failedit("racecondition", "sectionerror-{}".format(idx))
-    updated_body = sanitize_html(get_param("body"))
-    content["sections"][idx]["body"] = updated_body
-    if page["type"] == "user":
-        update = edit_user_page(page, content, emptyallowed=True)
-    elif page["type"] == "topic":
-        update = edit_topic_page(page, content, emptyallowed=True)
-    if "error" in update:
-        return failedit(update["error"], "sectionerror-{}".format(idx))
-
-    for section in update["version"]["primarydiff"]["sections"]:
-        if section["idx"] == idx:
-            curr_section = section
-    html = {}
-    if update["updated"]:
-        html = {
-            "section-{}".format(idx): render_template(
-                "page-section.html",
-                version=update["version"],
-                page=page,
-                section=curr_section,
-            )
-        }
-    return signal(response={"done": True, "num": update["version"]["num"]}, html=html)
-
-
-@app.route("/page/<title>/summaryedit/", methods=["POST"])
-def summaryedit(title):
-    pade = find_page(title, primary=True)
-    content = deepcopy(page["versions"][-1]["content"])
-    content["summary"] = sanitize_html(get_param("body"))
-    if page["type"] == "user":
-        update = edit_user_page(page, content, emptyallowed=True)
-    elif page["type"] == "topic":
-        update = edit_topic_page(page, content, emptyallowed=True)
-    if "error" in update:
-        return failedit(update["error"], "summaryerror")
-
-    html = {}
-    if update["updated"]:
-        html = {
-            "summary": render_template(
-                "page-summary.html", version=update["version"], page=page
-            )
-        }
-    return signal(response={"done": True, "num": update["version"]["num"]}, html=html)
-
-
-@app.route("/page/<title>/headingedit/", methods=["POST"])
-def headingedit(title):
-    pade = find_page(title, primary=True)
-    content = deepcopy(page["versions"][-1]["content"])
-    content["heading"] = sanitize_text(get_param("heading"))
-    if page["type"] == "user":
-        content["nickname"] = sanitize_text(get_param("nickname"))
-    update = edit_user_page(page, content, emptyallowed=True)
-    if "error" in update:
-        return failedit(update["error"], "headingerror")
-    html = {}
-    if update["updated"]:
-        if page["type"] == "user":
-            template = "user-heading.html"
-        elif page["type"] == "topic":
-            template = "topic-heading.html"
-        html = {
-            "heading": render_template(template, version=update["version"], page=page)
-        }
-
-    return signal(response={"done": True, "num": update["version"]["num"]}, html=html)
+@app.route("/page/<title>/update/", methods=["POST"])
+@error_handling
+def update(title):
+    page = Page.find(title, preload_primary=True)
+    return page.SubmitUpdate(page).run()
 
 
 @app.route("/page/<title>/restore/<int:num>/", methods=["POST"])
+@error_handling
 def restore(title, num):
-    page = find_page(title, primary=True)
-    newpage = find_page(title, version=num)
-    if page["type"] == "user":
-        update = edit_user_page(page, newpage["versions"][0]["content"])
-    elif page["type"] == "topic":
-        update = edit_topic_page(page, newpage["versions"][0]["content"])
-    if "error" in update:
-        return failedit(update["error"], "versionerror-{}".format(num))
-    return signal(redirect=get_param("href"))
+    page = Page.find(title, preload_primary=True)
+    return page.Restore(page, num).run()
 
 
 @app.route("/page/<title>/flag/<int:num>/", methods=["POST"])
+@error_handling
 def flag(title, num):
-    page = find_page(title, version=num)
-    update = flag_version(page)
-    if "error" in update:
-        return failedit(update["error"], "versionerror-{}".format(num))
-    return signal(redirect=get_param("href"))
+    page = Page.find(title, preload_version=num)
+    return page.Flag(page, num).run()
 
 
 @app.route("/page/<title>/unflag/<int:num>/", methods=["POST"])
+@error_handling
 def unflag(title, num):
-    page = find_page(title, version=num)
-    update = unflag_version(page)
-    if "error" in update:
-        return failedit(update["error"], "versionerror-{}".format(num))
-    return signal(redirect=get_param("href"))
+    page = Page.find(title, preload_version=num)
+    return page.Unflag(page, num).run()
 
 
 @app.route("/page/<title>/version/<int:num>/")
+@error_handling
 def version(title, num):
-    page = find_page(title, version=num)
-    return render_template(
-        "page-version.html", version=page["versions"][0], title=title, page=page
-    )
+    page = Page.find(title, preload_version=num)
+    return page.ViewVersion(page, num).run()
 
 
 @app.route("/page/<title>/history/")
+@error_handling
 def history(title):
-    page = find_page(title, version="all")
-    if not can_edit(page):
-        abort(401)
-    return render_template(
-        "page-history.html",
-        currentversion=page["versions"][-1],
-        oldversions=reversed(page["versions"][1:-1]),
-        initialversion=page["versions"][0],
-        title=title,
-        page=page,
-    )
+    page = Page.find(title, preload_all_versions=True)
+    return page.ViewHistory(page).run()
 
 
 @app.route("/page/<title>/freeze/", methods=["POST"])
+@error_handling
 def freeze(title):
-    page = find_page(title)
-    freeze_page(page)
-    return signal(redirect=url_for("page", title=title))
+    page = Page.find(title, preload_version=None)
+    return page.Freeze(page).run()
 
 
 @app.route("/page/<title>/unfreeze/", methods=["POST"])
+@error_handling
 def unfreeze(title):
-    page = find_page(title)
-    unfreeze_page(page)
-    return signal(redirect=url_for("page", title=title))
+    page = Page.find(title, preload_version=None)
+    return page.Unfreeze(page).run()
+
+
+def get_param(param):
+    params = request.get_json(silent=True)
+    if params is None or param not in params:
+        raise Malformed()
+    return params[param]
 
 
 @app.route("/authenticate/", methods=["POST"])
+@error_handling
 def authenticate():
-    verified = verify_password(get_param("email"), get_param("password"))
-    g.user = verified.get("user")
-    g.reissue_token = True
-    if g.user is None:
-        return signal(html={"loginerror": verified["error"]})
+    try:
+        user = User.find(email=get_param("email"))
+        user.login(get_param("password"))
+    except UserNotFound:
+        return jsonify({"html": {get_param("errorid"): "Can't find that account"}})
+    except IncorrectPassword:
+        return jsonify({"html": {get_param("errorid"): "Incorrect password"}})
+    except PasswordNotSet:
+        return jsonify({"html": {get_param("errorid"): "Password not set"}})
     return signal(redirect=get_param("href"))
 
 
 @app.route("/logout/", methods=["POST"])
 def logout():
     g.user = None
-    g.rerender = True
     return signal(redirect=get_param("href"))

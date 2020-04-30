@@ -4,6 +4,56 @@ from difflib import SequenceMatcher
 import itertools
 
 
+class Section:
+    def __init__(self, body, header, level):
+        self.body = body
+        self.header = header
+        self.level = level
+
+    @staticmethod
+    def from_dict(section):
+        return Section(section["body"], section["header"], section["level"])
+
+    def to_dict(self):
+        return {"body": self.body, "header": self.header, "level": self.level}
+
+    def copy(self):
+        return Section(self.body.copy(), self.header.copy(), self.level)
+
+
+class SectionDiff:
+    def __init__(
+        self, section, body_diff, idx=None, edited=False, deleted=False, inserted=False
+    ):
+        self.section = section
+        self.body_diff = body_diff
+        self.edited = edited
+        self.deleted = deleted
+        self.inserted = inserted
+        self.idx = idx
+
+    @staticmethod
+    def from_dict(section):
+        return SectionDiff(
+            Section.from_dict(section["section"]),
+            section["body_diff"],
+            edited=section["edited"],
+            deleted=section["deleted"],
+            inserted=section["inserted"],
+            idx=section["idx"],
+        )
+
+    def to_dict(self):
+        return {
+            "section": self.section.to_dict(),
+            "body_diff": self.body_diff,
+            "edited": self.edited,
+            "deleted": self.deleted,
+            "inserted": self.inserted,
+            "idx": self.idx,
+        }
+
+
 self_closing = ["br"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = " \t\n\xa0"
@@ -29,12 +79,11 @@ allowed_tags = [
 
 def sanitize_html(html):
     # TODO: linkify as well
-    return bleach.clean(html, tags=allowed_tags, strip=True)
+    return bleach.clean(str(html), tags=allowed_tags, strip=True)
 
 
 def sanitize_text(text):
-    # TODO: linkify as well
-    return bleach.clean(text, tags=[], strip=True)
+    return bleach.clean(str(text), tags=[], strip=True)
 
 
 def splitstrip(s):
@@ -306,13 +355,6 @@ def markup_changes(data_a, data_b, concise=False):
     return generate_html(merged_sequence)
 
 
-# def is_header(token):
-#     for (tag, attr) in token.context:
-#         if tag in header_tags:
-#             return True
-#     return False
-
-
 def get_header_level(tag):
     for (tag, attr) in tag.context:
         if tag in header_tags:
@@ -346,30 +388,27 @@ def separate_sections(data):
         hasbody = i + 1 < len(groups) and keys[i + 1] is None
         body = generate_html(groups[i + 1]) if hasbody else ""
         sections.append(
-            {
-                "header": extract_text(groups[i]),
-                "body": body,
-                "level": get_header_level(groups[i][0]),
-            }
+            Section(
+                header=extract_text(groups[i]),
+                body=body,
+                level=get_header_level(groups[i][0]),
+            )
         )
         i += 2 if hasbody else 1
     return summary, sections
 
 
-class Section(Token):
+class SectionToken(Token):
     def __init__(self, section):
-        self.header = section["header"]
-        self.body = section["body"]
-        self.level = section["level"]
+        self.header = section.header
+        self.body = section.body
+        self.level = section.level
         super().__init__((self.header, self.level))
-
-    def to_dict(self):
-        return {"header": self.header, "body": self.body, "level": self.level}
 
 
 def diff_sections(sections_a, sections_b, concise=False):
-    sequence_a = [Section(section) for section in sections_a]
-    sequence_b = [Section(section) for section in sections_b]
+    sequence_a = [SectionToken(section) for section in sections_a]
+    sequence_b = [SectionToken(section) for section in sections_b]
     matcher = SequenceMatcher(isjunk=isjunk, a=sequence_a, b=sequence_b, autojunk=False)
     merged_sequence = []
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -377,26 +416,22 @@ def diff_sections(sections_a, sections_b, concise=False):
             for i, j in zip(range(i1, i2), range(j1, j2)):
                 section_a = sequence_a[i]
                 section_b = sequence_b[j]
-                section_dict = section_b.to_dict()
-                if section_a.body != section_b.body:
-                    section_dict["edited"] = True
-                section_dict["diff"] = markup_changes(
+                edited = section_a.body != section_b.body
+                body_diff = markup_changes(
                     section_a.body, section_b.body, concise=concise
                 )
-                section_dict["idx"] = j
-                merged_sequence.append(section_dict)
+                merged_sequence.append(
+                    SectionDiff(section_b, body_diff, idx=j, edited=edited)
+                )
         if tag == "replace" or tag == "delete":
             for section in sequence_a[i1:i2]:
-                section_dict = section.to_dict()
-                section_dict["deleted"] = True
-                section_dict["diff"] = markup_changes(section.body, "", concise=concise)
-                merged_sequence.append(section_dict)
+                body_diff = markup_changes(section.body, "", concise=concise)
+                merged_sequence.append(SectionDiff(section_a, body_diff, deleted=True))
         if tag == "replace" or tag == "insert":
             for j in range(j1, j2):
                 section = sequence_b[j]
-                section_dict = section.to_dict()
-                section_dict["inserted"] = True
-                section_dict["diff"] = markup_changes("", section.body, concise=concise)
-                section_dict["idx"] = j
-                merged_sequence.append(section_dict)
+                body_diff = markup_changes("", section.body, concise=concise)
+                merged_sequence.append(
+                    SectionDiff(section, body_diff, idx=j, inserted=True)
+                )
     return merged_sequence
