@@ -1,80 +1,58 @@
-from .page import Page, LazyVersions
+from .page import Page, PageContent, LazyVersions
+from .app import db
+from .model import Model
 
 
-class UserPageContent(PageContent):
-    Heading = UserPageHeading
+class UserPageContent(Model):
+    heading = Field(UserPageHeading)
+    summary = Field(Paragraph)
+    sections = List(Section)
+
+    @property
+    def title(self):
+        return self.heading.title
 
 
-class UserPageHeading:
-    def __init__(self, name, aka):
-        self.name = name
-        self.aka = aka
-
-    def __eq__(self, other):
-        return (self.name, self.aka) == (other.name, other.aka)
+class UserPageHeading(Model):
+    name = Field(String)
+    aka = Field(String)
 
     @property
     def title(self):
         return (self.name + "_" + self.aka).replace(" ", "_").replace("/", "|")
 
-    @staticmethod
-    def from_dict(heading):
-        return UserPageHeading(heading["name"], heading["aka"])
 
-    def to_dict(self):
-        return {"name": self.name, "aka": self.aka}
-
-    def copy(self):
-        return UserPageHeading(self.name.copy(), self.aka.copy())
+empty_content = UserPageContent(
+    heading=UserPageHeading(name="", aka=""), summary=Paragraph(""), sections=[]
+)
 
 
-empty_content = UserPageContent(UserPageHeading("", ""), "", [])
+class UserPageVersion(Model):
+    content = Field(UserPageContent)
+    diff = Field(UserPageVersionDiff)
+    primary_diff = Field(UserPageVersionDiff)
+    is_primary = Field(Boolean)
+    timestamp = Field(Float)
+    editor = Field(ObjectRef)
+    num = Field(Int)
+    flag = Field(VersionFlag, required=False)
 
 
-class UserPageVersion:
-    def __init__(
-        self, content, diff, primary_diff, is_primary, editor, timestamp, num, flag=None
-    ):
-        self.content = content
-        self.diff = diff
-        self.primary_diff = primary_diff
-        self.is_primary = is_primary
-        self.editor = editor
-        self.timestamp = timestamp
-        self.num = num
-        self.flag = flag
+class UserPageHeadingDiff(Model):
+    heading_a = Field(UserPageHeading)
+    heading_b = Field(UserPageHeading)
+    changed = Field(Boolean)
 
     @staticmethod
-    def from_dict(version):
-        flag = None
-        if "flag" in version:
-            flag = VersionFlag.from_dict(version["flag"])
-        return UserPageVersion(
-            UserPageContent.from_dict(version["content"]),
-            VersionDiff.from_dict(version["diff"]),
-            VersionDiff.from_dict(version["primary_diff"]),
-            version["is_primary"],
-            version["editor"],
-            version["timestamp"],
-            version["num"],
-            flag=flag,
-        )
+    def compute(heading_a, heading_b, concise=False):
+        changed = heading_a == heading_b
+        return HeadingDiff(heading_a, heading_b, changed)
 
-    def to_dict(self):
-        return {
-            "content": self.content.to_dict(),
-            "diff": self.diff.to_dict,
-            "primary_diff": self.primary_diff.to_dict(),
-            "is_primary": self.is_primary,
-            "editor": self.editor,
-            "timestamp": self.timestamp,
-            "num": self.num,
-            "flag": self.flag.to_dict(),
-        }
 
-    @property
-    def title(self):
-        return self.content.title
+class UserPageVersionDiff(Model):
+    sections = List(SectionDiff)
+    summary = Field(ParagraphDiff)
+    heading = Field(UserPageHeadingDiff)
 
 
 class UserPage(Page):
@@ -91,8 +69,15 @@ class UserPage(Page):
     @property
     def primary(self):
         if self._primary is None:
-            self._primary = UserPageContent.find_primary(self.title)
+            page = db.pages.find_one({"titles": self.title}, {"primary": 1})
+            if page is None:
+                raise PageNotFound()
+            self._primary = UserPageContent.from_dict(page["primary"])
         return self._primary
+
+    @property
+    def heading(self):
+        return self.versions[-1].content.heading.name
 
     @staticmethod
     def from_dict(page):
@@ -109,7 +94,7 @@ class UserPage(Page):
     def create_or_return(title, owner, content):
         diff = VersionDiff.compute(empty_content, content)
         primary = empty_content
-        primary_diff = VersionDiff.compute(primary, content)
+        primary_diff = VersionDiff.compute(primary, content, concise=True)
         version = UserPageVersion(
             content,
             diff,
@@ -140,7 +125,7 @@ class UserPage(Page):
 
     def add_version(self, version):
         self.versions.append(version)
-        self.title = version.title
+        self.title = version.content.title
         stuff_to_set = {"num_versions": len(self.versions) + 1, "title": self.title}
         if version.is_primary:
             self.primary = version.content
@@ -162,7 +147,9 @@ class UserPage(Page):
     def accept_latest(self):
         self.versions[-1].is_primary = True
         self.primary = self.versions[-1].content
-        self.versions[-1].primary_diff = VersionDiff.compute(self.primary, self.primary)
+        self.versions[-1].primary_diff = VersionDiff.compute(
+            self.primary, self.primary, concise=True
+        )
         update = db.pages.update_one(
             {"titles": self.title, "versions": {"$size": len(self.versions)}},
             {

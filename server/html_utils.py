@@ -54,6 +54,42 @@ class SectionDiff:
         }
 
 
+class Paragraph:
+    def __init__(self, body):
+        self.body = body
+
+    @staticmethod
+    def from_dict(paragraph):
+        return Paragraph(paragraph)
+
+    def to_dict(self):
+        return self.body
+
+    def copy(self):
+        return Paragraph(self.body.copy())
+
+
+class ParagraphDiff:
+    def __init__(self, body, diff, changed):
+        self.body = body
+        self.diff = diff
+        self.changed = changed
+
+    @staticmethod
+    def compute(summary_a, summary_b, concise=False):
+        body = summary_b
+        diff = markup_changes(summary_a, summary_b, concise=concise)
+        changed = summary_a != summary_b
+        return SummaryDiff(body, diff, changed)
+
+    @staticmethod
+    def from_dict(summary):
+        return ParagraphDiff(summary["body"], summary["diff"], summary["changed"])
+
+    def to_dict(self):
+        return {"body": self.body, "diff": self.diff, "changed": self.changed}
+
+
 self_closing = ["br"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = " \t\n\xa0"
@@ -379,10 +415,10 @@ def separate_sections(data):
         groups.append(list(group))
     i = 0
     if keys[0] is None:
-        summary = generate_html(groups[0])
+        summary = Paragraph(generate_html(groups[0]))
         i += 1
     else:
-        summary = ""
+        summary = Paragraph("")
     sections = []
     while i < len(groups):
         hasbody = i + 1 < len(groups) and keys[i + 1] is None

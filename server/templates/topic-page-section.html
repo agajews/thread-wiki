@@ -1,0 +1,24 @@
+{% from 'page-utils.html' import header_at_level %}
+{% set displayid = "section-{{ section.idx }}-display" %}
+{% set editid = "section-{{ section.idx }}-edit" %}
+{% set bodyid = "section-{{ section.idx }}-body" %}
+{% set errorid = "error-section-{{ section.idx }}" %}
+<div id="{{ displayid }}">
+  {% set header %}
+    {{ section.header }}
+    {% if can_edit() %}
+      <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
+    {% endif %}
+  {% endset %}
+  {{ header_at_level(header, section.level) }}
+  <div>{{ section.body|safe }}</div>
+</div>
+<div id="{{ editid }}" hidden="true">
+  {% set header %}
+    {{ section.header }}
+    <button type="button" onclick="update(get_section({{ section.idx }}),'{{ errorid }}')">Done</button>
+  {% endset %}
+  {{ header_at_level(header, section.level) }}
+  <div id="{{ bodyid }}" contenteditable="true">{{ section.body|safe }}</div>
+</div>
+<div id="{{ errorid }}"></div>

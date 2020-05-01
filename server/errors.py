@@ -26,29 +26,13 @@ class NotAllowed(UserError):
     pass
 
 
-class PageNotFound(Exception):
+class PageNotFound(UserError):
     pass
 
 
-class VersionNotFound(Exception):
+class VersionNotFound(UserError):
     pass
 
 
-class Malformed(Exception):
+class Malformed(UserError):
     pass
-
-
-class PageErrorHandler:
-    RaceCondition =
-    EmptyEdit =
-    FlagYourself =
-    AlreadyFlagged = "Lel, someone else flagged this already."
-    NotAllowed = "Lel, looks like you're not allowed to do that."
-
-
-class UserPageErrorHandler(PageErrorHandler):
-    DuplicateKey = "Lel, someone with the same name already has that nickname!"
-
-
-class TopicPageErrorHandler(PageErrorHandler):
-    DuplicateKey = "Lel, a page with that name already exists!"

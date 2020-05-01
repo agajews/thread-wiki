@@ -1,0 +1,18 @@
+<script>
+  window.num_versions = {{ len(g.page.versions) }};
+
+  function swap(to_hide, to_show) {
+      document.getElementById(to_hide).setAttribute('hidden', true);
+      document.getElementById(to_show).removeAttribute('hidden');
+  }
+
+  function update(update, errorid) {
+    signal({{ url_for('update', title=g.page.title) }}, {
+      update: update,
+      num_versions: window.num_versions,
+      errorid: errorid,
+    }).then((response) => {
+      window.num_versions = response.num_versions;
+    });
+  }
+</script>

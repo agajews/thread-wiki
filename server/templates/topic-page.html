@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <title>{{ display.heading.name }} - Thread</title>
+    {% include 'scripts.html' %}
+    {% include 'diffstyles.html' %}
+  </head>
+
+  {% include 'update-scripts.html' %}
+
+  <script>
+    function get_summary() {
+      return {
+        summary: document.getElementById('summary-body')
+      };
+    }
+
+    function get_section(idx) {
+      return {sections: {
+        idx: document.getElementById('section-' + idx + '-body')
+      }};
+    }
+
+    function get_heading() {
+      return {
+        name: document.getElementById('name-body'),
+      };
+    }
+  </script>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <div id="heading">
+      {% include 'topic-page-heading.html' with heading=display.heading %}
+    </div>
+
+    {% if can_edit() %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% endif %}
+
+    <div id="summary">
+      {% include 'topic-page-summary.html' with summary=display.summary %}
+    </div>
+
+    {% for section in display.sections %}
+      <div id="section-{{ section.idx }}">
+        {% include 'topic-page-section.html' with section=section %}
+      </div>
+    {% endfor %}
+
+  </body>
+</html>

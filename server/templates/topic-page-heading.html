@@ -1,0 +1,15 @@
+<div id="heading-display">
+  <h1>
+    {{ heading.name }}
+    {% if can_edit() %}
+      <button type="button" onclick="swap('heading-display', 'heading-edit')">Edit name</button>
+    {% endif %}
+  </h1>
+</div>
+<div id="heading-edit" hidden="true">
+  <h1>
+    <span id="name-body" contenteditable="true">{{ heading.name }}</span>
+    <button type="button" onclick="update(get_heading(), 'error-heading')">Done</button>
+  </h1>
+</div>
+<div id="error-heading"></div>

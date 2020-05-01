@@ -1,52 +1,9 @@
 <html>
   <head>
-    <title>History: {{ currentversion.content.heading }} - Thread</title>
+    <title>History: {{ g.page.versions[-1].content.heading.name }} - Thread</title>
     {% include 'scripts.html' %}
+    {% include 'diff-styles.html' %}
 
-    <style>
-      .markupnote {
-        color: gray
-      }
-      .markupnote:before {
-        content: "[";
-      }
-      .markupnote:after {
-        content: "]";
-      }
-      .timestamp {
-        font-size: 20;
-        font-weight: bold;
-      }
-      ins {
-        color: deepskyblue;
-      }
-      del {
-        color: grey;
-      }
-    </style>
-
-    <script>
-      function restore(url) {
-        signal(url, {
-          num: {{ currentversion.num }},
-          href: window.location.href,
-        });
-      }
-
-      function flag(url) {
-        signal(url, {
-          num: {{ currentversion.num }},
-          href: window.location.href,
-        });
-      }
-
-      function unflag(url) {
-        signal(url, {
-          num: {{ currentversion.num }},
-          href: window.location.href,
-        });
-      }
-    </script>
   </head>
 
   <body>

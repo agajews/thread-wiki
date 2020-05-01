@@ -1,18 +1,21 @@
 from flask import render_template, abort, request, jsonify, g
 import re
-from copy import deepcopy
-from .app import app, db, timestamp, url_for
-from .auth import verify_password, generate_auth_token
+from .app import app, timestamp, url_for
 from .html_utils import sanitize_html, sanitize_text, separate_sections
-from .database import (
-    find_page,
-    create_user_page,
-    edit_user_page,
-    flag_version,
-    unflag_version,
-    freeze_page,
-    unfreeze_page,
-    can_edit,
+from .templates import generate_user_template, generate_aka, generate_topic_template
+from .page import Page
+from .user import User
+from .user_page import UserPageHeading, UserPageContent, UserPage
+from .topic_page import TopicPageHeading, TopicPageContent, TopicPage
+from .errors import (
+    Malformed,
+    EmptyEdit,
+    FlagYourself,
+    AlreadyFlagged,
+    NotAllowed,
+    IncorrectPassword,
+    PageNotFound,
+    VersionNotFound,
 )
 
 
@@ -25,7 +28,7 @@ def is_valid_email(email):
 def create_user_page(email):
     summary, sections = separate_sections(generate_user_template(email))
     owner = User.create_or_return(email)
-    heading = UserPageHeading(email, generate_aka(email))
+    heading = UserPageHeading(email, generate_aka())
     content = UserPageContent(heading, summary, sections)
     return UserPage.create_or_return(
         title=email,
@@ -33,6 +36,16 @@ def create_user_page(email):
         content=content,
         editor=g.user._id,
         timestamp=timestamp(),
+    )
+
+
+def create_topic_page(name):
+    summary, sections = separate_sections(generate_topic_template(name))
+    owner = Topic.create_or_return(name)
+    heading = TopicPageHeading(name)
+    content = TopicPageContent(heading, summary, sections)
+    return TopicPage.create_or_return(
+        title=name, content=content, editor=g.user._id, timestamp=timestamp()
     )
 
 
@@ -170,21 +183,23 @@ def page(title):
         else:
             g.page = create_topic_page(title)
     if isinstance(g.page, UserPage):
-        return render_template("user-page.html", version=g.page.versions[-1])
+        return render_template(
+            "user-page.html", display=g.page.versions[-1].primary_diff
+        )
     elif isinstance(g.page, TopicPage):
-        return render_template("topic-page.html", version=g.page.versions[-1])
+        return render_template("topic-page.html", display=g.page.versions[-1].content)
 
     return wrapped_fun
 
 
 @can_edit
 def view_user_edit():
-    return render_template("user-page.html", version=g.page.versions[-1])
+    return render_template("user-page.html", content=g.page.versions[-1].content)
 
 
 @can_edit
 def view_topic_edit():
-    return render_template("topic-page.html", version=g.page.versions[-1])
+    return render_template("topic-page.html", content=g.page.versions[-1].content)
 
 
 @app.route("/page/<title>/edit/")
@@ -239,16 +254,17 @@ def update_user_page():
     update_sections = []
 
     content = g.page.versions[-1].content.copy()
-    if "name" in get_params() and "aka" in get_params():
+    update = get_param("update", dict)
+    if "name" in update and "aka" in update:
         update_heading = True
         content.heading = UserPageHeading(
-            sanitize_text(get_param("name")), sanitize_text(get_param("aka"))
+            sanitize_text(update["name"]), sanitize_text(update["aka"])
         )
-    if "summary" in get_params():
+    if "summary" in update:
         update_summary = True
-        content.summary = sanitize_html(get_param("summary"))
-    if "sections" in get_params():
-        for key, body in get_param("sections", dict).keys():
+        content.summary = sanitize_html(update["summary"])
+    if "sections" in update:
+        for key, body in cast_param(update["sections"], dict).keys():
             idx = cast_param(key, int)
             update_sections.append(idx)
             content.sections[idx].body = sanitize_html(body)
@@ -259,17 +275,18 @@ def update_user_page():
         pass
 
     html = {}
+    display = g.page.versions[-1].primary_diff
     if update_heading:
         html["heading"] = render_template(
-            "user-page-heading.html", heading=g.page.primary_diff.heading
+            "user-page-heading.html", heading=display.heading
         )
     if update_summary:
         html["summary"] = render_template(
-            "user-page-summary.html", summary=g.page.primary_diff.summary
+            "user-page-summary.html", summary=display.summary
         )
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
-            "user-page-section.html", section=g.page.primary_diff.sections_dict[idx]
+            "user-page-section.html", section=display.sections_dict[idx]
         )
     return rerender(html, num_versions=len(g.page.versions))
 
@@ -283,14 +300,15 @@ def update_topic_page():
     update_sections = []
 
     content = g.page.versions[-1].content.copy()
-    if "name" in get_params():
+    update = get_param("update", dict)
+    if "name" in update:
         update_heading = True
-        content.heading = UserPageHeading(sanitize_text(get_param("name")))
-    if "summary" in get_params():
+        content.heading = UserPageHeading(sanitize_text(update["name"]))
+    if "summary" in update:
         update_summary = True
-        content.summary = sanitize_html(get_param("summary"))
-    if "sections" in get_params():
-        for key, body in get_param("sections", dict).keys():
+        content.summary = sanitize_html(update["summary"])
+    if "sections" in update:
+        for key, body in cast_param(update["sections"], dict).keys():
             idx = cast_param(key, int)
             update_sections.append(idx)
             content.sections[idx].body = sanitize_html(body)
@@ -301,17 +319,18 @@ def update_topic_page():
         pass
 
     html = {}
+    display = g.page.versions[-1].content
     if update_heading:
         html["heading"] = render_template(
-            "topic-page-heading.html", heading=g.page.content.heading
+            "topic-page-heading.html", heading=display.heading
         )
     if update_summary:
         html["summary"] = render_template(
-            "topic-page-summary.html", summary=g.page.content.summary
+            "topic-page-summary.html", summary=display.summary
         )
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
-            "topic-page-section.html", section=g.page.content.sections_dict[idx]
+            "topic-page-section.html", section=display.sections_dict[idx]
         )
     return rerender(html, num_versions=len(g.page.versions))
 
@@ -334,11 +353,12 @@ def restore_version(num):
     return reload()
 
 
-@app.route("/page/<title>/restore/<int:num>/", methods=["POST"])
+@app.route("/page/<title>/restore/", methods=["POST"])
 @error_handling
-def restore(title, num):
+def restore(title):
+    num = get_param("num", int)
     g.page = Page.find(title, preload_primary=True)
-    return restore_version(num)
+    return restore_version()
 
 
 @page_errors
@@ -348,9 +368,10 @@ def flag_version(num):
     return reload()
 
 
-@app.route("/page/<title>/flag/<int:num>/", methods=["POST"])
+@app.route("/page/<title>/flag/", methods=["POST"])
 @error_handling
-def flag(title, num):
+def flag(title):
+    num = get_param("num", int)
     g.page = Page.find(title, preload_version=num)
     return flag_version(num)
 
@@ -362,9 +383,10 @@ def unflag_version(num):
     return reload()
 
 
-@app.route("/page/<title>/unflag/<int:num>/", methods=["POST"])
+@app.route("/page/<title>/unflag/", methods=["POST"])
 @error_handling
-def unflag(title, num):
+def unflag(title):
+    num = get_param("num", int)
     g.page = Page.find(title, preload_version=num)
     return unflag_version(num)
 

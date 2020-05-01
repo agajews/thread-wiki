@@ -28,5 +28,10 @@ def inject_url_for_title():
     return dict(url_for=url_for)
 
 
+@app.context_processor
+def inject_len():
+    return dict(len=len)
+
+
 def timestamp():
     return datetime.utcnow().timestamp()

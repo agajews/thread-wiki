@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <title>{{ display.heading.name_b }} - Thread</title>
+    {% include 'scripts.html' %}
+    {% include 'concise-diff-styles.html' %}
+  </head>
+
+  {% include 'update-scripts.html' %}
+
+  <script>
+    function get_summary() {
+      return {
+        summary: document.getElementById('summary-body')
+      };
+    }
+
+    function get_section(idx) {
+      return {sections: {
+        idx: document.getElementById('section-' + idx + '-body')
+      }};
+    }
+
+    function get_heading() {
+      return {
+        name: document.getElementById('name-body'),
+        aka: document.getElementById('aka-body')
+      };
+    }
+
+    function accept(errorid) {
+      signal({{ url_for('restore', title=g.page.title, num=len(g.page.versions) - 1) }}, {
+        num_versions: {{ len(g.page.versions) }},
+        href: window.location.href,
+        errorid: errorid,
+      });
+    }
+
+    function freeze() {
+      signal({{ url_for('freeze', title=g.page.title) }}, {
+        errorid: 'error-freeze',
+      });
+    }
+
+    function unfreeze() {
+      signal({{ url_for('unfreeze', title=g.page.title) }}, {
+        errorid: 'error-freeze',
+      });
+    }
+  </script>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <div id="heading">
+      {% include 'user-page-heading.html' with heading=display.heading %}
+    </div>
+
+    {% if can_edit() %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% endif %}
+
+    {% if is_owner() %}
+      {% if g.page.isfrozen %}
+        <button type="button" onclick="unfreeze()">Unfreeze page</button>
+      {% else %}
+        <button type="button" onclick="freeze()">Freeze page</button>
+      {% endif %}
+    {% endif %}
+
+    <div id="error-freeze"></div>
+
+    <div id="summary">
+      {% include 'user-page-summary.html' with summary=display.summary %}
+    </div>
+
+    {% for section in version.primarydiff.sections %}
+      <div id="section-{{ section.idx }}">
+        {% include 'user-page-section.html' with section=section %}
+      </div>
+    {% endfor %}
+
+  </body>
+</html>

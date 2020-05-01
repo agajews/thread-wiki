@@ -1,5 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
+from .app import app
 
 
 class User:
@@ -69,3 +70,20 @@ class User:
         if page.is_frozen:
             return False
         return timestamp() > self.banned_until
+
+
+def is_owner():
+    if g.user is None:
+        return False
+    return g.user.is_owner(g.page)
+
+
+def can_edit():
+    if g.user is None:
+        return False
+    return g.user.can_edit(g.page)
+
+
+@app.context_processor
+def inject_permissions():
+    return dict(is_owner=is_owner, can_edit=can_edit)

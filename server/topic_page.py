@@ -1,71 +1,55 @@
 from .page import Page, LazyVersions
+from .app import db
 
 
-class TopicPageContent(PageContent):
-    Heading = TopicPageHeading
+class TopicPageContent(Model):
+    heading = Field(UserPageHeading)
+    summary = Field(Paragraph)
+    sections = List(Section)
+
+    @property
+    def title(self):
+        return self.heading.title
 
 
-class TopicPageHeading:
-    def __init__(self, name):
-        self.name = name
-
-    def __eq__(self, other):
-        return self.name == other.name
+class TopicPageHeading(Model):
+    name = Field(String)
+    aka = Field(String)
 
     @property
     def title(self):
         return self.name.replace(" ", "_").replace("/", "|")
 
-    @staticmethod
-    def from_dict(heading):
-        return TopicPageHeading(heading)
 
-    def to_dict(self):
-        return self.name
-
-    def copy(self):
-        return TopicPageHeading(self.name.copy())
+empty_content = TopicPageContent(
+    heading=TopicPageHeading(name="", aka=""), summary=Paragraph(""), sections=[]
+)
 
 
-empty_content = TopicPageContent(TopicPageHeading(""), "", [])
+class TopicPageVersion(Model):
+    content = Field(UserPageContent)
+    diff = Field(UserPageVersionDiff)
+    timestamp = Field(Float)
+    editor = Field(ObjectRef)
+    num = Field(Int)
+    flag = Field(VersionFlag, required=False)
 
 
-class TopicPageVersion:
-    def __init__(self, content, diff, editor, timestamp, num, flag=None):
-        self.content = content
-        self.diff = diff
-        self.editor = editor
-        self.timestamp = timestamp
-        self.num = num
-        self.flag = flag
+class TopicPageHeadingDiff(Model):
+    heading_a = Field(UserPageHeading)
+    heading_b = Field(UserPageHeading)
+    changed = Field(Boolean)
 
     @staticmethod
-    def from_dict(version):
-        flag = None
-        if "flag" in version:
-            flag = VersionFlag.from_dict(version["flag"])
-        return TopicPageVersion(
-            TopicPageContent.from_dict(version["content"]),
-            VersionDiff.from_dict(version["diff"]),
-            version["editor"],
-            version["timestamp"],
-            version["num"],
-            flag=flag,
-        )
+    def compute(heading_a, heading_b, concise=False):
+        changed = heading_a == heading_b
+        return HeadingDiff(heading_a, heading_b, changed)
 
-    def to_dict(self):
-        return {
-            "content": self.content.to_dict(),
-            "diff": self.diff.to_dict,
-            "editor": self.editor,
-            "timestamp": self.timestamp,
-            "num": self.num,
-            "flag": self.flag.to_dict(),
-        }
 
-    @property
-    def title(self):
-        return self.content.title
+class TopicPageVersionDiff(Model):
+    sections = List(SectionDiff)
+    summary = Field(ParagraphDiff)
+    heading = Field(UserPageHeadingDiff)
 
 
 class TopicPage(Page):
@@ -79,6 +63,10 @@ class TopicPage(Page):
     @staticmethod
     def from_dict(page):
         return TopicPage(page["_id"], LazyVersions.from_dict(page), page["title"])
+
+    @property
+    def heading(self):
+        return self.versions[-1].content.heading.name
 
     @staticmethod
     def create_or_return(title, owner, content):
@@ -103,7 +91,7 @@ class TopicPage(Page):
 
     def add_version(self, version):
         self.versions.append(version)
-        self.title = version.title
+        self.title = version.content.title
         try:
             update = db.pages.update_one(
                 {"titles": self.title, "versions": {"$size": len(self.versions)}},

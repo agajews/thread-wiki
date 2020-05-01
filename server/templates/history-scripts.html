@@ -1,0 +1,25 @@
+<script>
+  function restore(num, errorid) {
+    signal({{ url_for('restore', title=g.page.title }}, {
+      num: num,
+      num_versions: {{ len(g.page.versions) }},
+      href: window.location.href,
+      errorid: errorid,
+    });
+  }
+
+  function flag(num, errorid) {
+    signal({{ url_for('flag', title=g.page.title) }}, {
+      num: num,
+      href: window.location.href,
+      errorid: errorid,
+    });
+  }
+
+  function unflag(num, url) {
+    signal({{ url_for('unflag', title=g.page.title) }}, {
+      num: num,
+      href: window.location.href,
+    });
+  }
+</script>
