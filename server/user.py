@@ -1,51 +1,61 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
+from datetime import timedelta
 from .app import app
 
 
 class User(MongoModel):
     email = fields.EmailField()
     passhash = fields.CharField(default=None)
-    flags = fields.EmbeddedDocumentListField(Flag)
+    flags = fields.ListField(fields.ReferenceField(Flag))
     banned_until = fields.DateTimeField(default=None)
 
+    def add_flag(self, flag):
+        self.flags.append(flag)
+        User.objects.raw({"_id": self._id}).update({"$push": {"flags": flag._id}})
+        self.update_ban()
 
-class Flag(EmbeddedMongoModel):
-    sender = fields.ReferenceField(User)
-    timestamp = fields.DateTimeField()
-    version = fields.ReferenceField(Version)
+    def remove_flag(self, flag):
+        self.flags.remove(flag)
+        User.objects.raw({"_id": self._id}).update({"$pull": {"flags": flag._id}})
+        self.update_ban()
 
-
-class User:
-    def __init__(self, _id, email, passhash=None):
-        self._id = _id
-        self.email = email
-        self.passhash = passhash
-        self._banned_until = None
+    def update_ban(self):
+        first = None
+        self.banned_until = None
+        for flag in self.flags:
+            if first is None:
+                first = flag.sender
+            elif first != flag.sender:
+                first = None
+                self.banned_until = flag.timestamp + timedelta(days=1)
+        User.objects.raw({"_id": self._id, "flags": self.flags.to_son()}).update(
+            {"$set": {"banned_until": self.banned_until}}
+        )
 
     @staticmethod
     def create_or_return(email):
+        user = User(email=email)
         try:
-            db.users.insert_one({"email": email})
+            user.save()
         except DuplicateKeyError:
-            pass
-        return User.from_dict(db.users.find_one({"email": email}))
+            return User.objects.get({"email": email})
+        return user
 
-    @staticmethod
-    def find(_id=None, email=None):
-        assert _id is not None or email is not None
-        if _id is not None:
-            query = {"_id": _id}
-        elif email is not None:
-            query = {"email": email}
-        user = db.users.find_one(query)
-        if user is None:
-            raise UserNotFound()
-        return User.from_dict(user)
+    def set_password(self, password):
+        self.passhash = generate_password_hash(password)
+        User.objects.raw({"_id": self._id}).update(
+            {"$set": {"passhash": self.passhash}}
+        )
 
-    @staticmethod
-    def from_dict(user):
-        return User(user["_id"], user["email"], user.get("passhash"))
+    def verify_password(self, password):
+        return check_password_hash(self.passhash, password)
+
+
+class Flag(MongoModel):
+    sender = fields.ReferenceField(User)
+    timestamp = fields.DateTimeField()
+    version = fields.ReferenceField(Version)
 
     def set_password(self, password):
         self.passhash = generate_password_hash(password)
@@ -73,30 +83,3 @@ class User:
                 else:
                     self._banned_until = 0
         return self._banned_until
-
-    def is_owner(self, page):
-        return self._id == page.owner
-
-    def can_edit(self, page):
-        if is_owner(page):
-            return True
-        if page.is_frozen:
-            return False
-        return timestamp() > self.banned_until
-
-
-def is_owner():
-    if g.user is None:
-        return False
-    return g.user.is_owner(g.page)
-
-
-def can_edit():
-    if g.user is None:
-        return False
-    return g.user.can_edit(g.page)
-
-
-@app.context_processor
-def inject_permissions():
-    return dict(is_owner=is_owner, can_edit=can_edit)

@@ -1,6 +1,4 @@
-from .page import Page, PageContent, LazyVersions
-from .app import db
-from .model import Model
+from .page import Page, Version, VersionDiff
 
 
 class UserPage(Page):
@@ -104,10 +102,11 @@ class UserVersion(Version):
     sections = fields.EmbeddedDocumentListField(Section)
     summary = fields.CharField()
     name = fields.CharField()
+    aka = fields.CharField()
 
     @property
     def title(self):
-        return self.name.replace(" ", "_").replace("/", "|")
+        return (self.name + "_" + self.aka).replace(" ", "_").replace("/", "|")
 
 
 class UserVersionDiff(VersionDiff):
@@ -121,7 +120,7 @@ class UserVersionDiff(VersionDiff):
 
     @property
     def name_changed(self):
-        return self.name != self.prev_name
+        return self.name != self.prev_name or self.aka != self.prev_aka
 
     @property
     def is_empty(self):

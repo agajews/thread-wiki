@@ -1,3 +1,6 @@
+from .page import Page, Version, VersionDiff
+
+
 class TopicPage(Page):
     versions = fields.ListField(fields.ReferenceField(TopicVersion))
     diffs = fields.ListField(fields.ReferenceField(TopicVersionDiff))

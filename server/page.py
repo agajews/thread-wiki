@@ -26,9 +26,33 @@ class Version(MongoModel):
     page = fields.ReferenceField(Page)
     timestamp = fields.DateTimeField()
     editor = fields.ReferenceField(User)
-    flag = fields.EmbeddedDocumentField(Flag)
+    flag = fields.ReferenceField(Flag, default=None)
 
-    def 
+    def flag(self):
+        assert g.user is not None
+        assert self.flag is None
+        flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
+        try:
+            flag.save()
+        except DuplicateKeyError:
+            raise AlreadyFlagged()
+        self.add_flag(flag)
+        self.editor.add_flag(self.flag)
+
+    def unflag(self):
+        assert self.flag is not None
+        assert g.user == self.flag.sender
+        flag = self.flag
+        self.remove_flag()
+        flag.delete()
+
+    def add_flag(self, flag):
+        self.flag = flag
+        Version.objects.raw({"_id": self._id}).update({"$set": {"flag": flag._id}})
+
+    def remove_flag(self):
+        self.flag = None
+        Version.objects.raw({"_id": self._id}).update({"$set": {"flag": None}})
 
 
 class VersionDiff(MongoModel):
