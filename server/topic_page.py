@@ -1,126 +1,106 @@
-from .page import Page, LazyVersions
-from .app import db
+class TopicPage(Page):
+    versions = fields.ListField(fields.ReferenceField(TopicVersion))
+    diffs = fields.ListField(fields.ReferenceField(TopicVersionDiff))
+
+    def add_version(self, version):
+        diff = TopicVersionDiff.compute(self.versions[-1], version)
+        if diff.is_empty:
+            raise EmptyEdit()
+        version.save()
+        diff.save()
+        self.versions.append(version)
+        self.diffs.append(diff)
+        self.add_title(version.title)
+        try:
+            self.save_if_fresh()
+        except RaceCondition:
+            version.delete()
+            diff.delete()
+            raise
+
+    def edit(self, sections, summary, name):
+        assert g.user is not None
+        version = TopicVersion(
+            page=self,
+            timestamp=timestamp(),
+            editor=g.user,
+            sections=sections,
+            summary=summary,
+            name=name,
+        )
+        self.add_version(version)
+
+    def restore(self, num):
+        assert 0 <= num < len(self.versions) - 1
+        version = self.versions[num]
+        self.edit(version.sections, version.summary, version.name)
+
+    @staticmethod
+    def create_or_return(sections, summary, name):
+        assert g.user is not None
+        version = TopicVersion(
+            sections=sections,
+            summary=summary,
+            name=name,
+            timestamp=timestamp(),
+            editor=g.user,
+        )
+        diff = VersionDiff.compute(empty_version, version)
+        version.save()
+        diff.save()
+        page = TopicPage(titles=[version.title], versions=[version], diffs=[diff])
+        try:
+            page.save()
+        except DuplicateKeyError:
+            version.delete()
+            diff.delete()
+            return Page.objects.get({"titles": version.title})
+        return page
 
 
-class TopicPageContent(Model):
-    heading = Field(UserPageHeading)
-    summary = Field(Paragraph)
-    sections = List(Section)
-
-    @property
-    def title(self):
-        return self.heading.title
+empty_version = TopicVersion(sections=[], summary="", name="")
 
 
-class TopicPageHeading(Model):
-    name = Field(String)
-    aka = Field(String)
+class TopicVersion(Version):
+    sections = fields.EmbeddedDocumentListField(Section)
+    summary = fields.CharField()
+    name = fields.CharField()
 
     @property
     def title(self):
         return self.name.replace(" ", "_").replace("/", "|")
 
 
-empty_content = TopicPageContent(
-    heading=TopicPageHeading(name="", aka=""), summary=Paragraph(""), sections=[]
-)
-
-
-class TopicPageVersion(Model):
-    content = Field(UserPageContent)
-    diff = Field(UserPageVersionDiff)
-    timestamp = Field(Float)
-    editor = Field(ObjectRef)
-    num = Field(Int)
-    flag = Field(VersionFlag, required=False)
-
-
-class TopicPageHeadingDiff(Model):
-    heading_a = Field(UserPageHeading)
-    heading_b = Field(UserPageHeading)
-    changed = Field(Boolean)
-
-    @staticmethod
-    def compute(heading_a, heading_b, concise=False):
-        changed = heading_a == heading_b
-        return HeadingDiff(heading_a, heading_b, changed)
-
-
-class TopicPageVersionDiff(Model):
-    sections = List(SectionDiff)
-    summary = Field(ParagraphDiff)
-    heading = Field(UserPageHeadingDiff)
-
-
-class TopicPage(Page):
-    Version = TopicPageVersion
-
-    def __init__(self, _id, versions, title):
-        self._id = _id
-        self.versions = versions
-        self.title = title
-
-    @staticmethod
-    def from_dict(page):
-        return TopicPage(page["_id"], LazyVersions.from_dict(page), page["title"])
+class TopicVersionDiff(VersionDiff):
+    sections = fields.EmbeddedDocumentListField(SectionDiff)
+    summary_diff = fields.CharField()
+    summary_changed = fields.BooleanField()
+    name = fields.CharField()
+    prev_name = fields.CharField()
 
     @property
-    def heading(self):
-        return self.versions[-1].content.heading.name
+    def is_empty(self):
+        return not (
+            self.summary_changed
+            or self.name_changed
+            or any(not section.is_empty for section in self.sections)
+        )
+
+    @property
+    def name_changed(self):
+        return self.name != self.prev_name
 
     @staticmethod
-    def create_or_return(title, owner, content):
-        diff = VersionDiff.compute(empty_content, content)
-        version = TopicPageVersion(
-            content, diff, editor=g.user._id, timestamp=timestamp(), num=0
+    def compute(version_a, version_b):
+        sections = diff_sections(version_a.sections, version_b.sections)
+        summary_diff = markup_changes(version_a.summary, version_b.summary)
+        name = version_b.name
+        prev_name = version_a.name
+        return TopicVersionDiff(
+            version_a=version_a,
+            version_b=version_b,
+            sections=sections,
+            summary_diff=summary_diff,
+            name=name,
+            prev_name=prev_name,
         )
-        try:
-            insert = db.pages.insert_one(
-                {
-                    "titles": [title],
-                    "title": title,
-                    "type": "topic",
-                    "num_versions": 1,
-                    "versions": [version.to_dict()],
-                }
-            )
-        except DuplicateKeyError:
-            return Page.find(title)
-        versions = LazyVersions(title, 1, {0: version})
-        return TopicPage(insert.inserted_id, versions, title)
-
-    def add_version(self, version):
-        self.versions.append(version)
-        self.title = version.content.title
-        try:
-            update = db.pages.update_one(
-                {"titles": self.title, "versions": {"$size": len(self.versions)}},
-                {
-                    "$set": {
-                        "num_versions": len(self.versions) + 1,
-                        "title": self.title,
-                    },
-                    "$push": {"versions": version.to_dict()},
-                    "$addToSet": {"titles": self.title},
-                },
-            )
-        except DuplicateKeyError:
-            raise DuplicateKey()
-        if update.modified_count == 0:
-            raise RaceCondition()
-
-    def edit(self, content):
-        if content == self.versions[-1].content:
-            raise EmptyEdit()
-        diff = VersionDiff.compute(self.versions[-1].content, content)
-        version = UserPageVersion(
-            content=content,
-            diff=diff,
-            editor=g.user._id,
-            timestamp=timestamp(),
-            num=len(self.versions),
-        )
-        self.add_version(version)
-
-    def restore_version(self, num):
-        self.edit(self.versions[num].content)

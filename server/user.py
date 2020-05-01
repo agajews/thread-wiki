@@ -3,6 +3,19 @@ from pymongo.errors import DuplicateKeyError
 from .app import app
 
 
+class User(MongoModel):
+    email = fields.EmailField()
+    passhash = fields.CharField(default=None)
+    flags = fields.EmbeddedDocumentListField(Flag)
+    banned_until = fields.DateTimeField(default=None)
+
+
+class Flag(EmbeddedMongoModel):
+    sender = fields.ReferenceField(User)
+    timestamp = fields.DateTimeField()
+    version = fields.ReferenceField(Version)
+
+
 class User:
     def __init__(self, _id, email, passhash=None):
         self._id = _id

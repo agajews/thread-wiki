@@ -3,194 +3,149 @@ from .app import db
 from .model import Model
 
 
-class UserPageContent(Model):
-    heading = Field(UserPageHeading)
-    summary = Field(Paragraph)
-    sections = List(Section)
-
-    @property
-    def title(self):
-        return self.heading.title
-
-
-class UserPageHeading(Model):
-    name = Field(String)
-    aka = Field(String)
-
-    @property
-    def title(self):
-        return (self.name + "_" + self.aka).replace(" ", "_").replace("/", "|")
-
-
-empty_content = UserPageContent(
-    heading=UserPageHeading(name="", aka=""), summary=Paragraph(""), sections=[]
-)
-
-
-class UserPageVersion(Model):
-    content = Field(UserPageContent)
-    diff = Field(UserPageVersionDiff)
-    primary_diff = Field(UserPageVersionDiff)
-    is_primary = Field(Boolean)
-    timestamp = Field(Float)
-    editor = Field(ObjectRef)
-    num = Field(Int)
-    flag = Field(VersionFlag, required=False)
-
-
-class UserPageHeadingDiff(Model):
-    heading_a = Field(UserPageHeading)
-    heading_b = Field(UserPageHeading)
-    changed = Field(Boolean)
-
-    @staticmethod
-    def compute(heading_a, heading_b, concise=False):
-        changed = heading_a == heading_b
-        return HeadingDiff(heading_a, heading_b, changed)
-
-
-class UserPageVersionDiff(Model):
-    sections = List(SectionDiff)
-    summary = Field(ParagraphDiff)
-    heading = Field(UserPageHeadingDiff)
-
-
 class UserPage(Page):
-    Version = UserPageVersion
-
-    def __init__(self, _id, versions, title, owner, primary, is_frozen):
-        self._id = _id
-        self.versions = versions
-        self.title = title
-        self.owner = owner
-        self.is_frozen = is_frozen
-        self._primary = primary
-
-    @property
-    def primary(self):
-        if self._primary is None:
-            page = db.pages.find_one({"titles": self.title}, {"primary": 1})
-            if page is None:
-                raise PageNotFound()
-            self._primary = UserPageContent.from_dict(page["primary"])
-        return self._primary
-
-    @property
-    def heading(self):
-        return self.versions[-1].content.heading.name
-
-    @staticmethod
-    def from_dict(page):
-        return UserPage(
-            page["_id"],
-            LazyVersions.from_dict(page),
-            page["title"],
-            page["owner"],
-            page["is_frozen"],
-            UserPageContent.from_dict(page["primary"]),
-        )
-
-    @staticmethod
-    def create_or_return(title, owner, content):
-        diff = VersionDiff.compute(empty_content, content)
-        primary = empty_content
-        primary_diff = VersionDiff.compute(primary, content, concise=True)
-        version = UserPageVersion(
-            content,
-            diff,
-            primary_diff,
-            is_primary=False,
-            editor=g.user._id,
-            timestamp=timestamp(),
-            num=0,
-        )
-        is_frozen = False
-        try:
-            insert = db.pages.insert_one(
-                {
-                    "titles": [title],
-                    "title": title,
-                    "type": "user",
-                    "owner": owner,
-                    "primary": primary.to_dict(),
-                    "num_versions": 1,
-                    "versions": [version.to_dict()],
-                    "is_frozen": is_frozen,
-                }
-            )
-        except DuplicateKeyError:
-            return Page.find(title)
-        versions = LazyVersions(title, 1, {0: version})
-        return UserPage(insert.inserted_id, versions, title, owner, primary, is_frozen)
+    versions = fields.ListField(fields.ReferenceField(UserVersion))
+    diffs = fields.ListField(fields.ReferenceField(UserVersionDiff))
+    primary_diffs = fields.ListField(fields.ReferenceField(UserVersionDiff))
+    primary_version = fields.ReferenceField(UserVersion)
+    owner = fields.ReferenceField(User)
+    is_frozen = fields.BooleanField(default=False)
 
     def add_version(self, version):
-        self.versions.append(version)
-        self.title = version.content.title
-        stuff_to_set = {"num_versions": len(self.versions) + 1, "title": self.title}
-        if version.is_primary:
-            self.primary = version.content
-            stuff_to_set["primary"] = self.primary
-        try:
-            update = db.pages.update_one(
-                {"titles": self.title, "versions": {"$size": len(self.versions)}},
-                {
-                    "$set": stuff_to_set,
-                    "$push": {"versions": version.to_dict()},
-                    "$addToSet": {"titles": self.title},
-                },
-            )
-        except DuplicateKeyError:
-            raise DuplicateKey()
-        if update.modified_count == 0:
-            raise RaceCondition()
-
-    def accept_latest(self):
-        self.versions[-1].is_primary = True
-        self.primary = self.versions[-1].content
-        self.versions[-1].primary_diff = VersionDiff.compute(
-            self.primary, self.primary, concise=True
-        )
-        update = db.pages.update_one(
-            {"titles": self.title, "versions": {"$size": len(self.versions)}},
-            {
-                "$set": {
-                    "primary": self.primary,
-                    "versions.{}".format(self.versions[-1].num): self.versions[-1],
-                }
-            },
-        )
-        if update.modified_count == 0:
-            raise RaceCondition()
-
-    def edit(self, content):
-        if content == self.versions[-1].content:
+        diff = UserVersionDiff.compute(self.versions[-1], version)
+        if diff.is_empty:
             raise EmptyEdit()
-        diff = VersionDiff.compute(self.versions[-1].content, content)
-        is_primary = g.user.is_owner(self)
-        if is_primary:
-            self.primary = content
-        primary_diff = VersionDiff.compute(self.primary, content, concise=True)
-        version = UserPageVersion(
-            content=content,
-            diff=diff,
-            primary_diff=primary_diff,
-            is_primary=is_primary,
-            editor=g.user._id,
+        if version.is_primary:
+            self.primary_version = version
+        primary_diff = UserVersionDiff.compute(
+            self.primary_version, version, concise=True
+        )
+        version.save()
+        diff.save()
+        primary_diff.save()
+        self.versions.append(version)
+        self.diffs.append(diff)
+        self.primary_diffs.append(primary_diff)
+        self.add_title(version.title)
+        try:
+            self.save_if_fresh()
+        except RaceCondition:
+            version.delete()
+            diff.delete()
+            primary_diff.delete()
+            raise
+
+    def edit(self, sections, summary, name, aka):
+        assert g.user is not None
+        version = UserVersion(
+            page=self,
             timestamp=timestamp(),
-            num=len(self.versions),
+            editor=g.user,
+            sections=sections,
+            summary=summary,
+            name=name,
+            aka=aka,
+            is_primary=g.user == self.owner,
         )
         self.add_version(version)
 
-    def restore_version(self, num):
-        if num == len(self.versions) - 1 and g.user.is_owner(self):
-            self.accept_latest()
-        else:
-            self.edit(self.versions[num].content)
+    def restore(self, num):
+        assert 0 <= num < len(self.versions) - 1
+        version = self.versions[num]
+        self.edit(version.sections, version.summary, version.name, version.aka)
+
+    @staticmethod
+    def create_or_return(sections, summary, name, aka, owner):
+        assert g.user is not None
+        version = UserVersion(
+            sections=sections,
+            summary=summary,
+            name=name,
+            aka=aka,
+            timestamp=timestamp(),
+            editor=g.user,
+            is_primary=False,
+        )
+        diff = UserVersionDiff.compute(empty_version, version)
+        primary_diff = UserVersionDiff.compute(empty_version, version)
+        version.save()
+        diff.save()
+        primary_diff.save()
+        page = UserPage(
+            titles=[version.title],
+            versions=[version],
+            diffs=[diff],
+            primary_diffs=[primary_diff],
+            primary_version=version,
+            owner=owner,
+        )
+        try:
+            page.save()
+        except DuplicateKeyError:
+            version.delete()
+            diff.delete()
+            primary_diff.delete()
+            return Page.objects.get({"titles": version.title})
+        return page
 
     def freeze(self):
+        assert g.user == self.owner
         self.is_frozen = True
-        db.pages.update_one({"titles": self.title}, {"$set": {"is_frozen": True}})
+        # this can overwrite a pending edit from someone else, but that's ok
+        self.save()
 
     def unfreeze(self):
-        self.is_frozen = False
-        db.pages.update_one({"titles": self.title}, {"$set": {"is_frozen": False}})
+        assert g.user == self.owner
+        self.is_frozen = True
+        self.save()
+
+
+class UserVersion(Version):
+    sections = fields.EmbeddedDocumentListField(Section)
+    summary = fields.CharField()
+    name = fields.CharField()
+
+    @property
+    def title(self):
+        return self.name.replace(" ", "_").replace("/", "|")
+
+
+class UserVersionDiff(VersionDiff):
+    sections = fields.EmbeddedDocumentListField(SectionDiff)
+    summary_diff = fields.CharField()
+    summary_changed = fields.BooleanField()
+    name = fields.CharField()
+    prev_name = fields.CharField()
+    aka = fields.CharField()
+    prev_aka = fields.CharField()
+
+    @property
+    def name_changed(self):
+        return self.name != self.prev_name
+
+    @property
+    def is_empty(self):
+        return not (
+            self.summary_changed
+            or self.name_changed
+            or any(not section.is_empty for section in self.sections)
+        )
+
+    @staticmethod
+    def compute(version_a, version_b):
+        sections = diff_sections(version_a.sections, version_b.sections)
+        summary_diff = markup_changes(version_a.summary, version_b.summary)
+        name = version_b.name
+        prev_name = version_a.name
+        aka = version_b.aka
+        prev_aka = version_a.aka
+        return TopicVersionDiff(
+            version_a=version_a,
+            version_b=version_b,
+            sections=sections,
+            summary_diff=summary_diff,
+            name=name,
+            prev_name=prev_name,
+            aka=aka,
+            prev_aka=prev_aka,
+        )
