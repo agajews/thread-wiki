@@ -33,6 +33,11 @@ class User(MongoModel):
             {"$set": {"banned_until": self.banned_until}}
         )
 
+    def is_banned(self):
+        if self.banned_until is None:
+            return False
+        return self.banned_until > timestamp()
+
     @staticmethod
     def create_or_return(email):
         user = User(email=email)
@@ -50,36 +55,3 @@ class User(MongoModel):
 
     def verify_password(self, password):
         return check_password_hash(self.passhash, password)
-
-
-class Flag(MongoModel):
-    sender = fields.ReferenceField(User)
-    timestamp = fields.DateTimeField()
-    version = fields.ReferenceField(Version)
-
-    def set_password(self, password):
-        self.passhash = generate_password_hash(password)
-        db.users.update_one(
-            {"email": self.email}, {"$set": {"passhash": self.passhash}}
-        )
-
-    def verify_password(self, password):
-        return check_password_hash(self.passhash, password)
-
-    def login(self, password):
-        g.reissue_token = True
-        if self.verify_password(password):
-            g.user = self
-        else:
-            raise IncorrectPassword()
-
-    @property
-    def banned_until(self):
-        if self._banned_until is None:
-            flags = db.flags.find_one({"user": self._id})
-            if flags is not None:
-                if "banned_until" in flags:
-                    self._banned_until = flags["banned_until"]
-                else:
-                    self._banned_until = 0
-        return self._banned_until

@@ -60,6 +60,13 @@ class TopicPage(Page):
             return Page.objects.get({"titles": version.title})
         return page
 
+    def can_edit(self):
+        if g.user is None:
+            return False
+        if g.user.is_banned:
+            return False
+        return True
+
 
 empty_version = TopicVersion(sections=[], summary="", name="")
 

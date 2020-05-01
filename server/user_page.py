@@ -97,6 +97,17 @@ class UserPage(Page):
         self.is_frozen = True
         self.save()
 
+    def can_edit(self):
+        if g.user is None:
+            return False
+        if g.user == self.owner:
+            return True
+        if self.is_frozen:
+            return False
+        if g.user.is_banned:
+            return False
+        return True
+
 
 class UserVersion(Version):
     sections = fields.EmbeddedDocumentListField(Section)

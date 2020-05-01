@@ -28,25 +28,12 @@ def is_valid_email(email):
 def create_user_page(email):
     summary, sections = separate_sections(generate_user_template(email))
     owner = User.create_or_return(email)
-    heading = UserPageHeading(email, generate_aka())
-    content = UserPageContent(heading, summary, sections)
-    return UserPage.create_or_return(
-        title=email,
-        owner=owner._id,
-        content=content,
-        editor=g.user._id,
-        timestamp=timestamp(),
-    )
+    return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
 
 
 def create_topic_page(name):
     summary, sections = separate_sections(generate_topic_template(name))
-    owner = Topic.create_or_return(name)
-    heading = TopicPageHeading(name)
-    content = TopicPageContent(heading, summary, sections)
-    return TopicPage.create_or_return(
-        title=name, content=content, editor=g.user._id, timestamp=timestamp()
-    )
+    return TopicPage.create_or_return(sections, summary, name)
 
 
 def cast_param(val, cls):
