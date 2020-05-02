@@ -52,6 +52,20 @@ class UserPage(Page):
         version = self.versions[num]
         self.edit(version.sections, version.summary, version.name, version.aka)
 
+    def accept(self):
+        assert g.user == self.owner
+        self.primary_version = self.versions[-1]
+        primary_diff = UserVersionDiff.compute(
+            self.primary_version, self.primary_version, concise=True
+        )
+        primary_diff.save()
+        self.primary_diffs[-1] = primary_diff
+        try:
+            self.save_if_fresh()
+        except RaceCondition:
+            primary_diff.delete()
+            raise
+
     @staticmethod
     def create_or_return(sections, summary, name, aka, owner):
         assert g.user is not None
@@ -65,7 +79,7 @@ class UserPage(Page):
             is_primary=False,
         )
         diff = UserVersionDiff.compute(empty_version, version)
-        primary_diff = UserVersionDiff.compute(empty_version, version)
+        primary_diff = UserVersionDiff.compute(empty_version, version, concise=True)
         version.save()
         diff.save()
         primary_diff.save()

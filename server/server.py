@@ -281,7 +281,7 @@ def update_user_page():
         html["section-{}".format(idx)] = render_template(
             "user-page-section.html", section=display.sections_dict[idx]
         )
-    return rerender(html, num_versions=len(g.page.versions))
+    return rerender(html, freshness=g.page.freshness)
 
 
 @topic_page_errors
@@ -292,19 +292,27 @@ def update_topic_page():
     update_summary = False
     update_sections = []
 
-    content = g.page.versions[-1].content.copy()
+    old_version = g.page.versions[-1]
     update = get_param("update", dict)
+    name = old_version.name
+    summary = old_version.summary
+    sections = old_version.sections
     if "name" in update:
+        name = sanitize_text(update["name"])
         update_heading = True
-        content.heading = UserPageHeading(sanitize_text(update["name"]))
     if "summary" in update:
+        name = sanitize_html(update["summary"])
         update_summary = True
-        content.summary = sanitize_html(update["summary"])
     if "sections" in update:
-        for key, body in cast_param(update["sections"], dict).keys():
+        for key, body in cast_param(update["sections"], dict).items():
             idx = cast_param(key, int)
-            update_sections.append(idx)
-            content.sections[idx].body = sanitize_html(body)
+            if not 0 <= idx < len(sections):
+                raise Malformed()
+            sections[idx] = Section(
+                heading=sections[idx].heading,
+                level=sections[idx].level,
+                body=sanitize_html(body),
+            )
 
     try:
         g.page.edit(content)
@@ -312,7 +320,7 @@ def update_topic_page():
         pass
 
     html = {}
-    display = g.page.versions[-1].content
+    display = g.page.versions[-1]
     if update_heading:
         html["heading"] = render_template(
             "topic-page-heading.html", heading=display.heading
@@ -325,13 +333,13 @@ def update_topic_page():
         html["section-{}".format(idx)] = render_template(
             "topic-page-section.html", section=display.sections_dict[idx]
         )
-    return rerender(html, num_versions=len(g.page.versions))
+    return rerender(html, freshness=g.page.freshness)
 
 
 @app.route("/page/<title>/update/", methods=["POST"])
 @error_handling
 def update(title):
-    g.page = Page.find(title, preload_primary=True)
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
         return update_user_page()
     elif isinstance(g.page, TopicPage):
@@ -342,7 +350,9 @@ def update(title):
 @can_edit
 @check_race
 def restore_version(num):
-    g.page.restore_version(num)
+    if not 0 <= num < len(g.page.versions):
+        raise Malformed()
+    g.page.restore(num)
     return reload()
 
 
@@ -357,7 +367,9 @@ def restore(title):
 @page_errors
 @can_edit
 def flag_version(num):
-    g.page.flag_version(num)
+    if not 0 <= num < len(g.page.versions) - 1:
+        raise Malformed()
+    g.page.versions[num].flag()
     return reload()
 
 
@@ -365,14 +377,16 @@ def flag_version(num):
 @error_handling
 def flag(title):
     num = get_param("num", int)
-    g.page = Page.find(title, preload_version=num)
+    g.page = Page.find(title)
     return flag_version(num)
 
 
 @page_errors
 @can_edit
-def unflag_version(num):
-    g.page.unflag_version(num)
+def flag_version(num):
+    if not 0 <= num < len(g.page.versions) - 1:
+        raise Malformed()
+    g.page.versions[num].unflag()
     return reload()
 
 
@@ -380,7 +394,7 @@ def unflag_version(num):
 @error_handling
 def unflag(title):
     num = get_param("num", int)
-    g.page = Page.find(title, preload_version=num)
+    g.page = Page.find(title)
     return unflag_version(num)
 
 
@@ -389,9 +403,11 @@ def unflag(title):
 def version(title, num):
     g.page = Page.find(title, preload_version=num)
     if isinstance(g.page, UserPage):
-        return render_template("user-page-version.html", version=g.page.versions[num])
+        return render_template(
+            "user-page-version.html", display=g.page.primary_diffs[num]
+        )
     elif isinstance(g.page, TopicPage):
-        return render_template("topic-page-version.html", version=g.page.versions[num])
+        return render_template("topic-page-version.html", display=g.page.versions[num])
 
 
 @can_edit
@@ -407,7 +423,7 @@ def view_topic_history():
 @app.route("/page/<title>/history/")
 @error_handling
 def history(title):
-    g.page = Page.find(title, preload_all_versions=True)
+    g.page = Page.find(title)
     if isinstance(page, UserPage):
         return view_user_history()
     elif isinstance(page, TopicPage):

@@ -42,6 +42,7 @@ class Version(MongoModel):
         assert g.user is not None
         assert self.flag is None
         self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
+        # ordering is tricky here, using unique index as race arbiter
         try:
             self.flag.save()
         except DuplicateKeyError:
@@ -54,7 +55,9 @@ class Version(MongoModel):
         assert g.user == self.flag.sender
         flag = self.flag
         self.flag = None
+        # ordering is also tricky
         self.save()
+        self.editor.remove_flag(flag)
         flag.delete()
 
 
