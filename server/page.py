@@ -36,34 +36,22 @@ class Version(MongoModel):
     page = fields.ReferenceField(Page)
     timestamp = fields.DateTimeField()
     editor = fields.ReferenceField(User)
-    flag = fields.ReferenceField(Flag, default=None)
+    flag = fields.EmbeddedDocumentField(Flag, default=None)
 
     def flag(self):
         assert g.user is not None
         assert self.flag is None
         self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
-        # ordering is tricky here, using unique index as race arbiter
-        try:
-            self.flag.save()
-        except DuplicateKeyError:
+        update = Version.objects.raw({"_id": self._id, "flag": None}).update(
+            {"flag": self.flag.to_son()}
+        )
+        if update.modified_count == 0:
             raise AlreadyFlagged()
-        # if a server crashes here or the next line, could have mild inconsistencies
-        # where there is a flag that's in the database or that the version knows about
-        # but that doesn't count towards bans
-        self.save()
-        self.editor.add_flag(self.flag)
 
     def unflag(self):
         assert self.flag is not None
         assert g.user == self.flag.sender
-        flag = self.flag
-        self.flag = None
-        # ordering is also tricky
-        self.save()
-        self.editor.remove_flag(flag)
-        # important that delete comes last, because otherwise if the server crashes
-        # around here, could have remaining references to a deleted object
-        flag.delete()
+        Version.objects.raw({"_id": self._id}).update({"flag": None})
 
 
 class VersionDiff(MongoModel):

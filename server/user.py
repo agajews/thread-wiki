@@ -7,36 +7,37 @@ from .app import app
 class User(MongoModel):
     email = fields.EmailField()
     passhash = fields.CharField(default=None)
-    flags = fields.ListField(fields.ReferenceField(Flag))
-    banned_until = fields.DateTimeField(default=None)
-
-    def add_flag(self, flag):
-        self.flags.append(flag)
-        User.objects.raw({"_id": self._id}).update({"$push": {"flags": flag._id}})
-        self.update_ban()
-
-    def remove_flag(self, flag):
-        self.flags.remove(flag)
-        User.objects.raw({"_id": self._id}).update({"$pull": {"flags": flag._id}})
-        self.update_ban()
-
-    def update_ban(self):
-        first = None
-        self.banned_until = None
-        for flag in self.flags:
-            if first is None:
-                first = flag.sender
-            elif first != flag.sender:
-                first = None
-                self.banned_until = flag.timestamp + timedelta(days=1)
-        User.objects.raw({"_id": self._id, "flags": self.flags.to_son()}).update(
-            {"$set": {"banned_until": self.banned_until}}
-        )
 
     def is_banned(self):
         if self.banned_until is None:
             return False
         return self.banned_until > timestamp()
+
+    @property
+    def banned_until(self):
+        if not hasattr(self, "_banned_until"):
+            self._banned_until = None
+            first = None
+            for flag in self.flags:
+                if first is None:
+                    first = flag.sender
+                elif first != flag.sender:
+                    first = None
+                    self._banned_until = flag.timestamp + timedelta(days=1)
+        return self._banned_until
+
+    @property
+    def flags(self):
+        if not hasattr(self, "_flags"):
+            versions = (
+                Version.objects.raw(
+                    {"editor": self._id, "flag.sender": {"$exists": True}}
+                )
+                .only("flag")
+                .all()
+            )
+            self._flags = [version.flag for version in versions]
+        return self._flags
 
     @staticmethod
     def create_or_return(email):
