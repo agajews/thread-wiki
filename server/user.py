@@ -55,3 +55,9 @@ class User(MongoModel):
 
     def verify_password(self, password):
         return check_password_hash(self.passhash, password)
+
+    def find(self, email):
+        try:
+            return User.objects.get({"email": email})
+        except DoesNotExist:
+            raise UserNotFound()

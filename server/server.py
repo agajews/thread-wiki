@@ -472,8 +472,6 @@ def auth_errors(fun):
             return error("Can't find that account")
         except IncorrectPassword:
             return error("Incorrect password")
-        except PasswordNotSet:
-            return error("Password not set")
 
     return wrapped_fun
 
@@ -483,7 +481,10 @@ def auth_errors(fun):
 @auth_errors
 def authenticate():
     user = User.find(email=get_param("email"))
-    user.login(get_param("password"))
+    if not user.verify_password(get_param("password")):
+        raise IncorrectPassword()
+    g.user = user
+    g.reissue_token = True
     return reload()
 
 

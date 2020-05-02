@@ -47,6 +47,9 @@ class Version(MongoModel):
             self.flag.save()
         except DuplicateKeyError:
             raise AlreadyFlagged()
+        # if a server crashes here or the next line, could have mild inconsistencies
+        # where there is a flag that's in the database or that the version knows about
+        # but that doesn't count towards bans
         self.save()
         self.editor.add_flag(self.flag)
 
@@ -58,6 +61,8 @@ class Version(MongoModel):
         # ordering is also tricky
         self.save()
         self.editor.remove_flag(flag)
+        # important that delete comes last, because otherwise if the server crashes
+        # around here, could have remaining references to a deleted object
         flag.delete()
 
 
