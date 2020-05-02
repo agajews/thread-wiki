@@ -34,5 +34,9 @@ class VersionNotFound(UserError):
     pass
 
 
+class UserNotFound(UserError):
+    pass
+
+
 class Malformed(UserError):
     pass
