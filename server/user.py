@@ -1,6 +1,7 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
-from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo.operations import IndexModel
 from pymongo.errors import DuplicateKeyError
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 
 from .app import app
@@ -10,6 +11,9 @@ from .page import Flag
 class User(MongoModel):
     email = fields.EmailField()
     passhash = fields.CharField(default=None)
+
+    class Meta:
+        indexes = [IndexModel("email", unique=True)]
 
     def is_banned(self):
         if self.banned_until is None:
@@ -33,9 +37,7 @@ class User(MongoModel):
     def flags(self):
         if not hasattr(self, "_flags"):
             versions = (
-                Version.objects.raw(
-                    {"editor": self._id, "flag.sender": {"$exists": True}}
-                )
+                Version.objects.raw({"editor": self._id, "is_flagged": True})
                 .only("flag")
                 .all()
             )

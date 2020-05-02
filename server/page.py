@@ -1,6 +1,7 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymodm.errors import DoesNotExist
 from pymongo.errors import DuplicateKeyError
+from pymongo.operations import IndexModel
 
 from .sections import Section, SectionDiff, separate_sections, diff_sections
 from .html_utils import markup_changes
@@ -13,6 +14,9 @@ class Page(MongoModel):
     # TODO: markup indexes
     titles = fields.ListField(fields.CharField())
     freshness = fields.IntegerField(default=0)
+
+    class Meta:
+        indexes = [IndexModel("titles", unique=True)]
 
     def save_if_fresh(self):
         old_freshness = self.freshness
@@ -48,13 +52,17 @@ class Version(MongoModel):
     timestamp = fields.DateTimeField()
     editor = fields.ReferenceField(User)
     flag = fields.EmbeddedDocumentField(Flag, default=None)
+    is_flagged = fields.BooleanField()  # just bookkeeping for the index
+
+    class Meta:
+        indexes = [IndexModel([("editor", ASCENDING), ("is_flagged", ASCENDING)])]
 
     def flag(self):
         assert g.user is not None
         assert self.flag is None
         self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
         update = Version.objects.raw({"_id": self._id, "flag": None}).update(
-            {"flag": self.flag.to_son()}
+            {"flag": self.flag.to_son(), "is_flagged": True}
         )
         if update.modified_count == 0:
             raise AlreadyFlagged()
@@ -62,7 +70,9 @@ class Version(MongoModel):
     def unflag(self):
         assert self.flag is not None
         assert g.user == self.flag.sender
-        Version.objects.raw({"_id": self._id}).update({"flag": None})
+        Version.objects.raw({"_id": self._id}).update(
+            {"flag": None, "is_flagged": False}
+        )
 
 
 class VersionDiff(MongoModel):
