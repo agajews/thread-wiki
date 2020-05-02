@@ -6,7 +6,6 @@ from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes
 from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp
-from .user import User
 from .errors import *
 
 
@@ -15,7 +14,7 @@ class UserPage(Page):
     diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
     primary_diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
     primary_version = fields.ReferenceField("UserVersion")
-    owner = fields.ReferenceField(User)
+    owner = fields.ReferenceField("User")
     is_frozen = fields.BooleanField(default=False)
 
     def add_version(self, version, is_primary=False):

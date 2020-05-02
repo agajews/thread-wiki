@@ -7,7 +7,6 @@ from flask import g
 
 from .sections import Section, SectionDiff, separate_sections, diff_sections
 from .html_utils import markup_changes
-from .user import User
 from .app import timestamp
 from .errors import *
 
@@ -52,7 +51,7 @@ class Page(MongoModel):
 class PageVersion(MongoModel):
     page = fields.ReferenceField(Page)
     timestamp = fields.DateTimeField()
-    editor = fields.ReferenceField(User)
+    editor = fields.ReferenceField("User")
     flag = fields.EmbeddedDocumentField("Flag")
     is_flagged = fields.BooleanField(default=False)
 
@@ -62,6 +61,7 @@ class PageVersion(MongoModel):
     def set_flag(self):
         assert g.user is not None
         assert not self.is_flagged
+        assert g.user != self.editor
         self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
         modified_count = PageVersion.objects.raw(
             {"_id": self._id, "is_flagged": False}
@@ -84,5 +84,5 @@ class VersionDiff(MongoModel):
 
 class Flag(EmbeddedMongoModel):
     version = fields.ReferenceField(PageVersion)
-    sender = fields.ReferenceField(User)
+    sender = fields.ReferenceField("User")
     timestamp = fields.DateTimeField()

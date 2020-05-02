@@ -6,7 +6,6 @@ from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes
 from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp
-from .user import User
 from .errors import *
 
 

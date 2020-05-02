@@ -388,6 +388,8 @@ def flag_version(num):
         raise Malformed()
     if g.page.versions[num].is_flagged:
         raise AlreadyFlagged()
+    if g.page.versions[num].editor == g.user:
+        raise FlagYourself
     g.page.versions[num].set_flag()
     return reload()
 

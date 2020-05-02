@@ -6,8 +6,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 from flask import g
 
-from .app import app
+from .app import app, timestamp
 from .errors import *
+from .page import PageVersion
 
 
 class User(MongoModel):
@@ -17,6 +18,7 @@ class User(MongoModel):
     class Meta:
         indexes = [IndexModel("email", unique=True)]
 
+    @property
     def is_banned(self):
         if self.banned_until is None:
             return False
@@ -39,7 +41,7 @@ class User(MongoModel):
     def flags(self):
         if not hasattr(self, "_flags"):
             versions = (
-                Version.objects.raw({"editor": self._id, "is_flagged": True})
+                PageVersion.objects.raw({"editor": self._id, "is_flagged": True})
                 .only("flag")
                 .all()
             )
