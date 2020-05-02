@@ -1,16 +1,16 @@
-<div id="loginmodule">
+<div>
   {% if g.user %}
     <p>Welcome, {{ g.user.email }}!
-      <button type="button" onclick="logout(event)">Logout</button>
+      <button type="button" onclick="logout()">Logout</button>
     </p>
   {% else %}
-    <div id="loginerror"></div>
-    <form id="loginform" onsubmit="login(event)">
-      <span class="formrow">
+    <div id="error-login"></div>
+    <form id="login-form" onsubmit="login(event)">
+      <span class="form-row">
         <label for="email">Email:</label>
         <input type="email" name="email">
       </span>
-      <span class="formrow">
+      <span class="form-row">
         <label for="password">Password:</label>
         <input type="password" name="password"></span>
       <input type="submit">
@@ -21,22 +21,22 @@
 <script>
   function login(event) {
     event.preventDefault();
-    let form = document.getElementById("loginform");
+    let form = document.getElementById("login-form");
     signal("{{ url_for('authenticate') }}", {
         email: form.elements["email"].value,
         password: form.elements["password"].value,
         href: window.location.href,
+        errorid: 'error-login',
     });
   }
 
-  function logout(event) {
-    event.preventDefault();
+  function logout() {
     signal("{{ url_for('logout') }}", {href: window.location.href});
   }
 </script>
 
 <style>
-  .formrow {
+  .form-row {
     display: inline-block;
   }
 </style>

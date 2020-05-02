@@ -93,7 +93,7 @@ def user_page_errors(fun):
         try:
             return fun(*args, **kwargs)
         except DuplicatePage:
-            return error("Lel, someone with the same name already has that nickname!")
+            return error("Lel, someone with the same name already has that aka!")
 
     return wrapped_fun
 
@@ -270,13 +270,9 @@ def update_user_page():
     html = {}
     display = g.page.primary_diffs[-1]
     if update_heading:
-        html["heading"] = render_template(
-            "user-page-heading.html", name=display.name, aka=display.aka
-        )
+        html["heading"] = render_template("user-page-heading.html", display=display)
     if update_summary:
-        html["summary"] = render_template(
-            "user-page-summary.html", summary=display.summary
-        )
+        html["summary"] = render_template("user-page-summary.html", display=display)
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
             "user-page-section.html", section=display.sections_dict[idx]
@@ -322,13 +318,9 @@ def update_topic_page():
     html = {}
     display = g.page.versions[-1]
     if update_heading:
-        html["heading"] = render_template(
-            "topic-page-heading.html", heading=display.heading
-        )
+        html["heading"] = render_template("topic-page-heading.html", display=display)
     if update_summary:
-        html["summary"] = render_template(
-            "topic-page-summary.html", summary=display.summary
-        )
+        html["summary"] = render_template("topic-page-summary.html", display=display)
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
             "topic-page-section.html", section=display.sections_dict[idx]
@@ -364,10 +356,29 @@ def restore(title):
     return restore_version()
 
 
+@user_page_errors
+@is_owner
+@check_race
+def accept_version():
+    g.page.accept()
+    return reload()
+
+
+@app.route("/page/<title>/accept/", methods=["POST"])
+@error_handling
+def restore(title):
+    num = get_param("num", int)
+    g.page = Page.find(title, preload_primary=True)
+    if isinstance(g.page, UserPage):
+        return accept_version()
+    else:
+        raise Malformed()
+
+
 @page_errors
 @can_edit
 def flag_version(num):
-    if not 0 <= num < len(g.page.versions) - 1:
+    if not 1 <= num < len(g.page.versions) - 1:
         raise Malformed()
     g.page.versions[num].flag()
     return reload()
@@ -383,8 +394,8 @@ def flag(title):
 
 @page_errors
 @can_edit
-def flag_version(num):
-    if not 0 <= num < len(g.page.versions) - 1:
+def unflag_version(num):
+    if not 1 <= num < len(g.page.versions) - 1:
         raise Malformed()
     g.page.versions[num].unflag()
     return reload()

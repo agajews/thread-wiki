@@ -13,9 +13,9 @@
       {% else %}
         {{ section.header }}
       {% endif %}
-      {% if can_accept() %}
+      {% if g.page.can_accept %}
       <button type="button" onclick="accept('{{ errorid }}')">Accept this version</button>
-      {% elif can_edit() %}
+      {% elif g.page.can_edit %}
       <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
       {% endif %}
     {% endset %}

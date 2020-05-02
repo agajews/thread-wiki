@@ -1,5 +1,5 @@
 <script>
-  window.num_versions = {{ len(g.page.versions) }};
+  window.freshness = {{ g.page.freshness }};
 
   function swap(to_hide, to_show) {
       document.getElementById(to_hide).setAttribute('hidden', true);
@@ -9,10 +9,10 @@
   function update(update, errorid) {
     signal({{ url_for('update', title=g.page.title) }}, {
       update: update,
-      num_versions: window.num_versions,
+      freshness: window.freshness,
       errorid: errorid,
     }).then((response) => {
-      window.num_versions = response.num_versions;
+      window.freshness = response.freshness;
     });
   }
 </script>

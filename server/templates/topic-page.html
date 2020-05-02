@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>{{ display.heading.name }} - Thread</title>
+    <title>{{ display.name }} - Thread</title>
     {% include 'scripts.html' %}
     {% include 'diffstyles.html' %}
   </head>
@@ -33,16 +33,16 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <div id="heading">
-      {% include 'topic-page-heading.html' with heading=display.heading %}
+      {% include 'topic-page-heading.html' with display=display %}
     </div>
 
-    {% if can_edit() %}
+    {% if g.page.can_edit %}
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
       <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% endif %}
 
     <div id="summary">
-      {% include 'topic-page-summary.html' with summary=display.summary %}
+      {% include 'topic-page-summary.html' with display=display %}
     </div>
 
     {% for section in display.sections %}

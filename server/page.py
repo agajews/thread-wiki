@@ -4,6 +4,7 @@ from .user import User
 
 
 class Page(MongoModel):
+    # TODO: markup indexes
     titles = fields.ListField(fields.CharField())
     freshness = fields.IntegerField(default=0)
 
@@ -24,7 +25,11 @@ class Page(MongoModel):
             self.titles.remove(version.title)
         self.titles.append(version.title)
 
-    @classmethod
+    @property
+    def title(self):
+        return self.titles[-1]
+
+    @staticmethod
     def find(title):
         try:
             return Page.objects.get({"titles": title})

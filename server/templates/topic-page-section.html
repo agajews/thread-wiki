@@ -6,7 +6,7 @@
 <div id="{{ displayid }}">
   {% set header %}
     {{ section.header }}
-    {% if can_edit() %}
+    {% if g.page.can_edit %}
       <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
     {% endif %}
   {% endset %}

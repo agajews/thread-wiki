@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>{{ version.name }} - Thread</title>
+    {% include 'scripts.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <h1>{{ version.name }}, AKA "{{ version.aka }}"</h1>
+    <h3>{{ version.timestamp }}</h3>
+
+    {% if g.page.can_edit %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% endif %}
+    <a href="{{ url_for('page', title=g.page.title) }}">Latest version</a>
+
+    <div>{{ version.summary|safe }}</div>
+
+    {% for section in version.sections %}
+      {{ header_at_level(section.header, section.level) }}
+      <div>{{ section.body|safe }}</div>
+    {% endfor %}
+  </body>
+</html>

@@ -111,6 +111,7 @@ class UserPage(Page):
         self.is_frozen = True
         self.save()
 
+    @property
     def can_edit(self):
         if g.user is None:
             return False
@@ -121,6 +122,15 @@ class UserPage(Page):
         if g.user.is_banned:
             return False
         return True
+
+    @property
+    def can_accept(self):
+        if g.user is None:
+            return False
+        if g.user != self.owner:
+            return False
+        if self.versions[-1] != self.primary_version:
+            return True
 
 
 class UserVersion(Version):
@@ -136,6 +146,7 @@ class UserVersion(Version):
 
 class UserVersionDiff(VersionDiff):
     sections = fields.EmbeddedDocumentListField(SectionDiff)
+    summary = fields.CharField()
     summary_diff = fields.CharField()
     summary_changed = fields.BooleanField()
     name = fields.CharField()
@@ -144,8 +155,16 @@ class UserVersionDiff(VersionDiff):
     prev_aka = fields.CharField()
 
     @property
+    def heading_changed(self):
+        return self.name_changed or self.aka_changed
+
+    @property
     def name_changed(self):
-        return self.name != self.prev_name or self.aka != self.prev_aka
+        return self.name != self.prev_name
+
+    @property
+    def aka_changed(self):
+        return self.aka != self.prev_aka
 
     @property
     def is_empty(self):
@@ -167,7 +186,9 @@ class UserVersionDiff(VersionDiff):
             version_a=version_a,
             version_b=version_b,
             sections=sections,
+            summary=version_b.summary,
             summary_diff=summary_diff,
+            summary_changed=version_a.summary != version_b.summary,
             name=name,
             prev_name=prev_name,
             aka=aka,

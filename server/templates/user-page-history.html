@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <title>History: {{ g.page.versions[-1].name }} - Thread</title>
+    {% include 'scripts.html' %}
+    {% include 'diff-styles.html' %}
+    {% include 'user-update-scripts.html' %}
+    {% include 'history-scripts.html' %}
+  </head>
+
+  <body>
+    {% include 'modules/login.html' %}
+
+    <a href="{{ url_for('index') }}">Home</a>
+
+    <h1>History: {{ g.page.versions[-1].name }}, AKA "{{ g.page.versions[-1].aka }}"</h1>
+    <a href="{{ url_for('page', title=title) }}">Back</a>
+
+    {% from 'page-utils.html' import header_at_level %}
+    {% macro show_version(version, diff, num, buttons) %}
+      <div>
+        <span class="timestamp">{{ version.timestamp }}</span>
+        {{ buttons }}
+        <a href="{{ url_for('version', title=title, num=num) }}">View</a>
+      </div>
+      <div id="error-version-{{ version.num }}"></div>
+
+      {% if version.flag %}
+        <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>
+      {% else %}
+
+        {% if diff.name_changed %}
+          <div class="markupnote">Changed name to: {{ version.name }}</div>
+        {% endif %}
+        {% if diff.aka_changed %}
+          <div class="markupnote">Changed aka to: {{ version.aka }}</div>
+        {% endif %}
+        {% if diff.summary_changed %}
+          {{ diff.summary_diff|safe }}
+        {% endif %}
+        {% for section in diff.sections %}
+          {% if section.inserted %}
+            <ins>{{ header_at_level(section.header, section.level) }}</ins>
+            <ins>{{ section.body|safe }}</ins>
+          {% elif section.deleted %}
+            <del>{{ header_at_level(section.header, section.level) }}</del>
+            <del>{{ section.body|safe }}</del>
+          {% elif section.edited %}
+            {{ header_at_level(section.header, section.level) }}
+            {{ section.body_diff|safe }}
+          {% endif %}
+        {% endfor %}
+
+      {% endif %}
+    {% endmacro %}
+
+    {% if len(g.page.versions) != 1 %}
+      {% set num = len(g.page.versions) - 1 %}
+      {% set buttons %}
+        {% if g.page.can_accept %}
+          <button type="button" onclick="accept('error-version-{{ num }}')">Accept this version</button>
+        {% endif %}
+      {% endset %}
+      {{ show_version(g.page.versions[-1], g.page.diffs[-1], num, buttons) }}
+      <hr>
+    {% endif %}
+
+    {% for num, (version, diff) in enumerate(zip(g.page.versions[1:-1], g.page.diffs[1:-1])) %}
+      {% set errorid = "error-version-{{ num }}" %}
+      {% set buttons %}
+        {% if not version.flag %}
+          <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
+        {% elif version.flag.sender == g.user %}
+          <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
+        {% endif %}
+          <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
+      {% endset %}
+      {{ show_version(version, diff, num, buttons) }}
+      <hr>
+    {% endfor %}
+
+    {% set buttons %}
+      <button type="button" onclick="restore(0, 'error-version-0')">Restore</button>
+    {% endset %}
+    {{ show_version(g.page.versions[0], g.page.diffs[0], 0, buttons) }}
+  </body>
+</html>

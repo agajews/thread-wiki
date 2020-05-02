@@ -1,0 +1,21 @@
+<script>
+  function accept(errorid) {
+    signal({{ url_for('accept', title=g.page.title) }}, {
+      freshness: window.freshness,
+      href: window.location.href,
+      errorid: errorid,
+    });
+  }
+
+  function freeze() {
+    signal({{ url_for('freeze', title=g.page.title) }}, {
+      errorid: 'error-freeze',
+    });
+  }
+
+  function unfreeze() {
+    signal({{ url_for('unfreeze', title=g.page.title) }}, {
+      errorid: 'error-freeze',
+    });
+  }
+</script>

@@ -60,6 +60,7 @@ class TopicPage(Page):
             return Page.objects.get({"titles": version.title})
         return page
 
+    @property
     def can_edit(self):
         if g.user is None:
             return False
@@ -83,6 +84,7 @@ class TopicVersion(Version):
 
 class TopicVersionDiff(VersionDiff):
     sections = fields.EmbeddedDocumentListField(SectionDiff)
+    summary = fields.CharField()
     summary_diff = fields.CharField()
     summary_changed = fields.BooleanField()
     name = fields.CharField()
@@ -110,7 +112,9 @@ class TopicVersionDiff(VersionDiff):
             version_a=version_a,
             version_b=version_b,
             sections=sections,
+            summary=version_b.summary,
             summary_diff=summary_diff,
+            summary_changed=version_a.summary != version_b.summary,
             name=name,
             prev_name=prev_name,
         )

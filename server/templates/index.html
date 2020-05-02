@@ -11,8 +11,8 @@
     <h2>Here are our currently registered users:</h2>
     <ul>
       {% for page in pages %}
-        <li><a href="{{ url_for('page', title=page.currenttitle) }}">
-          {{ page.versions[-1].content.heading }}
+        <li><a href="{{ url_for('page', title=page.title) }}">
+          {{ page.versions[-1].name }}
         </a></li>
       {% endfor %}
     </ul>

@@ -29,8 +29,8 @@ def inject_url_for_title():
 
 
 @app.context_processor
-def inject_len():
-    return dict(len=len)
+def inject_utils():
+    return dict(len=len, enumerate=enumerate, zip=zip)
 
 
 def timestamp():
