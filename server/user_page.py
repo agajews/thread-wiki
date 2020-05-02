@@ -33,6 +33,7 @@ class UserPage(Page):
         self.diffs.append(diff)
         self.primary_diffs.append(primary_diff)
         self.add_title(version.title)
+        self.add_search_term(version.name)
         try:
             self.save_if_fresh()
         except (RaceCondition, DuplicatePage):
@@ -102,6 +103,7 @@ class UserPage(Page):
         primary_diff.save()
         page = UserPage(
             titles=[email],
+            search_terms=[email],
             versions=[version],
             diffs=[diff],
             primary_diffs=[primary_diff],
@@ -165,7 +167,7 @@ class UserVersion(PageVersion):
 
 
 class UserVersionDiff(VersionDiff):
-    # TODO: decide what to do about blank inputs
+    # TODO: make sure everything is blankable
     sections = fields.EmbeddedDocumentListField(SectionDiff, blank=True)
     summary = fields.CharField(blank=True)
     summary_diff = fields.CharField(blank=True)

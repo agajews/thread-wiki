@@ -1,0 +1,23 @@
+<div>
+  <form id="search-form" onsubmit="search(event)">
+    <input type="text" name="query" id="query" placeholder="Search for a name, email, topic, or the title for a new page">
+    <input type="submit">
+  </form>
+</div>
+
+<script>
+  function search(event) {
+    event.preventDefault();
+    let form = document.getElementById("search-form");
+    signal("{{ url_for('submitsearch') }}", {
+        query: form.elements["query"].value,
+    });
+  }
+</script>
+
+<style>
+  #query {
+    width: 500px;
+    text-align: center;
+  }
+</style>

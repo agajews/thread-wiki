@@ -26,6 +26,10 @@ class NotAllowed(UserError):
     pass
 
 
+class EmptyString(UserError):
+    pass
+
+
 class PageNotFound(UserError):
     pass
 

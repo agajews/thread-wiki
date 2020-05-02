@@ -82,6 +82,8 @@ def page_errors(fun):
             return error("Lel, someone else flagged this already.")
         except NotAllowed:
             return error("Lel, looks like you're not allowed to do that.")
+        except EmptyString:
+            return error("Lel, that shouldn't be empty.")
 
     return wrapped_fun
 
@@ -451,6 +453,33 @@ def history(title):
         return view_user_history()
     elif isinstance(g.page, TopicPage):
         return view_topic_history()
+
+
+@app.route("/search/?<query>")
+@error_handling
+def search(query):
+    if is_valid_email(query):
+        return redirect(url_for("page", title=query))
+    title = query.replace(" ", "_").replace("/", "|")
+    can_create = False
+    try:
+        Page.find(title)
+    except PageNotFound:
+        can_create = True
+    pages = Page.search(query)
+    return render_template(
+        "search.html",
+        pages=pages,
+        query=query,
+        can_create=can_create,
+        title_to_create=title,
+    )
+
+
+@app.route("/submitsearch/", methods=["POST"])
+@error_handling
+def submitsearch():
+    return redirect(url_for("search", query=get_param("query")))
 
 
 @user_page_errors

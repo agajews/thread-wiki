@@ -2,6 +2,8 @@ import bleach
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
 
+from .errors import *
+
 
 self_closing = ["br"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
@@ -32,6 +34,8 @@ def sanitize_html(html):
 
 
 def sanitize_text(text):
+    if text == "":
+        raise EmptyString()
     return bleach.clean(str(text), tags=[], strip=True)
 
 

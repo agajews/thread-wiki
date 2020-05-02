@@ -22,6 +22,7 @@ class TopicPage(Page):
         self.versions.append(version)
         self.diffs.append(diff)
         self.add_title(version.title)
+        self.add_search_term(version.name)
         try:
             self.save_if_fresh()
         except (RaceCondition, DuplicatePage):
@@ -61,7 +62,12 @@ class TopicPage(Page):
         empty_version.save()
         version.save()
         diff.save()
-        page = TopicPage(titles=[version.title], versions=[version], diffs=[diff])
+        page = TopicPage(
+            titles=[version.title],
+            search_terms=[name],
+            versions=[version],
+            diffs=[diff],
+        )
         try:
             page.save()
         except DuplicateKeyError:

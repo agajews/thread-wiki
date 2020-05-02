@@ -5,9 +5,7 @@
   </head>
 
   <body>
-    {% include 'modules/login.html' %}
-
-    <a href="{{ url_for('index') }}">Home</a>
+    {% include "modules/navbar.html" %}
 
     <h1>{{ version.name }}</h1>
     <h3>{{ version.timestamp }}</h3>

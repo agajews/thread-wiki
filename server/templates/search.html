@@ -1,14 +1,22 @@
 <html>
   <head>
-    <title>Thread</title>
+    <title>"{{ query }}" - Thread</title>
     {% include 'scripts.html' %}
   </head>
 
   <body>
     {% include 'modules/login.html' %}
-    <h1>Welcome to thread!</h1>
+
+    <a href="{{ url_for('index') }}">Home</a>
+
     {% include 'modules/search.html' %}
-    <h2>Here are all of the pages:</h2>
+
+    <h1>Search results for "{{ query }}"</h1>
+
+    {% if can_create %}
+      <a href="{{ url_for('page', title=title_to_create) }}">Create a page called {{ query }}</a>
+    {% endif %}
+
     <ul>
       {% for page in pages %}
         <li><a href="{{ url_for('page', title=page.title) }}">

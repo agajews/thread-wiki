@@ -17,9 +17,7 @@
   </head>
 
   <body>
-    {% include 'modules/login.html' %}
-
-    <a href="{{ url_for('index') }}">Home</a>
+    {% include "modules/navbar.html" %}
 
     <h1>
       <span id="name" contenteditable="true">{{ version.name }}</span>, AKA "<span id="aka" contenteditable="true">{{ version.aka }}</span>"

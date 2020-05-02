@@ -1,6 +1,6 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymodm.errors import DoesNotExist
-from pymongo import ASCENDING
+from pymongo import ASCENDING, TEXT
 from pymongo.errors import DuplicateKeyError
 from pymongo.operations import IndexModel
 from flask import g
@@ -12,12 +12,15 @@ from .errors import *
 
 
 class Page(MongoModel):
-    # TODO: markup indexes
     titles = fields.ListField(fields.CharField())
     freshness = fields.IntegerField(default=0)
+    search_terms = fields.ListField(fields.CharField())
 
     class Meta:
-        indexes = [IndexModel("titles", unique=True)]
+        indexes = [
+            IndexModel("titles", unique=True),
+            IndexModel([("search_terms", TEXT)]),
+        ]
 
     def save_if_fresh(self):
         old_freshness = self.freshness
@@ -36,6 +39,13 @@ class Page(MongoModel):
             self.titles.remove(title)
         self.titles.append(title)
 
+    def add_search_term(self, term):
+        print(self.search_terms)
+        if term not in self.search_terms:
+            print("adding term")
+            self.search_terms.append(term)
+            print(self.search_terms)
+
     @property
     def title(self):
         return self.titles[-1]
@@ -46,6 +56,10 @@ class Page(MongoModel):
             return Page.objects.get({"titles": title})
         except DoesNotExist:
             raise PageNotFound()
+
+    @staticmethod
+    def search(query):
+        return Page.objects.raw({"$text": {"$search": query}}).all()
 
 
 class PageVersion(MongoModel):
