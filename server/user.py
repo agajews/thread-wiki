@@ -1,7 +1,10 @@
+from pymodm import fields, MongoModel, EmbeddedMongoModel
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
 from datetime import timedelta
+
 from .app import app
+from .page import Flag
 
 
 class User(MongoModel):

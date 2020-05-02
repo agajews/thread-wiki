@@ -10,13 +10,12 @@
 import os
 from datetime import datetime
 import flask
-from pymongo import MongoClient
+from pymodm import connect
 
 app = flask.Flask(__name__)
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
-client = MongoClient("localhost", 27017)
-db = client.thread_dev
+connect("mongodb://localhost:27017")
 
 
 def url_for(*args, **kwargs):
@@ -34,4 +33,4 @@ def inject_utils():
 
 
 def timestamp():
-    return datetime.utcnow().timestamp()
+    return datetime.utcnow()

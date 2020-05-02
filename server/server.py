@@ -1,22 +1,15 @@
-from flask import render_template, abort, request, jsonify, g
 import re
-from .app import app, timestamp, url_for
-from .html_utils import sanitize_html, sanitize_text, separate_sections
+from flask import render_template, abort, request, jsonify, g
+
+from .app import app, url_for
+from .html_utils import sanitize_html, sanitize_text
+from .sections import separate_sections
 from .templates import generate_user_template, generate_aka, generate_topic_template
 from .page import Page
 from .user import User
-from .user_page import UserPageHeading, UserPageContent, UserPage
-from .topic_page import TopicPageHeading, TopicPageContent, TopicPage
-from .errors import (
-    Malformed,
-    EmptyEdit,
-    FlagYourself,
-    AlreadyFlagged,
-    NotAllowed,
-    IncorrectPassword,
-    PageNotFound,
-    VersionNotFound,
-)
+from .user_page import UserPage
+from .topic_page import TopicPage
+from .errors import *
 
 
 def is_valid_email(email):

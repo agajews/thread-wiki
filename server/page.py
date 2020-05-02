@@ -1,6 +1,12 @@
+from pymodm import fields, MongoModel, EmbeddedMongoModel
+from pymodm.errors import DoesNotExist
+from pymongo.errors import DuplicateKeyError
+
 from .sections import Section, SectionDiff, separate_sections, diff_sections
 from .html_utils import markup_changes
 from .user import User
+from .app import timestamp
+from .errors import *
 
 
 class Page(MongoModel):
@@ -62,3 +68,9 @@ class Version(MongoModel):
 class VersionDiff(MongoModel):
     version_a = fields.ReferenceField(Version)
     version_b = fields.ReferenceField(Version)
+
+
+class Flag(EmbeddedMongoModel):
+    version = fields.ReferenceField(Version)
+    sender = fields.ReferenceField(User)
+    timestamp = fields.DateTimeField()
