@@ -2,7 +2,6 @@
   <head>
     <title>{{ display.name }} - Thread</title>
     {% include 'scripts.html' %}
-    {% include 'diffstyles.html' %}
   </head>
 
   {% include 'update-scripts.html' %}
@@ -10,7 +9,7 @@
   <script>
     function get_summary() {
       return {
-        summary: document.getElementById('summary-body')
+        summary: document.getElementById('summary-body').innerHTML,
       };
     }
 
@@ -22,7 +21,7 @@
 
     function get_heading() {
       return {
-        name: document.getElementById('name-body'),
+        name: document.getElementById('name-body').innerText,
       };
     }
   </script>
@@ -45,8 +44,8 @@
       {% include 'topic-page-summary.html' %}
     </div>
 
-    {% for section in display.sections %}
-      <div id="section-{{ section.idx }}">
+    {% for idx, section in enumerate(display.sections) %}
+      <div id="section-{{ idx }}">
         {% include 'topic-page-section.html' %}
       </div>
     {% endfor %}

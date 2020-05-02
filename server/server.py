@@ -26,7 +26,8 @@ def create_user_page(email):
     return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
 
 
-def create_topic_page(name):
+def create_topic_page(title):
+    name = title.replace("_", " ").replace("|", "/")
     summary, sections = separate_sections(generate_topic_template(name))
     return TopicPage.create_or_return(sections, summary, name)
 
@@ -317,7 +318,7 @@ def update_topic_page():
             update_sections.append(idx)
 
     try:
-        g.page.edit(content)
+        g.page.edit(sections, summary, name)
     except EmptyEdit:
         pass
 
@@ -329,7 +330,7 @@ def update_topic_page():
         html["summary"] = render_template("topic-page-summary.html", display=display)
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
-            "topic-page-section.html", section=display.sections_dict[idx]
+            "topic-page-section.html", section=display.sections[idx]
         )
     return rerender(html, freshness=g.page.freshness)
 

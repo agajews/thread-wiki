@@ -1,8 +1,8 @@
 {% from 'page-utils.html' import header_at_level %}
-{% set displayid = "section-{}-display".format(section.idx) %}
-{% set editid = "section-{}-edit".format(section.idx) %}
-{% set bodyid = "section-{}-body".format(section.idx) %}
-{% set errorid = "error-section-{}".format(section.idx) %}
+{% set displayid = "section-{}-display".format(idx) %}
+{% set editid = "section-{}-edit".format(idx) %}
+{% set bodyid = "section-{}-body".format(idx) %}
+{% set errorid = "error-section-{}".format(idx) %}
 <div id="{{ displayid }}">
   {% set header %}
     {{ section.heading }}
@@ -16,7 +16,7 @@
 <div id="{{ editid }}" hidden="true">
   {% set header %}
     {{ section.heading }}
-    <button type="button" onclick="update(get_section({{ section.idx }}),'{{ errorid }}')">Done</button>
+    <button type="button" onclick="update(get_section({{ idx }}),'{{ errorid }}')">Done</button>
   {% endset %}
   {{ header_at_level(header, section.level) }}
   <div id="{{ bodyid }}" contenteditable="true">{{ section.body|safe }}</div>

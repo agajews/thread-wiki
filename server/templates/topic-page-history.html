@@ -17,6 +17,7 @@
     {% for num in reversed(range(len(g.page.versions))) %}
       {% set version = g.page.versions[num] %}
       {% set diff = g.page.diffs[num] %}
+      {% set errorid = "error-version-{}".format(num) %}
       <div>
         <span class="timestamp">{{ version.timestamp }}</span>
         {% if num != 0 and num != len(g.page.versions) - 1 %}
@@ -31,7 +32,7 @@
         {% endif %}
         <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
       </div>
-      <div id="error-version-{{ version.num }}"></div>
+      <div id="{{ errorid }}"></div>
 
       {% if version.is_flagged %}
         <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>

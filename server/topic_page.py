@@ -57,7 +57,7 @@ class TopicPage(Page):
             editor=g.user,
         )
         empty_version = TopicVersion(sections=[], summary="", name="")
-        diff = VersionDiff.compute(empty_version, version)
+        diff = TopicVersionDiff.compute(empty_version, version)
         empty_version.save()
         version.save()
         diff.save()
@@ -93,12 +93,12 @@ class TopicVersion(PageVersion):
 
 
 class TopicVersionDiff(VersionDiff):
-    sections = fields.EmbeddedDocumentListField(SectionDiff)
-    summary = fields.CharField()
-    summary_diff = fields.CharField()
+    sections = fields.EmbeddedDocumentListField(SectionDiff, blank=True)
+    summary = fields.CharField(blank=True)
+    summary_diff = fields.CharField(blank=True)
     summary_changed = fields.BooleanField()
-    name = fields.CharField()
-    prev_name = fields.CharField()
+    name = fields.CharField(blank=True)
+    prev_name = fields.CharField(blank=True)
 
     @property
     def is_empty(self):
