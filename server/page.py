@@ -10,9 +10,12 @@ class Page(MongoModel):
     def save_if_fresh(self):
         old_freshness = self.freshness
         self.freshness += 1
-        update = self._mongometa.collection.replace_one(
-            {"_id": self._id, "freshness": old_freshness}, self.to_son()
-        )
+        try:
+            update = self._mongometa.collection.replace_one(
+                {"_id": self._id, "freshness": old_freshness}, self.to_son()
+            )
+        except DuplicateKeyError:
+            raise DuplicatePage()
         if update.modified_count == 0:
             raise RaceCondition()
 
@@ -20,6 +23,13 @@ class Page(MongoModel):
         if title in self.titles:
             self.titles.remove(version.title)
         self.titles.append(version.title)
+
+    @classmethod
+    def find(title):
+        try:
+            return Page.objects.get({"titles": title})
+        except DoesNotExist:
+            raise PageNotFound()
 
 
 class Version(MongoModel):
@@ -31,28 +41,21 @@ class Version(MongoModel):
     def flag(self):
         assert g.user is not None
         assert self.flag is None
-        flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
+        self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
         try:
-            flag.save()
+            self.flag.save()
         except DuplicateKeyError:
             raise AlreadyFlagged()
-        self.add_flag(flag)
+        self.save()
         self.editor.add_flag(self.flag)
 
     def unflag(self):
         assert self.flag is not None
         assert g.user == self.flag.sender
         flag = self.flag
-        self.remove_flag()
-        flag.delete()
-
-    def add_flag(self, flag):
-        self.flag = flag
-        Version.objects.raw({"_id": self._id}).update({"$set": {"flag": flag._id}})
-
-    def remove_flag(self):
         self.flag = None
-        Version.objects.raw({"_id": self._id}).update({"$set": {"flag": None}})
+        self.save()
+        flag.delete()
 
 
 class VersionDiff(MongoModel):

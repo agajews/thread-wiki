@@ -16,7 +16,7 @@ class TopicPage(Page):
         self.add_title(version.title)
         try:
             self.save_if_fresh()
-        except RaceCondition:
+        except (RaceCondition, DuplicatePage):
             version.delete()
             diff.delete()
             raise

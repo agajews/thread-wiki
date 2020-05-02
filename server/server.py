@@ -61,7 +61,7 @@ def error_handling(fun):
             abort(400)
         except NotAllowed:
             abort(401)
-        except (PageNotFound, VersionNotFound):
+        except PageNotFound:
             abort(404)
 
     return wrapped_fun
@@ -92,7 +92,7 @@ def user_page_errors(fun):
     def wrapped_fun(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
-        except DuplicateKey:
+        except DuplicatePage:
             return error("Lel, someone with the same name already has that nickname!")
 
     return wrapped_fun
@@ -103,7 +103,7 @@ def topic_page_errors(fun):
     def wrapped_fun(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
-        except DuplicateKey:
+        except DuplicatePage:
             return error("Lel, a page with that name already exists!")
 
     return wrapped_fun
@@ -111,7 +111,7 @@ def topic_page_errors(fun):
 
 def can_edit(fun):
     def wrapped_fun(*args, **kwargs):
-        if g.user is None or not g.user.can_edit(g.page):
+        if not g.page.can_edit():
             raise NotAllowed()
         return fun(*args, **kwargs)
 
@@ -120,7 +120,7 @@ def can_edit(fun):
 
 def is_owner(fun):
     def wrapped_fun(*args, **kwargs):
-        if g.user is None or not g.user.is_owner(g.page):
+        if g.user != g.page.owner:
             raise NotAllowed()
         return fun(*args, **kwargs)
 
@@ -129,7 +129,7 @@ def is_owner(fun):
 
 def catch_race(fun):
     def wrapped_fun(*args, **kwargs):
-        if len(g.page.versions) != get_param("num_versions", int):
+        if g.page.freshness != get_param("freshness", int):
             raise RaceCondition()
         return fun(*args, **kwargs)
 
@@ -137,7 +137,11 @@ def catch_race(fun):
 
 
 def reload():
-    return jsonify({"href": get_param("href")})
+    return jsonify({"redirect": get_param("href")})
+
+
+def redirect(href):
+    return jsonify({"redirect": href})
 
 
 def rerender(html, **kwargs):
@@ -151,9 +155,7 @@ def error(message):
 @app.route("/")
 @error_handling
 def index():
-    pages = db.pages.find(
-        {}, {"titles": {"$slice": -1}, "versions.heading": {"$slice": -1}}
-    )
+    pages = Page.objects.all()
     return render_template("index.html", pages=pages)
 
 
@@ -170,23 +172,21 @@ def page(title):
         else:
             g.page = create_topic_page(title)
     if isinstance(g.page, UserPage):
-        return render_template(
-            "user-page.html", display=g.page.versions[-1].primary_diff
-        )
+        return render_template("user-page.html", display=g.page.primary_diffs[-1])
     elif isinstance(g.page, TopicPage):
-        return render_template("topic-page.html", display=g.page.versions[-1].content)
+        return render_template("topic-page.html", display=g.page.versions[-1])
 
     return wrapped_fun
 
 
 @can_edit
 def view_user_edit():
-    return render_template("user-page.html", content=g.page.versions[-1].content)
+    return render_template("edit-user-page.html", version=g.page.versions[-1])
 
 
 @can_edit
 def view_topic_edit():
-    return render_template("topic-page.html", content=g.page.versions[-1].content)
+    return render_template("edit-topic-page.html", version=g.page.versions[-1])
 
 
 @app.route("/page/<title>/edit/")
@@ -206,8 +206,7 @@ def edit_user_page():
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     name = sanitize_text(get_param("name"))
     aka = sanitize_text(get_param("aka"))
-    content = UserPageContent(UserPageHeading(name, aka), summary, sections)
-    g.page.edit(content)
+    g.page.edit(sections, summary, name, aka)
     return redirect(url_for("page", title=g.page.title))
 
 
@@ -217,8 +216,7 @@ def edit_user_page():
 def edit_topic_page():
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     name = sanitize_text(get_param("name"))
-    content = UserPageContent(TopicPageHeading(name), summary, sections)
-    g.page.edit(content)
+    g.page.edit(sections, summary, name)
     return redirect(url_for("page", title=g.page.title))
 
 
@@ -240,32 +238,40 @@ def update_user_page():
     update_summary = False
     update_sections = []
 
-    content = g.page.versions[-1].content.copy()
+    old_version = g.page.versions[-1]
     update = get_param("update", dict)
-    if "name" in update and "aka" in update:
+    name = old_version.name
+    aka = old_version.aka
+    summary = old_version.summary
+    sections = old_version.sections
+    if "name" in update:
+        name = sanitize_text(update["name"])
         update_heading = True
-        content.heading = UserPageHeading(
-            sanitize_text(update["name"]), sanitize_text(update["aka"])
-        )
+    if "aka" in update:
+        name = sanitize_text(update["aka"])
+        update_heading = True
     if "summary" in update:
+        name = sanitize_html(update["summary"])
         update_summary = True
-        content.summary = sanitize_html(update["summary"])
     if "sections" in update:
-        for key, body in cast_param(update["sections"], dict).keys():
+        for key, body in cast_param(update["sections"], dict).items():
             idx = cast_param(key, int)
-            update_sections.append(idx)
-            content.sections[idx].body = sanitize_html(body)
+            sections[idx] = Section(
+                heading=sections[idx].heading,
+                level=sections[idx].level,
+                body=sanitize_html(body),
+            )
 
     try:
-        g.page.edit(content)
+        g.page.edit(sections, summary, name, aka)
     except EmptyEdit:
         pass
 
     html = {}
-    display = g.page.versions[-1].primary_diff
+    display = g.page.primary_diffs[-1]
     if update_heading:
         html["heading"] = render_template(
-            "user-page-heading.html", heading=display.heading
+            "user-page-heading.html", name=display.name, aka=display.aka
         )
     if update_summary:
         html["summary"] = render_template(

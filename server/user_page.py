@@ -27,7 +27,7 @@ class UserPage(Page):
         self.add_title(version.title)
         try:
             self.save_if_fresh()
-        except RaceCondition:
+        except (RaceCondition, DuplicatePage):
             version.delete()
             diff.delete()
             primary_diff.delete()
@@ -159,3 +159,9 @@ class UserVersionDiff(VersionDiff):
             aka=aka,
             prev_aka=prev_aka,
         )
+
+    @property
+    def sections_dict(self):
+        return {
+            section.idx: section for section in self.sections if not section.deleted
+        }
