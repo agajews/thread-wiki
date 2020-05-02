@@ -41,7 +41,7 @@ class UserPage(Page):
             primary_diff.delete()
             raise
 
-    def edit(self, sections, summary, name, aka):
+    def edit(self, sections, summary, name, aka, is_primary=None):
         assert g.user is not None
         version = UserVersion(
             page=self,
@@ -52,15 +52,24 @@ class UserPage(Page):
             name=name,
             aka=aka,
         )
-        self.add_version(version, is_primary=g.user == self.owner)
+        if is_primary is None:
+            is_primary = g.user == self.owner
+        self.add_version(version, is_primary=is_primary)
 
     def restore(self, num):
         assert 0 <= num < len(self.versions) - 1
         version = self.versions[num]
-        self.edit(version.sections, version.summary, version.name, version.aka)
+        self.edit(
+            version.sections,
+            version.summary,
+            version.name,
+            version.aka,
+            is_primary=False,
+        )
 
     def accept(self):
         assert g.user == self.owner
+        print("accepting")
         self.primary_version = self.versions[-1]
         primary_diff = UserVersionDiff.compute(
             self.primary_version, self.primary_version, concise=True

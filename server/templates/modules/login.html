@@ -2,9 +2,15 @@
   {% if g.user %}
     <p>Welcome, {{ g.user.email }}!
       <button type="button" onclick="logout()">Logout</button>
+      {% if g.user.passhash == None %}
+        <form id="password-form" onsubmit="setpassword(event)">
+          <label for="password">Looks like you haven't set a password yet. Set one here:</label>
+          <input type="password" name="password">
+          <input type="submit">
+        </form>
+      {% endif %}
     </p>
   {% else %}
-    <div id="error-login"></div>
     <form id="login-form" onsubmit="login(event)">
       <span class="form-row">
         <label for="email">Email:</label>
@@ -16,6 +22,7 @@
       <input type="submit">
     </form>
   {% endif %}
+  <div id="error-login"></div>
 </div>
 
 <script>
@@ -24,6 +31,16 @@
     let form = document.getElementById("login-form");
     signal("{{ url_for('authenticate') }}", {
         email: form.elements["email"].value,
+        password: form.elements["password"].value,
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
+  function setpassword(event) {
+    event.preventDefault();
+    let form = document.getElementById("password-form");
+    signal("{{ url_for('setpassword') }}", {
         password: form.elements["password"].value,
         href: window.location.href,
         errorid: 'error-login',

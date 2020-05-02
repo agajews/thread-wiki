@@ -43,6 +43,7 @@ def cast_param(val, cls):
 def get_param(param, cls=None):
     params = request.get_json(silent=True)
     if params is None or param not in params:
+        print("Missing param {}".format(param))
         raise Malformed()
     if cls is not None:
         return cast_param(params[param], cls)
@@ -508,6 +509,16 @@ def authenticate():
         raise IncorrectPassword()
     g.user = user
     g.reissue_token = True
+    return reload()
+
+
+@app.route("/setpassword/", methods=["POST"])
+@error_handling
+@auth_errors
+def setpassword():
+    if g.user is None:
+        return reload()
+    g.user.set_password(get_param("password"))
     return reload()
 
 

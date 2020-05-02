@@ -1,8 +1,10 @@
 <script>
+  window.freshness = {{ g.page.freshness }};
+
   function restore(num, errorid) {
     signal("{{ url_for('restore', title=g.page.title) }}", {
       num: num,
-      freshness: {{ g.page.freshness }},
+      freshness: window.freshness,
       href: window.location.href,
       errorid: errorid,
     });

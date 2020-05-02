@@ -1,15 +1,20 @@
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flask import g, request
+from flask import g, request, redirect
 from bson import ObjectId
-from .app import app, timestamp
+from .app import app, timestamp, url_for
 from .user import User
 
 
-def generate_auth_token(_id, expiration=3600 * 24 * 365):
+def generate_auth_token(_id, expiration=3600 * 24 * 7):
     s = Serializer(app.config["SECRET_KEY"], expires_in=expiration)
     return s.dumps({"_id": str(_id), "timestamp": timestamp().timestamp()}).decode(
         "utf-8"
     )
+
+
+def token_url_for(user, *args, **kwargs):
+    token = generate_auth_token(user._id)
+    return url_for(*args, token=token, **kwargs)
 
 
 def verify_auth_token(token):
@@ -25,9 +30,15 @@ def verify_auth_token(token):
 
 @app.before_request
 def populate_user():
-    token = request.cookies.get("token")
     g.reissue_token = False
+    token = request.cookies.get("token")
     g.user = verify_auth_token(token)
+    if g.user is None:
+        g.reissue_token = True
+        token = request.args.get("token")
+        g.user = verify_auth_token(token)
+    if "token" in request.args:
+        return manage_token(redirect(request.path))
 
 
 @app.after_request

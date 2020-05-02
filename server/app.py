@@ -9,7 +9,13 @@ import flask
 from pymodm import connect
 
 app = flask.Flask(__name__)
-app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
+app.config.update(
+    SECRET_KEY=os.environ["FLASK_SECRET_KEY"],
+    SERVER_NAME="127.0.0.1:5000",
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 connect("mongodb://localhost:27017/thread_dev")
 
