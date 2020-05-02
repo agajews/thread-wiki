@@ -7,7 +7,7 @@
   }
 
   function update(update, errorid) {
-    signal({{ url_for('update', title=g.page.title) }}, {
+    signal("{{ url_for('update', title=g.page.title) }}", {
       update: update,
       freshness: window.freshness,
       errorid: errorid,

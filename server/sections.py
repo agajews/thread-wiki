@@ -1,5 +1,16 @@
-from .html_utils import get_sequence, markup_changes, generate_html
+import itertools
+from pymodm import fields, MongoModel, EmbeddedMongoModel
 from difflib import SequenceMatcher
+
+from .html_utils import (
+    get_sequence,
+    markup_changes,
+    generate_html,
+    Token,
+    header_tags,
+    DataToken,
+)
+
 
 class Section(EmbeddedMongoModel):
     heading = fields.CharField()
@@ -10,6 +21,7 @@ class Section(EmbeddedMongoModel):
 class SectionDiff(EmbeddedMongoModel):
     heading = fields.CharField()
     level = fields.IntegerField()
+    body = fields.CharField()
     body_diff = fields.CharField()
     inserted = fields.BooleanField(default=False)
     deleted = fields.BooleanField(default=False)
@@ -18,7 +30,7 @@ class SectionDiff(EmbeddedMongoModel):
 
     @property
     def is_empty(self):
-        return not (inserted or deleted or edited)
+        return not (self.inserted or self.deleted or self.edited)
 
 
 def get_header_level(tag):
@@ -55,7 +67,7 @@ def separate_sections(data):
         body = generate_html(groups[i + 1]) if hasbody else ""
         sections.append(
             Section(
-                header=extract_text(groups[i]),
+                heading=extract_text(groups[i]),
                 body=body,
                 level=get_header_level(groups[i][0]),
             )
@@ -66,10 +78,10 @@ def separate_sections(data):
 
 class SectionToken(Token):
     def __init__(self, section):
-        self.header = section.header
+        self.heading = section.heading
         self.body = section.body
         self.level = section.level
-        super().__init__((self.header, self.level))
+        super().__init__((self.heading, self.level))
 
 
 def diff_sections(sections_a, sections_b, concise=False):
@@ -91,6 +103,7 @@ def diff_sections(sections_a, sections_b, concise=False):
                         heading=section_b.heading,
                         level=section_b.level,
                         body_diff=body_diff,
+                        body=section_b.body,
                         idx=j,
                         edited=edited,
                     )
@@ -103,8 +116,10 @@ def diff_sections(sections_a, sections_b, concise=False):
                         heading=section.heading,
                         level=section.level,
                         body_diff=body_diff,
+                        body=section.body,
                         deleted=True,
                     )
+                )
         if tag == "replace" or tag == "insert":
             for j in range(j1, j2):
                 section = sequence_b[j]
@@ -114,7 +129,9 @@ def diff_sections(sections_a, sections_b, concise=False):
                         heading=section.heading,
                         level=section.level,
                         body_diff=body_diff,
+                        body=section.body,
                         idx=j,
                         inserted=True,
                     )
+                )
     return merged_sequence

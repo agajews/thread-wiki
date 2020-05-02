@@ -1,7 +1,9 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymodm.errors import DoesNotExist
+from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError
 from pymongo.operations import IndexModel
+from flask import g
 
 from .sections import Section, SectionDiff, separate_sections, diff_sections
 from .html_utils import markup_changes
@@ -32,8 +34,8 @@ class Page(MongoModel):
 
     def add_title(self, title):
         if title in self.titles:
-            self.titles.remove(version.title)
-        self.titles.append(version.title)
+            self.titles.remove(title)
+        self.titles.append(title)
 
     @property
     def title(self):
@@ -47,40 +49,40 @@ class Page(MongoModel):
             raise PageNotFound()
 
 
-class Version(MongoModel):
+class PageVersion(MongoModel):
     page = fields.ReferenceField(Page)
     timestamp = fields.DateTimeField()
     editor = fields.ReferenceField(User)
-    flag = fields.EmbeddedDocumentField(Flag, default=None)
-    is_flagged = fields.BooleanField()  # just bookkeeping for the index
+    flag = fields.EmbeddedDocumentField("Flag")
+    is_flagged = fields.BooleanField(default=False)
 
     class Meta:
         indexes = [IndexModel([("editor", ASCENDING), ("is_flagged", ASCENDING)])]
 
-    def flag(self):
+    def set_flag(self):
         assert g.user is not None
-        assert self.flag is None
+        assert not self.is_flagged
         self.flag = Flag(sender=g.user, timestamp=timestamp(), version=self)
-        update = Version.objects.raw({"_id": self._id, "flag": None}).update(
-            {"flag": self.flag.to_son(), "is_flagged": True}
-        )
-        if update.modified_count == 0:
+        modified_count = PageVersion.objects.raw(
+            {"_id": self._id, "is_flagged": False}
+        ).update({"$set": {"flag": self.flag.to_son(), "is_flagged": True}})
+        if modified_count == 0:
             raise AlreadyFlagged()
 
-    def unflag(self):
-        assert self.flag is not None
+    def set_unflag(self):
+        assert self.is_flagged
         assert g.user == self.flag.sender
-        Version.objects.raw({"_id": self._id}).update(
-            {"flag": None, "is_flagged": False}
+        PageVersion.objects.raw({"_id": self._id}).update(
+            {"$set": {"flag": None, "is_flagged": False}}
         )
 
 
 class VersionDiff(MongoModel):
-    version_a = fields.ReferenceField(Version)
-    version_b = fields.ReferenceField(Version)
+    version_a = fields.ReferenceField(PageVersion)
+    version_b = fields.ReferenceField(PageVersion)
 
 
 class Flag(EmbeddedMongoModel):
-    version = fields.ReferenceField(Version)
+    version = fields.ReferenceField(PageVersion)
     sender = fields.ReferenceField(User)
     timestamp = fields.DateTimeField()

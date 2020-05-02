@@ -30,7 +30,7 @@
 
       {% from 'page-utils.html' import header_at_level %}
       {% for section in version.sections %}
-        {{ header_at_level(section.header, section.level) }}
+        {{ header_at_level(section.heading, section.level) }}
         {{ section.body|safe }}
       {% endfor %}
     </div>

@@ -15,9 +15,9 @@
     }
 
     function get_section(idx) {
-      return {sections: {
-        idx: document.getElementById('section-' + idx + '-body')
-      }};
+      sections = {};
+      sections[idx] = document.getElementById('section-' + idx + '-body').innerHTML;
+      return {sections: sections};
     }
 
     function get_heading() {
@@ -33,7 +33,7 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <div id="heading">
-      {% include 'topic-page-heading.html' with display=display %}
+      {% include 'topic-page-heading.html' %}
     </div>
 
     {% if g.page.can_edit %}
@@ -42,12 +42,12 @@
     {% endif %}
 
     <div id="summary">
-      {% include 'topic-page-summary.html' with display=display %}
+      {% include 'topic-page-summary.html' %}
     </div>
 
     {% for section in display.sections %}
       <div id="section-{{ section.idx }}">
-        {% include 'topic-page-section.html' with section=section %}
+        {% include 'topic-page-section.html' %}
       </div>
     {% endfor %}
 

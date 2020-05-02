@@ -1,15 +1,17 @@
 import re
 from flask import render_template, abort, request, jsonify, g
+from functools import wraps
 
 from .app import app, url_for
 from .html_utils import sanitize_html, sanitize_text
-from .sections import separate_sections
+from .sections import separate_sections, Section
 from .templates import generate_user_template, generate_aka, generate_topic_template
 from .page import Page
 from .user import User
 from .user_page import UserPage
 from .topic_page import TopicPage
 from .errors import *
+from . import auth  # just to load handlers into the app
 
 
 def is_valid_email(email):
@@ -47,10 +49,11 @@ def get_param(param, cls=None):
 
 
 def error_handling(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
-        except Malformed:
+        except Malformed as e:
             abort(400)
         except NotAllowed:
             abort(401)
@@ -61,6 +64,7 @@ def error_handling(fun):
 
 
 def page_errors(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
@@ -81,6 +85,7 @@ def page_errors(fun):
 
 
 def user_page_errors(fun):
+    @wraps(fun)
     @page_errors
     def wrapped_fun(*args, **kwargs):
         try:
@@ -92,6 +97,7 @@ def user_page_errors(fun):
 
 
 def topic_page_errors(fun):
+    @wraps(fun)
     @page_errors
     def wrapped_fun(*args, **kwargs):
         try:
@@ -103,8 +109,9 @@ def topic_page_errors(fun):
 
 
 def can_edit(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
-        if not g.page.can_edit():
+        if not g.page.can_edit:
             raise NotAllowed()
         return fun(*args, **kwargs)
 
@@ -112,6 +119,7 @@ def can_edit(fun):
 
 
 def is_owner(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
         if g.user != g.page.owner:
             raise NotAllowed()
@@ -121,6 +129,7 @@ def is_owner(fun):
 
 
 def catch_race(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
         if g.page.freshness != get_param("freshness", int):
             raise RaceCondition()
@@ -194,7 +203,7 @@ def edit(title):
 
 @user_page_errors
 @can_edit
-@check_race
+@catch_race
 def edit_user_page():
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     name = sanitize_text(get_param("name"))
@@ -205,7 +214,7 @@ def edit_user_page():
 
 @topic_page_errors
 @can_edit
-@check_race
+@catch_race
 def edit_topic_page():
     summary, sections = separate_sections(sanitize_html(get_param("body")))
     name = sanitize_text(get_param("name"))
@@ -216,7 +225,7 @@ def edit_topic_page():
 @app.route("/page/<title>/submitedit/", methods=["POST"])
 @error_handling
 def submitedit(title):
-    g.page = Page.find(title, preload_primary=True)
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
         return edit_user_page()
     elif isinstance(g.page, TopicPage):
@@ -225,7 +234,7 @@ def submitedit(title):
 
 @user_page_errors
 @can_edit
-@check_race
+@catch_race
 def update_user_page():
     update_heading = False
     update_summary = False
@@ -236,24 +245,27 @@ def update_user_page():
     name = old_version.name
     aka = old_version.aka
     summary = old_version.summary
-    sections = old_version.sections
+    sections = old_version.sections[:]
     if "name" in update:
         name = sanitize_text(update["name"])
         update_heading = True
     if "aka" in update:
-        name = sanitize_text(update["aka"])
+        aka = sanitize_text(update["aka"])
         update_heading = True
     if "summary" in update:
-        name = sanitize_html(update["summary"])
+        summary = sanitize_html(update["summary"])
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
             idx = cast_param(key, int)
+            if not 0 <= idx < len(sections):
+                raise Malformed()
             sections[idx] = Section(
                 heading=sections[idx].heading,
                 level=sections[idx].level,
                 body=sanitize_html(body),
             )
+            update_sections.append(idx)
 
     try:
         g.page.edit(sections, summary, name, aka)
@@ -275,7 +287,7 @@ def update_user_page():
 
 @topic_page_errors
 @can_edit
-@check_race
+@catch_race
 def update_topic_page():
     update_heading = False
     update_summary = False
@@ -285,12 +297,12 @@ def update_topic_page():
     update = get_param("update", dict)
     name = old_version.name
     summary = old_version.summary
-    sections = old_version.sections
+    sections = old_version.sections[:]
     if "name" in update:
         name = sanitize_text(update["name"])
         update_heading = True
     if "summary" in update:
-        name = sanitize_html(update["summary"])
+        summary = sanitize_html(update["summary"])
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
@@ -302,6 +314,7 @@ def update_topic_page():
                 level=sections[idx].level,
                 body=sanitize_html(body),
             )
+            update_sections.append(idx)
 
     try:
         g.page.edit(content)
@@ -333,7 +346,7 @@ def update(title):
 
 @page_errors
 @can_edit
-@check_race
+@catch_race
 def restore_version(num):
     if not 0 <= num < len(g.page.versions):
         raise Malformed()
@@ -345,13 +358,13 @@ def restore_version(num):
 @error_handling
 def restore(title):
     num = get_param("num", int)
-    g.page = Page.find(title, preload_primary=True)
-    return restore_version()
+    g.page = Page.find(title)
+    return restore_version(num)
 
 
 @user_page_errors
 @is_owner
-@check_race
+@catch_race
 def accept_version():
     g.page.accept()
     return reload()
@@ -359,9 +372,8 @@ def accept_version():
 
 @app.route("/page/<title>/accept/", methods=["POST"])
 @error_handling
-def restore(title):
-    num = get_param("num", int)
-    g.page = Page.find(title, preload_primary=True)
+def accept(title):
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
         return accept_version()
     else:
@@ -371,9 +383,12 @@ def restore(title):
 @page_errors
 @can_edit
 def flag_version(num):
+    # TODO: partial rerendering
     if not 1 <= num < len(g.page.versions) - 1:
         raise Malformed()
-    g.page.versions[num].flag()
+    if g.page.versions[num].is_flagged:
+        raise AlreadyFlagged()
+    g.page.versions[num].set_flag()
     return reload()
 
 
@@ -390,7 +405,9 @@ def flag(title):
 def unflag_version(num):
     if not 1 <= num < len(g.page.versions) - 1:
         raise Malformed()
-    g.page.versions[num].unflag()
+    if not g.page.versions[num].is_flagged:
+        return reload()
+    g.page.versions[num].set_unflag()
     return reload()
 
 
@@ -405,13 +422,11 @@ def unflag(title):
 @app.route("/page/<title>/version/<int:num>/")
 @error_handling
 def version(title, num):
-    g.page = Page.find(title, preload_version=num)
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
-        return render_template(
-            "user-page-version.html", display=g.page.primary_diffs[num]
-        )
+        return render_template("user-page-version.html", version=g.page.versions[num])
     elif isinstance(g.page, TopicPage):
-        return render_template("topic-page-version.html", display=g.page.versions[num])
+        return render_template("topic-page-version.html", version=g.page.versions[num])
 
 
 @can_edit
@@ -428,9 +443,9 @@ def view_topic_history():
 @error_handling
 def history(title):
     g.page = Page.find(title)
-    if isinstance(page, UserPage):
+    if isinstance(g.page, UserPage):
         return view_user_history()
-    elif isinstance(page, TopicPage):
+    elif isinstance(g.page, TopicPage):
         return view_topic_history()
 
 
@@ -444,7 +459,7 @@ def freeze_user_page():
 @app.route("/page/<title>/freeze/", methods=["POST"])
 @error_handling
 def freeze(title):
-    g.page = Page.find(title, preload_version=None)
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
         return freeze_user_page()
     else:
@@ -461,7 +476,7 @@ def unfreeze_user_page():
 @app.route("/page/<title>/unfreeze/", methods=["POST"])
 @error_handling
 def unfreeze(title):
-    g.page = Page.find(title, preload_version=None)
+    g.page = Page.find(title)
     if isinstance(g.page, UserPage):
         return unfreeze_user_page()
     else:
@@ -469,9 +484,10 @@ def unfreeze(title):
 
 
 def auth_errors(fun):
+    @wraps(fun)
     def wrapped_fun(*args, **kwargs):
         try:
-            fun(*args, **kwargs)
+            return fun(*args, **kwargs)
         except UserNotFound:
             return error("Can't find that account")
         except IncorrectPassword:

@@ -1,3 +1,6 @@
+import random
+
+
 def generate_user_template(email):
     return "<p>The homo sapiens {0} is simply the best.</p><h2>Best Quotes</h2><p>Yoyoyo, it's my boy {0}.</p><h2>Early life</h2><p>One day, our protagonist {0} was born. Later, they went to college.</p>".format(
         email

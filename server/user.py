@@ -1,11 +1,13 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
+from pymodm.errors import DoesNotExist
 from pymongo.operations import IndexModel
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
+from flask import g
 
 from .app import app
-from .page import Flag
+from .errors import *
 
 
 class User(MongoModel):
@@ -62,7 +64,8 @@ class User(MongoModel):
     def verify_password(self, password):
         return check_password_hash(self.passhash, password)
 
-    def find(self, email):
+    @staticmethod
+    def find(email):
         try:
             return User.objects.get({"email": email})
         except DoesNotExist:

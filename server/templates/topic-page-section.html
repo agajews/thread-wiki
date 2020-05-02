@@ -1,11 +1,11 @@
 {% from 'page-utils.html' import header_at_level %}
-{% set displayid = "section-{{ section.idx }}-display" %}
-{% set editid = "section-{{ section.idx }}-edit" %}
-{% set bodyid = "section-{{ section.idx }}-body" %}
-{% set errorid = "error-section-{{ section.idx }}" %}
+{% set displayid = "section-{}-display".format(section.idx) %}
+{% set editid = "section-{}-edit".format(section.idx) %}
+{% set bodyid = "section-{}-body".format(section.idx) %}
+{% set errorid = "error-section-{}".format(section.idx) %}
 <div id="{{ displayid }}">
   {% set header %}
-    {{ section.header }}
+    {{ section.heading }}
     {% if g.page.can_edit %}
       <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
     {% endif %}
@@ -15,7 +15,7 @@
 </div>
 <div id="{{ editid }}" hidden="true">
   {% set header %}
-    {{ section.header }}
+    {{ section.heading }}
     <button type="button" onclick="update(get_section({{ section.idx }}),'{{ errorid }}')">Done</button>
   {% endset %}
   {{ header_at_level(header, section.level) }}

@@ -21,7 +21,8 @@
     <div>{{ version.summary|safe }}</div>
 
     {% for section in version.sections %}
-      {{ header_at_level(section.header, section.level) }}
+      {% from 'page-utils.html' import header_at_level %}
+      {{ header_at_level(section.heading, section.level) }}
       <div>{{ section.body|safe }}</div>
     {% endfor %}
   </body>

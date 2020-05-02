@@ -1,15 +1,18 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
+from flask import g
 
-from .page import Page, Version, VersionDiff
+from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes
-from .sections import diff_sections
+from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp
+from .user import User
+from .errors import *
 
 
 class TopicPage(Page):
-    versions = fields.ListField(fields.ReferenceField(TopicVersion))
-    diffs = fields.ListField(fields.ReferenceField(TopicVersionDiff))
+    versions = fields.ListField(fields.ReferenceField("TopicVersion"))
+    diffs = fields.ListField(fields.ReferenceField("TopicVersionDiff"))
 
     def add_version(self, version):
         diff = TopicVersionDiff.compute(self.versions[-1], version)
@@ -54,16 +57,21 @@ class TopicPage(Page):
             timestamp=timestamp(),
             editor=g.user,
         )
+        empty_version = TopicVersion(sections=[], summary="", name="")
         diff = VersionDiff.compute(empty_version, version)
+        empty_version.save()
         version.save()
         diff.save()
         page = TopicPage(titles=[version.title], versions=[version], diffs=[diff])
         try:
             page.save()
         except DuplicateKeyError:
+            empty_version.delete()
             version.delete()
             diff.delete()
             return Page.objects.get({"titles": version.title})
+        empty_version.page = page
+        empty_version.save()
         return page
 
     @property
@@ -75,13 +83,10 @@ class TopicPage(Page):
         return True
 
 
-empty_version = TopicVersion(sections=[], summary="", name="")
-
-
-class TopicVersion(Version):
-    sections = fields.EmbeddedDocumentListField(Section)
-    summary = fields.CharField()
-    name = fields.CharField()
+class TopicVersion(PageVersion):
+    sections = fields.EmbeddedDocumentListField(Section, blank=True)
+    summary = fields.CharField(blank=True)
+    name = fields.CharField(blank=True)
 
     @property
     def title(self):

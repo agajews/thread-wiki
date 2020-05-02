@@ -11,22 +11,20 @@
   <script>
     function get_summary() {
       return {
-        summary: document.getElementById('summary-body')
+        summary: document.getElementById('summary-body').innerHTML,
       };
     }
 
     function get_section(idx) {
-      return {
-        sections: {
-          idx: document.getElementById('section-' + idx + '-body')
-        }
-      };
+      sections = {};
+      sections[idx] = document.getElementById('section-' + idx + '-body').innerHTML;
+      return {sections: sections};
     }
 
     function get_heading() {
       return {
-        name: document.getElementById('name-body'),
-        aka: document.getElementById('aka-body')
+        name: document.getElementById('name-body').innerText,
+        aka: document.getElementById('aka-body').innerText,
       };
     }
   </script>
@@ -37,7 +35,7 @@
     <a href="{{ url_for('index') }}">Home</a>
 
     <div id="heading">
-      {% include 'user-page-heading.html' with display=display %}
+      {% include 'user-page-heading.html' %}
     </div>
 
     {% if g.page.can_edit %}
@@ -56,12 +54,12 @@
     <div id="error-freeze"></div>
 
     <div id="summary">
-      {% include 'user-page-summary.html' with display=display %}
+      {% include 'user-page-summary.html' %}
     </div>
 
     {% for section in display.sections %}
       <div id="section-{{ section.idx }}">
-        {% include 'user-page-section.html' with section=section %}
+        {% include 'user-page-section.html' %}
       </div>
     {% endfor %}
 

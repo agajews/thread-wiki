@@ -1,25 +1,28 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
+from flask import g
 
-from .page import Page, Version, VersionDiff
+from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes
-from .sections import diff_sections
+from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp
+from .user import User
+from .errors import *
 
 
 class UserPage(Page):
-    versions = fields.ListField(fields.ReferenceField(UserVersion))
-    diffs = fields.ListField(fields.ReferenceField(UserVersionDiff))
-    primary_diffs = fields.ListField(fields.ReferenceField(UserVersionDiff))
-    primary_version = fields.ReferenceField(UserVersion)
+    versions = fields.ListField(fields.ReferenceField("UserVersion"))
+    diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
+    primary_diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
+    primary_version = fields.ReferenceField("UserVersion")
     owner = fields.ReferenceField(User)
     is_frozen = fields.BooleanField(default=False)
 
-    def add_version(self, version):
+    def add_version(self, version, is_primary=False):
         diff = UserVersionDiff.compute(self.versions[-1], version)
         if diff.is_empty:
             raise EmptyEdit()
-        if version.is_primary:
+        if is_primary:
             self.primary_version = version
         primary_diff = UserVersionDiff.compute(
             self.primary_version, version, concise=True
@@ -49,9 +52,8 @@ class UserPage(Page):
             summary=summary,
             name=name,
             aka=aka,
-            is_primary=g.user == self.owner,
         )
-        self.add_version(version)
+        self.add_version(version, is_primary=g.user == self.owner)
 
     def restore(self, num):
         assert 0 <= num < len(self.versions) - 1
@@ -73,37 +75,41 @@ class UserPage(Page):
             raise
 
     @staticmethod
-    def create_or_return(sections, summary, name, aka, owner):
+    def create_or_return(sections, summary, email, aka, owner):
         assert g.user is not None
         version = UserVersion(
             sections=sections,
             summary=summary,
-            name=name,
+            name=email,
             aka=aka,
             timestamp=timestamp(),
             editor=g.user,
-            is_primary=False,
         )
+        empty_version = UserVersion(sections=[], summary="", name="", aka="")
         diff = UserVersionDiff.compute(empty_version, version)
         primary_diff = UserVersionDiff.compute(empty_version, version, concise=True)
+        empty_version.save()
         version.save()
         diff.save()
         primary_diff.save()
         page = UserPage(
-            titles=[version.title],
+            titles=[email],
             versions=[version],
             diffs=[diff],
             primary_diffs=[primary_diff],
-            primary_version=version,
+            primary_version=empty_version,
             owner=owner,
         )
         try:
             page.save()
         except DuplicateKeyError:
             version.delete()
+            empty_version.delete()
             diff.delete()
             primary_diff.delete()
-            return Page.objects.get({"titles": version.title})
+            return Page.objects.get({"titles": email})
+        empty_version.page = page
+        empty_version.save()
         return page
 
     def freeze(self):
@@ -114,7 +120,7 @@ class UserPage(Page):
 
     def unfreeze(self):
         assert g.user == self.owner
-        self.is_frozen = True
+        self.is_frozen = False
         self.save()
 
     @property
@@ -139,11 +145,11 @@ class UserPage(Page):
             return True
 
 
-class UserVersion(Version):
-    sections = fields.EmbeddedDocumentListField(Section)
-    summary = fields.CharField()
-    name = fields.CharField()
-    aka = fields.CharField()
+class UserVersion(PageVersion):
+    sections = fields.EmbeddedDocumentListField(Section, blank=True)
+    summary = fields.CharField(blank=True)
+    name = fields.CharField(blank=True)
+    aka = fields.CharField(blank=True)
 
     @property
     def title(self):
@@ -151,14 +157,15 @@ class UserVersion(Version):
 
 
 class UserVersionDiff(VersionDiff):
-    sections = fields.EmbeddedDocumentListField(SectionDiff)
-    summary = fields.CharField()
-    summary_diff = fields.CharField()
+    # TODO: decide what to do about blank inputs
+    sections = fields.EmbeddedDocumentListField(SectionDiff, blank=True)
+    summary = fields.CharField(blank=True)
+    summary_diff = fields.CharField(blank=True)
     summary_changed = fields.BooleanField()
-    name = fields.CharField()
-    prev_name = fields.CharField()
-    aka = fields.CharField()
-    prev_aka = fields.CharField()
+    name = fields.CharField(blank=True)
+    prev_name = fields.CharField(blank=True)
+    aka = fields.CharField(blank=True)
+    prev_aka = fields.CharField(blank=True)
 
     @property
     def heading_changed(self):
@@ -176,19 +183,23 @@ class UserVersionDiff(VersionDiff):
     def is_empty(self):
         return not (
             self.summary_changed
-            or self.name_changed
+            or self.heading_changed
             or any(not section.is_empty for section in self.sections)
         )
 
     @staticmethod
-    def compute(version_a, version_b):
-        sections = diff_sections(version_a.sections, version_b.sections)
-        summary_diff = markup_changes(version_a.summary, version_b.summary)
+    def compute(version_a, version_b, concise=False):
+        sections = diff_sections(
+            version_a.sections, version_b.sections, concise=concise
+        )
+        summary_diff = markup_changes(
+            version_a.summary, version_b.summary, concise=concise
+        )
         name = version_b.name
         prev_name = version_a.name
         aka = version_b.aka
         prev_aka = version_a.aka
-        return TopicVersionDiff(
+        return UserVersionDiff(
             version_a=version_a,
             version_b=version_b,
             sections=sections,

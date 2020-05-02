@@ -14,16 +14,26 @@
     <h1>History: {{ g.page.versions[-1].name }}</h1>
     <a href="{{ url_for('page', title=title) }}">Back</a>
 
-    {% from 'page-utils.html' import header_at_level %}
-    {% macro show_version(version, diff, num, buttons) %}
+    {% for num in reversed(range(len(g.page.versions))) %}
+      {% set version = g.page.versions[num] %}
+      {% set diff = g.page.diffs[num] %}
       <div>
         <span class="timestamp">{{ version.timestamp }}</span>
-        {{ buttons }}
-        <a href="{{ url_for('version', title=title, num=num) }}">View</a>
+        {% if num != 0 and num != len(g.page.versions) - 1 %}
+          {% if not version.is_flagged %}
+            <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
+          {% elif version.flag.sender == g.user %}
+            <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
+          {% endif %}
+        {% endif %}
+        {% if num != len(g.page.versions) - 1 %}
+          <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
+        {% endif %}
+        <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
       </div>
       <div id="error-version-{{ version.num }}"></div>
 
-      {% if version.flag %}
+      {% if version.is_flagged %}
         <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>
       {% else %}
 
@@ -33,47 +43,26 @@
         {% if diff.summary_changed %}
           {{ diff.summary_diff|safe }}
         {% endif %}
+
+        {% from 'page-utils.html' import header_at_level %}
         {% for section in diff.sections %}
           {% if section.inserted %}
-            <ins>{{ header_at_level(section.header, section.level) }}</ins>
+            <ins>{{ header_at_level(section.heading, section.level) }}</ins>
             <ins>{{ section.body|safe }}</ins>
           {% elif section.deleted %}
-            <del>{{ header_at_level(section.header, section.level) }}</del>
+            <del>{{ header_at_level(section.heading, section.level) }}</del>
             <del>{{ section.body|safe }}</del>
           {% elif section.edited %}
-            {{ header_at_level(section.header, section.level) }}
+            {{ header_at_level(section.heading, section.level) }}
             {{ section.body_diff|safe }}
           {% endif %}
         {% endfor %}
 
       {% endif %}
-    {% endmacro %}
 
-    {% if len(g.page.versions) != 1 %}
-      {% set num = len(g.page.versions) - 1 %}
-      {% set buttons %}
-      {% endset %}
-      {{ show_version(g.page.versions[-1], g.page.diffs[-1], num, buttons) }}
-      <hr>
-    {% endif %}
-
-    {% for num, (version, diff) in enumerate(zip(g.page.versions[1:-1], g.page.diffs[1:-1])) %}
-      {% set errorid = "error-version-{{ num }}" %}
-      {% set buttons %}
-        {% if not version.flag %}
-          <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
-        {% elif version.flag.sender == g.user %}
-          <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
-        {% endif %}
-          <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
-      {% endset %}
-      {{ show_version(version, diff, num, buttons) }}
-      <hr>
+      {% if num != 0 %}
+        <hr>
+      {% endif %}
     {% endfor %}
-
-    {% set buttons %}
-      <button type="button" onclick="restore(0, 'error-version-0')">Restore</button>
-    {% endset %}
-    {{ show_version(g.page.versions[0], g.page.diffs[0], 0, buttons) }}
   </body>
 </html>

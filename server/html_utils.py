@@ -1,7 +1,6 @@
 import bleach
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
-import itertools
 
 
 self_closing = ["br"]

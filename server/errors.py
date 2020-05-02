@@ -6,7 +6,7 @@ class RaceCondition(UserError):
     pass
 
 
-class DuplicateKey(UserError):
+class DuplicatePage(UserError):
     pass
 
 
@@ -35,6 +35,10 @@ class VersionNotFound(UserError):
 
 
 class UserNotFound(UserError):
+    pass
+
+
+class IncorrectPassword(UserError):
     pass
 
 

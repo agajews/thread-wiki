@@ -11,7 +11,7 @@ from pymodm import connect
 app = flask.Flask(__name__)
 app.config["SECRET_KEY"] = os.environ["FLASK_SECRET_KEY"]
 
-connect("mongodb://localhost:27017")
+connect("mongodb://localhost:27017/thread_dev")
 
 
 def url_for(*args, **kwargs):
@@ -25,7 +25,7 @@ def inject_url_for_title():
 
 @app.context_processor
 def inject_utils():
-    return dict(len=len, enumerate=enumerate, zip=zip)
+    return dict(len=len, enumerate=enumerate, zip=zip, range=range, reversed=reversed)
 
 
 def timestamp():
