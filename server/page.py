@@ -40,11 +40,8 @@ class Page(MongoModel):
         self.titles.append(title)
 
     def add_search_term(self, term):
-        print(self.search_terms)
         if term not in self.search_terms:
-            print("adding term")
             self.search_terms.append(term)
-            print(self.search_terms)
 
     @property
     def title(self):

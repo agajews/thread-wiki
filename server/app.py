@@ -2,6 +2,7 @@
 # FLASK_ENV=development
 # FLASK_APP=server/server.py
 # FLASK_SECRET_KEY=<secret_key>
+# MONGODB_CONNECT_STRING=<secret_key>
 
 import os
 from datetime import datetime
@@ -11,13 +12,15 @@ from pymodm import connect
 app = flask.Flask(__name__)
 app.config.update(
     SECRET_KEY=os.environ["FLASK_SECRET_KEY"],
-    SERVER_NAME="127.0.0.1:5000",
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
 )
 
-connect("mongodb://localhost:27017/thread_dev")
+if "FLASK_SERVER_NAME" in os.environ:
+    SERVER_NAME = os.environ["FLASK_SERVER_NAME"]
+
+connect(os.environ["MONGODB_CONNECT_STRING"])
 
 
 def url_for(*args, **kwargs):
