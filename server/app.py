@@ -1,8 +1,8 @@
 # stuff to set:
 # FLASK_ENV=development
 # FLASK_APP=server/server.py
-# FLASK_SECRET_KEY=<secret_key>
-# MONGODB_CONNECT_STRING=<secret_key>
+# FLASK_SECRET_KEY=devkey
+# MONGODB_CONNECT_STRING=mongodb://localhost:27017/thread_dev
 
 import os
 from datetime import datetime
@@ -18,7 +18,7 @@ app.config.update(
 )
 
 if "FLASK_SERVER_NAME" in os.environ:
-    SERVER_NAME = os.environ["FLASK_SERVER_NAME"]
+    app.config.update(SERVER_NAME=os.environ["FLASK_SERVER_NAME"])
 
 connect(os.environ["MONGODB_CONNECT_STRING"])
 
@@ -34,7 +34,14 @@ def inject_url_for_title():
 
 @app.context_processor
 def inject_utils():
-    return dict(len=len, enumerate=enumerate, zip=zip, range=range, reversed=reversed)
+    return dict(
+        len=len,
+        enumerate=enumerate,
+        zip=zip,
+        range=range,
+        reversed=reversed,
+        isinstance=isinstance,
+    )
 
 
 def timestamp():

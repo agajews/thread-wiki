@@ -3,6 +3,7 @@
     <title>{{ display.name }} - Thread</title>
     {% include 'scripts.html' %}
     {% include 'concise-diff-styles.html' %}
+    {% include 'user-styles.html' %}
   </head>
 
   {% include 'update-scripts.html' %}
@@ -40,6 +41,7 @@
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
       <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% endif %}
+    <span class="email">{{ g.page.owner.email }}</span>
 
     {% if g.user == g.page.owner %}
       {% if g.page.is_frozen %}

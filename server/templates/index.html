@@ -2,20 +2,32 @@
   <head>
     <title>Thread</title>
     {% include 'scripts.html' %}
+    {% include 'diff-styles.html' %}
   </head>
 
   <body>
     {% include 'modules/login.html' %}
-    <h1>Welcome to thread!</h1>
+    <h1>Recent Edits</h1>
     {% include 'modules/search.html' %}
-    <h2>Here are all of the pages:</h2>
-    <ul>
+    <ol>
       {% for page in pages %}
-        <li><a href="{{ url_for('page', title=page.title) }}">
-          {{ page.versions[-1].name }}
-        </a></li>
+        <li>
+        {% if isinstance(page, UserPage) %}
+          {% set diff = page.diffs[-1] %}
+          <h2><a href="{{ url_for('page', title=page.title) }}">
+            {{ diff.name }}
+          </a></h2>
+          {% include 'user-page-diff.html' %}
+        {% elif isinstance(page, TopicPage) %}
+          {% set diff = page.diffs[-1] %}
+          <h2><a href="{{ url_for('page', title=page.title) }}">
+            {{ diff.name }}
+          </a></h2>
+          {% include 'topic-page-diff.html' %}
+        {% endif %}
       {% endfor %}
-    </ul>
+      </li>
+    </ol>
 
   </body>
 </html>

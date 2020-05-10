@@ -34,6 +34,7 @@ class UserPage(Page):
         self.primary_diffs.append(primary_diff)
         self.add_title(version.title)
         self.add_search_term(version.name)
+        self.last_edited = version.timestamp
         try:
             self.save_if_fresh()
         except (RaceCondition, DuplicatePage):

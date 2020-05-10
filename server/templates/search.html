@@ -17,13 +17,17 @@
       <a href="{{ url_for('page', title=title_to_create) }}">Create a page called {{ query }}</a>
     {% endif %}
 
-    <ul>
-      {% for page in pages %}
-        <li><a href="{{ url_for('page', title=page.title) }}">
-          {{ page.versions[-1].name }}
-        </a></li>
-      {% endfor %}
-    </ul>
+    {% if len(pages) == 0 %}
+      <p>No search results found :(</p>
+    {% else %}
+      <ul>
+        {% for page in pages %}
+          <li><a href="{{ url_for('page', title=page.title) }}">
+            {{ page.versions[-1].name }}
+          </a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
   </body>
 </html>

@@ -2,6 +2,7 @@
   <head>
     <title>{{ version.name }} - Thread</title>
     {% include 'scripts.html' %}
+    {% include 'user-styles.html' %}
   </head>
 
   <body>
@@ -15,6 +16,7 @@
       <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% endif %}
     <a href="{{ url_for('page', title=g.page.title) }}">Latest version</a>
+    <span class="email">{{ g.page.owner.email }}</span>
 
     <div>{{ version.summary|safe }}</div>
 

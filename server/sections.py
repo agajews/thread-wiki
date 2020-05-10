@@ -15,14 +15,15 @@ from .html_utils import (
 class Section(EmbeddedMongoModel):
     heading = fields.CharField()
     level = fields.IntegerField()
-    body = fields.CharField()
+    body = fields.CharField(blank=True)
 
 
 class SectionDiff(EmbeddedMongoModel):
     heading = fields.CharField()
     level = fields.IntegerField()
-    body = fields.CharField()
-    body_diff = fields.CharField()
+    body = fields.CharField(blank=True)
+    body_diff = fields.CharField(blank=True)
+
     inserted = fields.BooleanField(default=False)
     deleted = fields.BooleanField(default=False)
     edited = fields.BooleanField(default=False)

@@ -15,6 +15,7 @@ class Page(MongoModel):
     titles = fields.ListField(fields.CharField())
     freshness = fields.IntegerField(default=0)
     search_terms = fields.ListField(fields.CharField())
+    last_edited = fields.DateTimeField(default=0)
 
     class Meta:
         indexes = [
@@ -55,8 +56,8 @@ class Page(MongoModel):
             raise PageNotFound()
 
     @staticmethod
-    def search(query):
-        return Page.objects.raw({"$text": {"$search": query}}).all()
+    def search(query, limit=20):
+        return list(Page.objects.raw({"$text": {"$search": query}}).limit(limit))
 
 
 class PageVersion(MongoModel):

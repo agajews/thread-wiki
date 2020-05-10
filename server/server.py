@@ -1,6 +1,8 @@
 import re
 from flask import render_template, abort, request, jsonify, g
+from flask import redirect as flask_redirect
 from functools import wraps
+from pymongo import DESCENDING
 
 from .app import app, url_for
 from .html_utils import sanitize_html, sanitize_text
@@ -14,8 +16,19 @@ from .errors import *
 from . import auth  # just to load handlers into the app
 
 
+@app.context_processor
+def inject_models():
+    return dict(UserPage=UserPage, TopicPage=TopicPage)
+
+
+def is_email(email):
+    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+[a-zA-Z0-9\\-_]+$", email):
+        return True
+    return False
+
+
 def is_valid_email(email):
-    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+.)+edu$", email):
+    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
         return True
     return False
 
@@ -161,7 +174,7 @@ def error(message):
 @app.route("/")
 @error_handling
 def index():
-    pages = Page.objects.all()
+    pages = Page.objects.order_by([("last_edited", DESCENDING)]).limit(20)
     return render_template("index.html", pages=pages)
 
 
@@ -171,10 +184,12 @@ def page(title):
     try:
         g.page = Page.find(title)
     except PageNotFound as e:
-        if g.user is None:
+        if g.user is None or not g.user.can_create:
             raise e
         if is_valid_email(title):
             g.page = create_user_page(title)
+        elif is_email(title):
+            raise e
         else:
             g.page = create_topic_page(title)
     if isinstance(g.page, UserPage):
@@ -458,14 +473,14 @@ def history(title):
 @app.route("/search/?<query>")
 @error_handling
 def search(query):
-    if is_valid_email(query):
-        return redirect(url_for("page", title=query))
+    if g.user is not None and is_valid_email(query):
+        return flask_redirect(url_for("page", title=query))
     title = query.replace(" ", "_").replace("/", "|")
     can_create = False
     try:
         Page.find(title)
     except PageNotFound:
-        can_create = True
+        can_create = g.user is not None and g.user.can_create and not is_email(title)
     pages = Page.search(query)
     return render_template(
         "search.html",

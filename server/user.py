@@ -25,6 +25,10 @@ class User(MongoModel):
         return self.banned_until > timestamp()
 
     @property
+    def can_create(self):
+        return not self.is_banned
+
+    @property
     def banned_until(self):
         if not hasattr(self, "_banned_until"):
             self._banned_until = None
