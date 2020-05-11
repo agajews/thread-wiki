@@ -23,6 +23,7 @@
       <span id="name" contenteditable="true">{{ version.name }}</span>, AKA "<span id="aka" contenteditable="true">{{ version.aka }}</span>"
     </h1>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>
+    {% include 'edit-buttons.html' %}
     <div id="body" contenteditable="true">
       {{ version.summary|safe }}
 

@@ -5,7 +5,7 @@ from functools import wraps
 from pymongo import DESCENDING
 
 from .app import app, url_for
-from .html_utils import sanitize_html, sanitize_text
+from .html_utils import sanitize_html, sanitize_paragraph, sanitize_text, title_to_name
 from .sections import separate_sections, Section
 from .templates import generate_user_template, generate_aka, generate_topic_template
 from .page import Page
@@ -22,13 +22,15 @@ def inject_models():
 
 
 def is_email(email):
-    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+[a-zA-Z0-9\\-_]+$", email):
+    if re.fullmatch(
+        "^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+[a-zA-Z0-9\\-_]+$", email
+    ):
         return True
     return False
 
 
 def is_valid_email(email):
-    if re.match("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
+    if re.fullmatch("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
         return True
     return False
 
@@ -40,7 +42,7 @@ def create_user_page(email):
 
 
 def create_topic_page(title):
-    name = title.replace("_", " ").replace("|", "/")
+    name = title_to_name(title)
     summary, sections = separate_sections(generate_topic_template(name))
     return TopicPage.create_or_return(sections, summary, name)
 
@@ -272,7 +274,7 @@ def update_user_page():
         aka = sanitize_text(update["aka"])
         update_heading = True
     if "summary" in update:
-        summary = sanitize_html(update["summary"])
+        summary = sanitize_paragraph(update["summary"])
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
@@ -282,7 +284,7 @@ def update_user_page():
             sections[idx] = Section(
                 heading=sections[idx].heading,
                 level=sections[idx].level,
-                body=sanitize_html(body),
+                body=sanitize_paragraph(body),
             )
             update_sections.append(idx)
 
@@ -321,7 +323,7 @@ def update_topic_page():
         name = sanitize_text(update["name"])
         update_heading = True
     if "summary" in update:
-        summary = sanitize_html(update["summary"])
+        summary = sanitize_paragraph(update["summary"])
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
@@ -331,7 +333,7 @@ def update_topic_page():
             sections[idx] = Section(
                 heading=sections[idx].heading,
                 level=sections[idx].level,
-                body=sanitize_html(body),
+                body=sanitize_paragraph(body),
             )
             update_sections.append(idx)
 
@@ -348,7 +350,7 @@ def update_topic_page():
         html["summary"] = render_template("topic-page-summary.html", display=display)
     for idx in update_sections:
         html["section-{}".format(idx)] = render_template(
-            "topic-page-section.html", section=display.sections[idx]
+            "topic-page-section.html", section=display.sections[idx], idx=idx
         )
     return rerender(html, freshness=g.page.freshness)
 
@@ -475,7 +477,7 @@ def history(title):
 def search(query):
     if g.user is not None and is_valid_email(query):
         return flask_redirect(url_for("page", title=query))
-    title = query.replace(" ", "_").replace("/", "|")
+    title = name_to_title(query)
     can_create = False
     try:
         Page.find(title)

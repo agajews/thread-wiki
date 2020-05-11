@@ -3,7 +3,7 @@ from pymongo.errors import DuplicateKeyError
 from flask import g
 
 from .page import Page, PageVersion, VersionDiff
-from .html_utils import markup_changes
+from .html_utils import markup_changes, name_to_title
 from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp
 from .errors import *
@@ -96,7 +96,7 @@ class TopicVersion(PageVersion):
 
     @property
     def title(self):
-        return self.name.replace(" ", "_").replace("/", "|")
+        return name_to_title(self.name)
 
 
 class TopicVersionDiff(VersionDiff):

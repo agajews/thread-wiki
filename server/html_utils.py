@@ -1,4 +1,5 @@
 import bleach
+import re
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
 
@@ -8,29 +9,54 @@ from .errors import *
 self_closing = ["br"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = " \t\n\xa0"
-allowed_tags = [
-    "p",
-    "div",
-    "br",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "b",
-    "strong",
-    "i",
-    "em",
-    "li",
-    "ol",
-    "ul",
-    "a",
-]
+allowed_tags = ["p", "div", "br", "b", "strong", "i", "em", "li", "ol", "ul", "a"]
+
+
+def name_to_title(name):
+    return name.replace(" ", "_").replace("/", "|")
+
+
+def title_to_name(title):
+    return title.replace("_", " ").replace("|", "/")
+
+
+def get_thread_title(href):
+    match = re.fullmatch("^(http://|https://)?thread.wiki/page/([^/]+)(/)?$", href)
+    if match is None:
+        return None
+    return match.group(2)
+
+
+def clean_link(attrs, new=False):
+    print("cleaning link")
+    print(attrs)
+    if (None, "href") not in attrs:
+        return None
+    href = attrs[(None, "href")]
+    thread_title = get_thread_title(href)
+    if thread_title is None:
+        attrs["_text"] = href
+    else:
+        attrs["_text"] = title_to_name(thread_title)
+    return attrs
+
+
+linker = bleach.Linker(
+    callbacks=[clean_link], url_re=bleach.linkifier.build_url_re(tlds=["[a-z]+"])
+)
+
+
+def linkify(html):
+    return linker.linkify(html)
 
 
 def sanitize_html(html):
-    # TODO: linkify as well
-    return bleach.clean(str(html), tags=allowed_tags, strip=True)
+    return linkify(bleach.clean(str(html), tags=allowed_tags + header_tags, strip=True))
+
+
+def sanitize_paragraph(html):
+    print("sanitizing paragraph")
+    return linkify(bleach.clean(str(html), tags=allowed_tags, strip=True))
 
 
 def sanitize_text(text):
