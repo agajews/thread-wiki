@@ -164,7 +164,7 @@ class UserVersion(PageVersion):
 
     @property
     def title(self):
-        return name_to_title(self.name + "_" + self.aka)
+        return name_to_title(self.name + " (" + self.aka + ")")
 
 
 class UserVersionDiff(VersionDiff):

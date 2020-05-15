@@ -10,7 +10,7 @@
   <body>
     {% include "modules/navbar.html" %}
 
-    <h1>History: {{ g.page.versions[-1].name }}, AKA "{{ g.page.versions[-1].aka }}"</h1>
+    <h1>History: {{ g.page.versions[-1].name }} ({{ g.page.versions[-1].aka }})</h1>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>
 
     {% for num in reversed(range(len(g.page.versions))) %}

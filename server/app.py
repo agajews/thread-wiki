@@ -24,7 +24,13 @@ connect(os.environ["MONGODB_CONNECT_STRING"])
 
 
 def url_for(*args, **kwargs):
-    return flask.url_for(*args, **kwargs).replace("%40", "@").replace("%7C", "|")
+    return (
+        flask.url_for(*args, **kwargs)
+        .replace("%40", "@")
+        .replace("%7C", "|")
+        .replace("%28", "(")
+        .replace("%29", ")")
+    )
 
 
 @app.context_processor

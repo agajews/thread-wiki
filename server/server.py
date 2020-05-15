@@ -5,7 +5,7 @@ from functools import wraps
 from pymongo import DESCENDING
 
 from .app import app, url_for
-from .html_utils import sanitize_html, sanitize_paragraph, sanitize_text, title_to_name
+from .html_utils import sanitize_html, sanitize_paragraph, sanitize_text, title_to_name, name_to_title
 from .sections import separate_sections, Section
 from .templates import generate_user_template, generate_aka, generate_topic_template
 from .page import Page

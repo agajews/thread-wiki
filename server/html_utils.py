@@ -2,6 +2,7 @@ import bleach
 import re
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
+import urllib
 
 from .errors import *
 
@@ -28,16 +29,14 @@ def get_thread_title(href):
 
 
 def clean_link(attrs, new=False):
-    print("cleaning link")
-    print(attrs)
     if (None, "href") not in attrs:
         return None
     href = attrs[(None, "href")]
     thread_title = get_thread_title(href)
     if thread_title is None:
-        attrs["_text"] = href
+        attrs["_text"] = sanitize_text(href)
     else:
-        attrs["_text"] = title_to_name(thread_title)
+        attrs["_text"] = sanitize_text(urllib.parse.unquote(title_to_name(thread_title)))
     return attrs
 
 
@@ -55,7 +54,6 @@ def sanitize_html(html):
 
 
 def sanitize_paragraph(html):
-    print("sanitizing paragraph")
     return linkify(bleach.clean(str(html), tags=allowed_tags, strip=True))
 
 

@@ -68,7 +68,7 @@ def generate_user_template(email):
 
 
 def generate_aka():
-    return " ".join([random_adjective(), random_noun(), random_title()])
+    return " ".join(s.capitalize() for s in [random_noun(), random_title()])
 
 
 def generate_topic_template(name):
