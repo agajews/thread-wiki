@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Edit: Bookmarks - Thread</title>
+    {% include 'scripts.html' %}
+
+    <script>
+      function submitedit() {
+        signal("{{ url_for('bookmarks_submitedit') }}", {
+          body: document.getElementById("body").innerHTML,
+          errorid: 'error-edit',
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    {% include "modules/navbar.html" %}
+
+    <h1>Bookmarks</h1>
+    <a href="{{ url_for('bookmarks') }}">Back</a>
+    {% include 'edit-buttons.html' %}
+    <div id="body" contenteditable="true">
+      {{ version.summary|safe }}
+
+      {% from 'page-utils.html' import header_at_level %}
+      {% for section in version.sections %}
+        {{ header_at_level(section.heading, section.level) }}
+        {{ section.body|safe }}
+      {% endfor %}
+    </div>
+    <button type="button" onclick="submitedit()">Submit edit</button>
+    <div id="error-edit"></div>
+  </body>
+</html>

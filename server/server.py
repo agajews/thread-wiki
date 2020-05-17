@@ -5,13 +5,20 @@ from functools import wraps
 from pymongo import DESCENDING
 
 from .app import app, url_for
-from .html_utils import sanitize_html, sanitize_paragraph, sanitize_text, title_to_name, name_to_title
+from .html_utils import (
+    sanitize_html,
+    sanitize_paragraph,
+    sanitize_text,
+    title_to_name,
+    name_to_title,
+)
 from .sections import separate_sections, Section
 from .templates import generate_user_template, generate_aka, generate_topic_template
 from .page import Page
 from .user import User
 from .user_page import UserPage
 from .topic_page import TopicPage
+from .bookmarks import BookmarksPage
 from .errors import *
 from . import auth  # just to load handlers into the app
 
@@ -47,6 +54,11 @@ def create_topic_page(title):
     return TopicPage.create_or_return(sections, summary, name)
 
 
+def create_bookmarks_page():
+    summary, sections = separate_sections(render_template("bookmarks-template.html"))
+    return BookmarksPage.create_or_return(sections, summary)
+
+
 def cast_param(val, cls):
     try:
         val = cls(val)
@@ -73,7 +85,8 @@ def error_handling(fun):
         except Malformed as e:
             abort(400)
         except NotAllowed:
-            abort(401)
+            # abort(401)
+            return flask_redirect(url_for("recent"))
         except PageNotFound:
             abort(404)
 
@@ -127,6 +140,15 @@ def topic_page_errors(fun):
     return wrapped_fun
 
 
+def bookmarks_page_errors(fun):
+    @wraps(fun)
+    @page_errors
+    def wrapped_fun(*args, **kwargs):
+        return fun(*args, **kwargs)
+
+    return wrapped_fun
+
+
 def can_edit(fun):
     @wraps(fun)
     def wrapped_fun(*args, **kwargs):
@@ -176,8 +198,16 @@ def error(message):
 @app.route("/")
 @error_handling
 def index():
+    if g.user is None:
+        return flask_redirect(url_for("recent"))
+    return flask_redirect(url_for("bookmarks"))
+
+
+@app.route("/recent/")
+@error_handling
+def recent():
     pages = Page.objects.order_by([("last_edited", DESCENDING)]).limit(20)
-    return render_template("index.html", pages=pages)
+    return render_template("recent.html", pages=pages)
 
 
 @app.route("/page/<title>/")
@@ -199,7 +229,25 @@ def page(title):
     elif isinstance(g.page, TopicPage):
         return render_template("topic-page.html", display=g.page.versions[-1])
 
-    return wrapped_fun
+
+@app.route("/bookmarks/")
+@error_handling
+def bookmarks():
+    if g.user is None:
+        raise NotAllowed()
+    try:
+        g.page = BookmarksPage.find()
+    except PageNotFound:
+        g.page = create_bookmarks_page()
+    links = g.page.latest.links
+    pages = list(
+        Page.objects.raw({"titles": {"$in": links}})
+        .order_by([("last_edited", DESCENDING)])
+        .limit(10)
+    )
+    return render_template(
+        "bookmarks-page.html", display=g.page.versions[-1], pages=pages
+    )
 
 
 @can_edit
@@ -220,6 +268,15 @@ def edit(title):
         return view_user_edit()
     elif isinstance(g.page, TopicPage):
         return view_topic_edit()
+
+
+@app.route("/bookmarks/edit/")
+@error_handling
+def edit_bookmarks():
+    if g.user is None:
+        raise NotAllowed()
+    g.page = BookmarksPage.find()
+    return render_template("edit-bookmarks-page.html", version=g.page.versions[-1])
 
 
 @user_page_errors
@@ -251,6 +308,18 @@ def submitedit(title):
         return edit_user_page()
     elif isinstance(g.page, TopicPage):
         return edit_topic_page()
+
+
+@app.route("/bookmarks/submitedit/", methods=["POST"])
+@error_handling
+@bookmarks_page_errors
+def bookmarks_submitedit():
+    if g.user is None:
+        raise NotAllowed()
+    g.page = BookmarksPage.find()
+    summary, sections = separate_sections(sanitize_html(get_param("body")))
+    g.page.edit(sections, summary)
+    return redirect(url_for("bookmarks"))
 
 
 @user_page_errors
@@ -366,6 +435,53 @@ def update(title):
         return update_topic_page()
 
 
+@app.route("/bookmarks/update/", methods=["POST"])
+@error_handling
+def update_bookmarks():
+    if g.user is None:
+        raise NotAllowed()
+    g.page = BookmarksPage.find()
+
+    update_summary = False
+    update_sections = []
+
+    old_version = g.page.latest
+    update = get_param("update", dict)
+    summary = old_version.summary
+    sections = old_version.sections[:]
+    if "summary" in update:
+        summary = sanitize_paragraph(update["summary"])
+        update_summary = True
+    if "sections" in update:
+        for key, body in cast_param(update["sections"], dict).items():
+            idx = cast_param(key, int)
+            if not 0 <= idx < len(sections):
+                raise Malformed()
+            sections[idx] = Section(
+                heading=sections[idx].heading,
+                level=sections[idx].level,
+                body=sanitize_paragraph(body),
+            )
+            update_sections.append(idx)
+
+    try:
+        g.page.edit(sections, summary)
+    except EmptyEdit:
+        pass
+
+    html = {}
+    display = g.page.versions[-1]
+    if update_summary:
+        html["summary"] = render_template(
+            "bookmarks-page-summary.html", display=display
+        )
+    for idx in update_sections:
+        html["section-{}".format(idx)] = render_template(
+            "bookmarks-page-section.html", section=display.sections[idx], idx=idx
+        )
+    return rerender(html)
+
+
 @page_errors
 @can_edit
 @catch_race
@@ -382,6 +498,20 @@ def restore(title):
     num = get_param("num", int)
     g.page = Page.find(title)
     return restore_version(num)
+
+
+@app.route("/bookmarks/restore/", methods=["POST"])
+@error_handling
+@bookmarks_page_errors
+def restore_bookmarks():
+    if g.user is None:
+        raise NotAllowed()
+    num = get_param("num", int)
+    if not 0 <= num < len(g.page.versions):
+        raise Malformed()
+    g.page = BookmarksPage.find()
+    g.page.restore(num)
+    return reload()
 
 
 @user_page_errors
@@ -448,9 +578,24 @@ def unflag(title):
 def version(title, num):
     g.page = Page.find(title)
     if isinstance(g.page, UserPage):
+        if not 0 <= num < len(g.page.versions):
+            raise Malformed()
         return render_template("user-page-version.html", version=g.page.versions[num])
     elif isinstance(g.page, TopicPage):
+        if not 0 <= num < len(g.page.versions):
+            raise Malformed()
         return render_template("topic-page-version.html", version=g.page.versions[num])
+
+
+@app.route("/bookmarks/version/<int:num>/")
+@error_handling
+def bookmarks_version(num):
+    if g.user is None:
+        raise NotAllowed()
+    g.page = BookmarksPage.find()
+    if not 0 <= num < len(g.page.versions):
+        raise Malformed()
+    return render_template("bookmarks-page-version.html", version=g.page.versions[num])
 
 
 @can_edit
@@ -471,6 +616,15 @@ def history(title):
         return view_user_history()
     elif isinstance(g.page, TopicPage):
         return view_topic_history()
+
+
+@app.route("/bookmarks/history/")
+@error_handling
+def bookmarks_history():
+    if g.user is None:
+        raise NotAllowed()
+    g.page = BookmarksPage.find()
+    return render_template("bookmarks-page-history.html")
 
 
 @app.route("/search/?<query>")
@@ -563,6 +717,7 @@ def authenticate():
 @error_handling
 @auth_errors
 def setpassword():
+    # TODO: make password reset, forgot password
     if g.user is None:
         return reload()
     g.user.set_password(get_param("password"))

@@ -79,7 +79,7 @@ class PageVersion(MongoModel):
     editor = fields.ReferenceField("User")
     flag = fields.EmbeddedDocumentField("Flag")
     is_flagged = fields.BooleanField(default=False)
-    links = fields.ListField(fields.CharField(), default=[])
+    links = fields.ListField(fields.CharField(), default=[], blank=True)
 
     class Meta:
         indexes = [IndexModel([("editor", ASCENDING), ("is_flagged", ASCENDING)])]

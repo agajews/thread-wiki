@@ -1,0 +1,74 @@
+<html>
+  <head>
+    <title>Bookmarks - Thread</title>
+    {% include 'scripts.html' %}
+
+    <script>
+      function swap(to_hide, to_show) {
+        document.getElementById(to_hide).setAttribute('hidden', true);
+        document.getElementById(to_show).removeAttribute('hidden');
+      }
+
+      function update(update, errorid) {
+        signal("{{ url_for('update_bookmarks', title=g.page.title) }}", {
+          update: update,
+          errorid: errorid,
+        }).then((response) => {
+          window.freshness = response.freshness;
+        });
+      }
+
+      function get_summary() {
+        return {
+          summary: document.getElementById('summary-body').innerHTML,
+        };
+      }
+
+      function get_section(idx) {
+        sections = {};
+        sections[idx] = document.getElementById('section-' + idx + '-body').innerHTML;
+        return {sections: sections};
+      }
+    </script>
+  </head>
+
+  <body>
+    {% include 'modules/navbar.html' %}
+
+    <h1>Bookmarks</h1>
+    <a href="{{ url_for('edit_bookmarks') }}">Edit page</a>
+    <a href="{{ url_for('bookmarks_history') }}">History</a>
+
+    {% if len(pages) != 0 %}
+      <div>Recently edited:</div>
+      <ul>
+        {% for page in pages %}
+          <li>
+          {% if isinstance(page, UserPage) %}
+            {% set diff = page.diffs[-1] %}
+            <a href="{{ url_for('page', title=page.title) }}">
+              {{ diff.name }}
+            </a>
+          {% elif isinstance(page, TopicPage) %}
+            {% set diff = page.diffs[-1] %}
+            <a href="{{ url_for('page', title=page.title) }}">
+              {{ diff.name }}
+            </a>
+          {% endif %}
+        {% endfor %}
+        </li>
+      </ul>
+    {% endif %}
+
+    <div id="summary">
+      {% include 'bookmarks-page-summary.html' %}
+    </div>
+
+    {% for idx, section in enumerate(display.sections) %}
+      <div id="section-{{ idx }}">
+        {% include 'bookmarks-page-section.html' %}
+      </div>
+    {% endfor %}
+
+  </body>
+</html>

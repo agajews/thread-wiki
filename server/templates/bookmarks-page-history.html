@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>History: Bookmarks - Thread</title>
+    {% include 'scripts.html' %}
+    {% include 'diff-styles.html' %}
+    <script>
+      function restore(num, errorid) {
+        signal("{{ url_for('restore_bookmarks', title=g.page.title) }}", {
+          num: num,
+          href: window.location.href,
+          errorid: errorid,
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    {% include "modules/navbar.html" %}
+
+    <h1>History: Bookmarks</h1>
+    <a href="{{ url_for('bookmarks') }}">Back</a>
+
+    {% for num in reversed(range(len(g.page.versions))) %}
+      {% set version = g.page.versions[num] %}
+      {% set diff = g.page.diffs[num] %}
+      {% set errorid = "error-version-{}".format(num) %}
+      <div>
+        <span class="timestamp">{{ version.timestamp }}</span>
+        {% if num != len(g.page.versions) - 1 %}
+          <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
+        {% endif %}
+        <a href="{{ url_for('bookmarks_version', num=num) }}">View</a>
+      </div>
+      <div id="{{ errorid }}"></div>
+
+      {% include 'topic-page-diff.html' %}
+      {% if num != 0 %}
+        <hr>
+      {% endif %}
+    {% endfor %}
+  </body>
+</html>

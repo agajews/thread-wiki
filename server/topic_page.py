@@ -102,7 +102,9 @@ class TopicPage(Page):
             diff.delete()
             return Page.objects.get({"titles": version.title})
         empty_version.page = page
+        version.page = page
         empty_version.save()
+        version.save()
         return page
 
     @property

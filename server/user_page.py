@@ -151,7 +151,9 @@ class UserPage(Page):
             primary_diff.delete()
             return Page.objects.get({"titles": email})
         empty_version.page = page
+        version.page = page
         empty_version.save()
+        version.save()
         return page
 
     def freeze(self):
