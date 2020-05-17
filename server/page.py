@@ -44,6 +44,19 @@ class Page(MongoModel):
         if term not in self.search_terms:
             self.search_terms.append(term)
 
+    def trigger_backlinks(self, new_links):
+        for link in new_links:
+            try:
+                page = Page.find(link)
+            except PageNotFound:
+                pass
+            if page.can_edit:
+                try:
+                    page.add_backlink(self.titles)
+                except RaceCondition:
+                    # would be nice to still make the link eventually hmm...
+                    pass
+
     @property
     def title(self):
         return self.titles[-1]
@@ -66,6 +79,7 @@ class PageVersion(MongoModel):
     editor = fields.ReferenceField("User")
     flag = fields.EmbeddedDocumentField("Flag")
     is_flagged = fields.BooleanField(default=False)
+    links = fields.ListField(fields.CharField(), default=[])
 
     class Meta:
         indexes = [IndexModel([("editor", ASCENDING), ("is_flagged", ASCENDING)])]

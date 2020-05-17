@@ -1,11 +1,12 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
 from flask import g
+from urllib.parse import urljoin
 
 from .page import Page, PageVersion, VersionDiff
-from .html_utils import markup_changes, name_to_title
+from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
-from .app import timestamp
+from .app import timestamp, url_for
 from .errors import *
 
 
@@ -14,9 +15,10 @@ class TopicPage(Page):
     diffs = fields.ListField(fields.ReferenceField("TopicVersionDiff"))
 
     def add_version(self, version):
-        diff = TopicVersionDiff.compute(self.versions[-1], version)
+        diff = TopicVersionDiff.compute(self.latest, version)
         if diff.is_empty:
             raise EmptyEdit()
+        new_links = set(version.links).difference(self.latest.links)
         version.save()
         diff.save()
         self.versions.append(version)
@@ -30,9 +32,31 @@ class TopicPage(Page):
             version.delete()
             diff.delete()
             raise
+        self.trigger_backlinks(new_links)
+
+    @property
+    def latest(self):
+        return self.versions[-1]
+
+    def add_backlink(self, titles):
+        if set(titles).intersection(self.latest.links):
+            return
+        sections = self.latest.sections[:]
+        url = urljoin("https://thread.wiki/", url_for("page", title=titles[-1]))
+        body = sanitize_html("<div>{}</div>".format(url))
+        if len(sections) == 0:
+            sections.append(Section(heading="Unsorted links", level=2, body=body))
+        else:
+            sections[-1] = Section(
+                heading=sections[-1].heading,
+                level=sections[-1].level,
+                body=sections[-1].body + body,
+            )
+        return self.edit(sections, self.latest.summary, self.latest.name)
 
     def edit(self, sections, summary, name):
         assert g.user is not None
+        links, sections, summary = linkify_page(sections, summary)
         version = TopicVersion(
             page=self,
             timestamp=timestamp(),
@@ -40,6 +64,7 @@ class TopicPage(Page):
             sections=sections,
             summary=summary,
             name=name,
+            links=links,
         )
         self.add_version(version)
 

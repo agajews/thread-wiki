@@ -261,7 +261,8 @@ def update_user_page():
     update_summary = False
     update_sections = []
 
-    old_version = g.page.versions[-1]
+    # TODO: maybe move the new section logic to page class
+    old_version = g.page.latest
     update = get_param("update", dict)
     name = old_version.name
     aka = old_version.aka
@@ -314,7 +315,7 @@ def update_topic_page():
     update_summary = False
     update_sections = []
 
-    old_version = g.page.versions[-1]
+    old_version = g.page.latest
     update = get_param("update", dict)
     name = old_version.name
     summary = old_version.summary

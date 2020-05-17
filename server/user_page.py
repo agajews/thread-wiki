@@ -1,11 +1,12 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
 from flask import g
+from urllib.parse import urljoin
 
 from .page import Page, PageVersion, VersionDiff
-from .html_utils import markup_changes, name_to_title
+from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
-from .app import timestamp
+from .app import timestamp, url_for
 from .errors import *
 
 
@@ -18,7 +19,7 @@ class UserPage(Page):
     is_frozen = fields.BooleanField(default=False)
 
     def add_version(self, version, is_primary=False):
-        diff = UserVersionDiff.compute(self.versions[-1], version)
+        diff = UserVersionDiff.compute(self.latest, version)
         if diff.is_empty:
             raise EmptyEdit()
         if is_primary:
@@ -26,6 +27,7 @@ class UserPage(Page):
         primary_diff = UserVersionDiff.compute(
             self.primary_version, version, concise=True
         )
+        new_links = set(version.links).difference(self.latest.links)
         version.save()
         diff.save()
         primary_diff.save()
@@ -42,9 +44,38 @@ class UserPage(Page):
             diff.delete()
             primary_diff.delete()
             raise
+        self.trigger_backlinks(new_links)
+
+    @property
+    def latest(self):
+        return self.versions[-1]
+
+    def add_backlink(self, titles):
+        print("adding user backlink")
+        if set(titles).intersection(self.latest.links):
+            return
+        sections = self.latest.sections[:]
+        url = urljoin("https://thread.wiki/", url_for("page", title=titles[-1]))
+        body = sanitize_html("<div>{}</div>".format(url))
+        if len(sections) == 0:
+            sections.append(Section(heading="Unsorted links", level=2, body=body))
+        else:
+            sections[-1] = Section(
+                heading=sections[-1].heading,
+                level=sections[-1].level,
+                body=sections[-1].body + body,
+            )
+        return self.edit(
+            sections,
+            self.latest.summary,
+            self.latest.name,
+            self.latest.aka,
+            is_primary=False,
+        )
 
     def edit(self, sections, summary, name, aka, is_primary=None):
         assert g.user is not None
+        links, sections, summary = linkify_page(sections, summary)
         version = UserVersion(
             page=self,
             timestamp=timestamp(),
@@ -53,6 +84,7 @@ class UserPage(Page):
             summary=summary,
             name=name,
             aka=aka,
+            links=links,
         )
         if is_primary is None:
             is_primary = g.user == self.owner
@@ -71,8 +103,7 @@ class UserPage(Page):
 
     def accept(self):
         assert g.user == self.owner
-        print("accepting")
-        self.primary_version = self.versions[-1]
+        self.primary_version = self.latest
         primary_diff = UserVersionDiff.compute(
             self.primary_version, self.primary_version, concise=True
         )
@@ -152,7 +183,7 @@ class UserPage(Page):
             return False
         if g.user != self.owner:
             return False
-        if self.versions[-1] != self.primary_version:
+        if self.latest != self.primary_version:
             return True
 
 

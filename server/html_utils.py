@@ -28,33 +28,40 @@ def get_thread_title(href):
     return match.group(2)
 
 
-def clean_link(attrs, new=False):
-    if (None, "href") not in attrs:
-        return None
-    href = attrs[(None, "href")]
-    thread_title = get_thread_title(href)
-    if thread_title is None:
-        attrs["_text"] = sanitize_text(href)
-    else:
-        attrs["_text"] = sanitize_text(urllib.parse.unquote(title_to_name(thread_title)))
-    return attrs
-
-
-linker = bleach.Linker(
-    callbacks=[clean_link], url_re=bleach.linkifier.build_url_re(tlds=["[a-z]+"])
-)
-
-
 def linkify(html):
-    return linker.linkify(html)
+    links = set()
+
+    def clean_link(attrs, new=False):
+        if (None, "href") not in attrs:
+            return None
+        href = attrs[(None, "href")]
+        thread_title = get_thread_title(href)
+        if thread_title is None:
+            attrs["_text"] = sanitize_text(href)
+        else:
+            attrs["_text"] = sanitize_text(urllib.parse.unquote(title_to_name(thread_title)))
+            links.add(thread_title)
+        return attrs
+
+    linker = bleach.Linker(
+        callbacks=[clean_link], url_re=bleach.linkifier.build_url_re(tlds=["[a-z]+"])
+    )
+    return links, linker.linkify(html)
+
+def linkify_page(sections, summary):
+    links, summary = linkify(summary)
+    for section in sections:
+        section_links, section.body = linkify(section.body)
+        links = links.union(section_links)
+    return links, sections, summary
 
 
 def sanitize_html(html):
-    return linkify(bleach.clean(str(html), tags=allowed_tags + header_tags, strip=True))
+    return bleach.clean(str(html), tags=allowed_tags + header_tags, strip=True)
 
 
 def sanitize_paragraph(html):
-    return linkify(bleach.clean(str(html), tags=allowed_tags, strip=True))
+    return bleach.clean(str(html), tags=allowed_tags, strip=True)
 
 
 def sanitize_text(text):
