@@ -43,4 +43,44 @@
       }
     });
   }
+
+  function login(event) {
+    event.preventDefault();
+    let form = document.getElementById("login-form");
+    signal("{{ url_for('authenticate') }}", {
+        email: form.elements["email"].value,
+        password: form.elements["password"].value,
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
+  function setpassword(event) {
+    event.preventDefault();
+    let form = document.getElementById("password-form");
+    signal("{{ url_for('setpassword') }}", {
+        password: form.elements["password"].value,
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
+  function resetpassword() {
+    signal("{{ url_for('resetpassword') }}", {
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
+  function logout() {
+    signal("{{ url_for('logout') }}", {href: window.location.href});
+  }
+
+  function search(event) {
+    event.preventDefault();
+    let form = document.getElementById("search-form");
+    signal("{{ url_for('submitsearch') }}", {
+        query: form.elements["query"].value,
+    });
+  }
 </script>

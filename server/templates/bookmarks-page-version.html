@@ -1,25 +1,23 @@
-<html>
-  <head>
-    <title>Bookmarks - Thread</title>
-    {% include 'scripts.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>Bookmarks - Thread</title>
+{% endblock %}
 
-  <body>
-    {% include "modules/navbar.html" %}
+{% block content %}
+  <h1>Bookmarks</h1>
+  <h3>{{ version.timestamp }}</h3>
 
-    <h1>Bookmarks</h1>
-    <h3>{{ version.timestamp }}</h3>
-
+  <nav>
     <a href="{{ url_for('edit_bookmarks') }}">Edit page</a>
     <a href="{{ url_for('bookmarks_history') }}">History</a>
     <a href="{{ url_for('bookmarks') }}">Latest version</a>
+  </nav>
 
-    <div>{{ version.summary|safe }}</div>
+  <div>{{ version.summary|safe }}</div>
 
-    {% for section in version.sections %}
-      {% from 'page-utils.html' import header_at_level %}
-      {{ header_at_level(section.heading, section.level) }}
-      <div>{{ section.body|safe }}</div>
-    {% endfor %}
-  </body>
-</html>
+  {% for section in version.sections %}
+    {% from 'page-utils.html' import header_at_level %}
+    {{ header_at_level(section.heading, section.level) }}
+    <div>{{ section.body|safe }}</div>
+  {% endfor %}
+{% endblock %}

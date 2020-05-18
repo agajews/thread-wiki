@@ -56,7 +56,6 @@ def linkify(html):
         if thread_title is None:
             _fnm, ext = os.path.splitext(urlparse(href).path)
             if ext.lower() in img_exts:
-                print("making image")
                 attrs["_text"] = sanitize_html("<img src='{}'>".format(href))
             else:
                 attrs["_text"] = sanitize_text(href)

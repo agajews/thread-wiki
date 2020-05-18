@@ -1,9 +1,9 @@
-<html>
-  <head>
-    <title>{{ display.name }} - Thread</title>
-    {% include 'scripts.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>{{ display.name }} - Thread</title>
+{% endblock %}
 
+{% block scripts %}
   {% include 'update-scripts.html' %}
 
   <script>
@@ -25,37 +25,34 @@
       };
     }
   </script>
+{% endblock %}
 
-  <body>
-    {% include 'modules/navbar.html' %}
+{% block content %}
+  <div id="heading">
+    {% include 'topic-page-heading.html' %}
+  </div>
 
-    <div id="heading">
-      {% include 'topic-page-heading.html' %}
+  <nav>
+    {% if g.page.can_edit %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% endif %}
+
+    {% if g.user != None and not g.page.is_bookmarked %}
+      <span id="add-bookmark">
+        <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
+        <span id="error-bookmark"></span>
+      </span>
+    {% endif %}
+  </nav>
+
+  <div id="summary">
+    {% include 'topic-page-summary.html' %}
+  </div>
+
+  {% for idx, section in enumerate(display.sections) %}
+    <div id="section-{{ idx }}">
+      {% include 'topic-page-section.html' %}
     </div>
-
-    <div>
-      {% if g.page.can_edit %}
-        <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
-        <a href="{{ url_for('history', title=g.page.title) }}">History</a>
-      {% endif %}
-
-      {% if g.user != None and not g.page.is_bookmarked %}
-        <span id="add-bookmark">
-          <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
-          <span id="error-bookmark"></span>
-        </span>
-      {% endif %}
-    </div>
-
-    <div id="summary">
-      {% include 'topic-page-summary.html' %}
-    </div>
-
-    {% for idx, section in enumerate(display.sections) %}
-      <div id="section-{{ idx }}">
-        {% include 'topic-page-section.html' %}
-      </div>
-    {% endfor %}
-
-  </body>
-</html>
+  {% endfor %}
+{% endblock %}

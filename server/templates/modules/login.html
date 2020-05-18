@@ -1,17 +1,10 @@
-<div>
+<span id="login-module">
   {% if g.user %}
-    <p>Welcome, {{ g.user.email }}!
-      <button type="button" onclick="logout()">Logout</button>
-      {% if g.user.passhash == None %}
-        <form id="password-form" onsubmit="setpassword(event)">
-          <label for="password">Looks like you haven't set a password yet. Set one here:</label>
-          <input type="password" name="password">
-          <input type="submit">
-        </form>
-      {% else %}
-        <button type="button" onclick="resetpassword()">Reset password</button>
-      {% endif %}
-    </p>
+    {{ g.user.email }}
+    {% if g.user.passhash != None %}
+      <button type="button" onclick="resetpassword()">Reset password</button>
+    {% endif %}
+    <button type="button" onclick="logout()">Logout</button>
   {% else %}
     <form id="login-form" onsubmit="login(event)">
       <span class="form-row">
@@ -25,44 +18,4 @@
     </form>
   {% endif %}
   <div id="error-login"></div>
-</div>
-
-<script>
-  function login(event) {
-    event.preventDefault();
-    let form = document.getElementById("login-form");
-    signal("{{ url_for('authenticate') }}", {
-        email: form.elements["email"].value,
-        password: form.elements["password"].value,
-        href: window.location.href,
-        errorid: 'error-login',
-    });
-  }
-
-  function setpassword(event) {
-    event.preventDefault();
-    let form = document.getElementById("password-form");
-    signal("{{ url_for('setpassword') }}", {
-        password: form.elements["password"].value,
-        href: window.location.href,
-        errorid: 'error-login',
-    });
-  }
-
-  function resetpassword() {
-    signal("{{ url_for('resetpassword') }}", {
-        href: window.location.href,
-        errorid: 'error-login',
-    });
-  }
-
-  function logout() {
-    signal("{{ url_for('logout') }}", {href: window.location.href});
-  }
-</script>
-
-<style>
-  .form-row {
-    display: inline-block;
-  }
-</style>
+</span>

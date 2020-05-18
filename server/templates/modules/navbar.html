@@ -1,8 +1,18 @@
-{% include 'modules/login.html' %}
+<header>
+  {% if g.user != None %}
+    <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
+    <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
+  {% endif %}
+  <a href="{{ url_for('recent') }}">Recent edits</a>
 
-{% if g.user != None %}
-  <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
-  <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
-{% endif %}
-<a href="{{ url_for('recent') }}">Recent edits</a>
-{% include 'modules/search.html' %}
+  {% include 'modules/login.html' %}
+  {% if g.user.passhash == None %}
+    <form id="password-form" onsubmit="setpassword(event)">
+      <label for="password">Looks like you haven't set a password yet. Set one here:</label>
+      <input type="password" name="password">
+      <input type="submit">
+    </form>
+  {% endif %}
+
+  {% include 'modules/search.html' %}
+</header>

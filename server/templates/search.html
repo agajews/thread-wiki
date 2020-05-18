@@ -1,33 +1,24 @@
-<html>
-  <head>
-    <title>"{{ query }}" - Thread</title>
-    {% include 'scripts.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>"{{ query }}" - Thread</title>
+{% endblock %}
 
-  <body>
-    {% include 'modules/login.html' %}
+{% block content %}
+  <h1>Search results for "{{ query }}"</h1>
 
-    <a href="{{ url_for('index') }}">Home</a>
+  {% if can_create %}
+    <a href="{{ url_for('page', title=title_to_create) }}">Create a page called {{ query }}</a>
+  {% endif %}
 
-    {% include 'modules/search.html' %}
-
-    <h1>Search results for "{{ query }}"</h1>
-
-    {% if can_create %}
-      <a href="{{ url_for('page', title=title_to_create) }}">Create a page called {{ query }}</a>
-    {% endif %}
-
-    {% if len(pages) == 0 %}
-      <p>No search results found :(</p>
-    {% else %}
-      <ul>
-        {% for page in pages %}
-          <li><a href="{{ url_for('page', title=page.title) }}">
-            {{ page.versions[-1].name }}
-          </a></li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-
-  </body>
-</html>
+  {% if len(pages) == 0 %}
+    <p>No search results found :(</p>
+  {% else %}
+    <ul>
+      {% for page in pages %}
+        <li><a href="{{ url_for('page', title=page.title) }}">
+          {{ page.versions[-1].name }}
+        </a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

@@ -1,46 +1,47 @@
-<html>
-  <head>
-    <title>History: {{ g.page.versions[-1].name }} - Thread</title>
-    {% include 'scripts.html' %}
-    {% include 'diff-styles.html' %}
-    {% include 'history-scripts.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>History: {{ g.page.versions[-1].name }} - Thread</title>
+  {% include 'diff-styles.html' %}
+{% endblock %}
 
-  <body>
-    {% include "modules/navbar.html" %}
+{% block scripts %}
+  {% include 'history-scripts.html' %}
+{% endblock %}
 
-    <h1>History: {{ g.page.versions[-1].name }}</h1>
+{% block content %}
+  <h1>History: {{ g.page.versions[-1].name }}</h1>
+  <nav>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>
+  </nav>
 
-    {% for num in reversed(range(len(g.page.versions))) %}
-      {% set version = g.page.versions[num] %}
-      {% set diff = g.page.diffs[num] %}
-      {% set errorid = "error-version-{}".format(num) %}
-      <div>
-        <span class="timestamp">{{ version.timestamp }}</span>
-        {% if num != 0 and num != len(g.page.versions) - 1 %}
-          {% if not version.is_flagged %}
-            <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
-          {% elif version.flag.sender == g.user %}
-            <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
-          {% endif %}
+  {% for num in reversed(range(len(g.page.versions))) %}
+    {% set version = g.page.versions[num] %}
+    {% set diff = g.page.diffs[num] %}
+    {% set errorid = "error-version-{}".format(num) %}
+    <nav>
+      <span class="timestamp">{{ version.timestamp }}</span>
+      {% if num != 0 and num != len(g.page.versions) - 1 %}
+        {% if not version.is_flagged %}
+          <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
+        {% elif version.flag.sender == g.user %}
+          <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
         {% endif %}
-        {% if num != len(g.page.versions) - 1 %}
-          <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
-        {% endif %}
-        <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
-      </div>
-      <div id="{{ errorid }}"></div>
-
-      {% if version.is_flagged %}
-        <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>
-      {% else %}
-        {% include 'topic-page-diff.html' %}
       {% endif %}
-
-      {% if num != 0 %}
-        <hr>
+      {% if num != len(g.page.versions) - 1 %}
+        <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
       {% endif %}
-    {% endfor %}
-  </body>
-</html>
+      <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
+    </nav>
+    <div id="{{ errorid }}"></div>
+
+    {% if version.is_flagged %}
+      <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>
+    {% else %}
+      {% include 'topic-page-diff.html' %}
+    {% endif %}
+
+    {% if num != 0 %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+{% endblock %}

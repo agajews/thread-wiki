@@ -1,20 +1,22 @@
-{% if diff.name_changed %}
-  <div class="markupnote">Changed name to: {{ diff.name }}</div>
-{% endif %}
-{% if diff.summary_changed %}
-  {{ diff.summary_diff|safe }}
-{% endif %}
-
-{% from 'page-utils.html' import header_at_level %}
-{% for section in diff.sections %}
-  {% if section.inserted %}
-    <ins>{{ header_at_level(section.heading, section.level) }}</ins>
-    <ins>{{ section.body|safe }}</ins>
-  {% elif section.deleted %}
-    <del>{{ header_at_level(section.heading, section.level) }}</del>
-    <del>{{ section.body|safe }}</del>
-  {% elif section.edited %}
-    {{ header_at_level(section.heading, section.level) }}
-    {{ section.body_diff|safe }}
+<div class="diff">
+  {% if diff.name_changed %}
+    <div class="markupnote">Changed name to: {{ diff.name }}</div>
   {% endif %}
-{% endfor %}
+  {% if diff.summary_changed %}
+    {{ diff.summary_diff|safe }}
+  {% endif %}
+
+  {% from 'page-utils.html' import header_at_level %}
+  {% for section in diff.sections %}
+    {% if section.inserted %}
+      <ins>{{ header_at_level(section.heading, section.level) }}</ins>
+      <ins>{{ section.body|safe }}</ins>
+    {% elif section.deleted %}
+      <del>{{ header_at_level(section.heading, section.level) }}</del>
+      <del>{{ section.body|safe }}</del>
+    {% elif section.edited %}
+      {{ header_at_level(section.heading, section.level) }}
+      {{ section.body_diff|safe }}
+    {% endif %}
+  {% endfor %}
+</div>

@@ -1,11 +1,11 @@
-<html>
-  <head>
-    <title>{{ display.name }} - Thread</title>
-    {% include 'scripts.html' %}
-    {% include 'concise-diff-styles.html' %}
-    {% include 'user-styles.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>{{ display.name }} - Thread</title>
+  {% include 'concise-diff-styles.html' %}
+  {% include 'user-styles.html' %}
+{% endblock %}
 
+{% block scripts %}
   {% include 'update-scripts.html' %}
   {% include 'user-update-scripts.html' %}
 
@@ -29,47 +29,44 @@
       };
     }
   </script>
+{% endblock %}
 
-  <body>
-    {% include "modules/navbar.html" %}
+{% block content %}
+  <div id="heading">
+    {% include 'user-page-heading.html' %}
+  </div>
 
-    <div id="heading">
-      {% include 'user-page-heading.html' %}
-    </div>
+  <nav>
+    {% if g.page.can_edit %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% endif %}
+    <span class="email">{{ g.page.owner.email }}</span>
 
-    <div>
-      {% if g.page.can_edit %}
-        <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
-        <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+    {% if g.user != None and not g.page.is_bookmarked %}
+      <span id="add-bookmark">
+        <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
+        <span id="error-bookmark"></span>
+      </span>
+    {% endif %}
+
+    {% if g.user == g.page.owner %}
+      {% if g.page.is_frozen %}
+        <button type="button" onclick="unfreeze()">Unfreeze page</button>
+      {% else %}
+        <button type="button" onclick="freeze()">Freeze page</button>
       {% endif %}
-      <span class="email">{{ g.page.owner.email }}</span>
+      <span id="error-freeze"></span>
+    {% endif %}
+  </nav>
 
-      {% if g.user != None and not g.page.is_bookmarked %}
-        <span id="add-bookmark">
-          <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
-          <span id="error-bookmark"></span>
-        </span>
-      {% endif %}
+  <div id="summary">
+    {% include 'user-page-summary.html' %}
+  </div>
 
-      {% if g.user == g.page.owner %}
-        {% if g.page.is_frozen %}
-          <button type="button" onclick="unfreeze()">Unfreeze page</button>
-        {% else %}
-          <button type="button" onclick="freeze()">Freeze page</button>
-        {% endif %}
-        <span id="error-freeze"></span>
-      {% endif %}
+  {% for section in display.sections %}
+    <div id="section-{{ section.idx }}">
+      {% include 'user-page-section.html' %}
     </div>
-
-    <div id="summary">
-      {% include 'user-page-summary.html' %}
-    </div>
-
-    {% for section in display.sections %}
-      <div id="section-{{ section.idx }}">
-        {% include 'user-page-section.html' %}
-      </div>
-    {% endfor %}
-
-  </body>
-</html>
+  {% endfor %}
+{% endblock %}

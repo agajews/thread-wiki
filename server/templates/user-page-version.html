@@ -1,29 +1,27 @@
-<html>
-  <head>
-    <title>{{ version.name }} - Thread</title>
-    {% include 'scripts.html' %}
-    {% include 'user-styles.html' %}
-  </head>
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>{{ version.name }} - Thread</title>
+  {% include 'user-styles.html' %}
+{% endblock %}
 
-  <body>
-    {% include "modules/navbar.html" %}
+{% block content %}
+  <h1>{{ version.name }} ({{ version.aka }})</h1>
+  <h3>{{ version.timestamp }}</h3>
 
-    <h1>{{ version.name }} ({{ version.aka }})</h1>
-    <h3>{{ version.timestamp }}</h3>
-
+  <nav>
     {% if g.page.can_edit %}
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
       <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% endif %}
     <a href="{{ url_for('page', title=g.page.title) }}">Latest version</a>
     <span class="email">{{ g.page.owner.email }}</span>
+  </nav>
 
-    <div>{{ version.summary|safe }}</div>
+  <div>{{ version.summary|safe }}</div>
 
-    {% for section in version.sections %}
-      {% from 'page-utils.html' import header_at_level %}
-      {{ header_at_level(section.heading, section.level) }}
-      <div>{{ section.body|safe }}</div>
-    {% endfor %}
-  </body>
-</html>
+  {% for section in version.sections %}
+    {% from 'page-utils.html' import header_at_level %}
+    {{ header_at_level(section.heading, section.level) }}
+    <div>{{ section.body|safe }}</div>
+  {% endfor %}
+{% endblock %}

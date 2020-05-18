@@ -1,0 +1,21 @@
+<html>
+  <head>
+    {% include 'scripts.html' %}
+    {% include 'styles.html' %}
+    {% block head %}
+      <title>Thread</title>
+    {% endblock %}
+  </head>
+
+  {% block scripts %}
+  {% endblock %}
+
+  <body>
+    {% include "modules/navbar.html" %}
+
+    <div id="content">
+      {% block content %}
+      {% endblock %}
+    </div>
+  </body>
+</html>

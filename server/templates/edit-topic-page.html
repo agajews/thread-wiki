@@ -1,36 +1,36 @@
-<html>
-  <head>
-    <title>Edit: {{ version.name }} - Thread</title>
-    {% include 'scripts.html' %}
+{% extends 'base-page.html' %}
+{% block head %}
+  <title>Edit: {{ version.name }} - Thread</title>
+{% endblock %}
 
-    <script>
-      function submitedit() {
-        signal("{{ url_for('submitedit', title=g.page.title) }}", {
-          body: document.getElementById("body").innerHTML,
-          name: document.getElementById("name").innerText,
-          freshness: {{ g.page.freshness }},
-          errorid: 'error-edit',
-        });
-      }
-    </script>
-  </head>
+{% block scripts %}
+  <script>
+    function submitedit() {
+      signal("{{ url_for('submitedit', title=g.page.title) }}", {
+        body: document.getElementById("body").innerHTML,
+        name: document.getElementById("name").innerText,
+        freshness: {{ g.page.freshness }},
+        errorid: 'error-edit',
+      });
+    }
+  </script>
+{% endblock %}
 
-  <body>
-    {% include "modules/navbar.html" %}
-
-    <h1 id="name" contenteditable="true">{{ version.name }}</h1>
+{% block content %}
+  <h1 id="name" contenteditable="true">{{ version.name }}</h1>
+  <nav>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>
-    {% include 'edit-buttons.html' %}
-    <div id="body" contenteditable="true">
-      {{ version.summary|safe }}
+  </nav>
+  {% include 'edit-buttons.html' %}
+  <div id="body" contenteditable="true">
+    {{ version.summary|safe }}
 
-      {% from 'page-utils.html' import header_at_level %}
-      {% for section in version.sections %}
-        {{ header_at_level(section.heading, section.level) }}
-        {{ section.body|safe }}
-      {% endfor %}
-    </div>
-    <button type="button" onclick="submitedit()">Submit edit</button>
-    <div id="error-edit"></div>
-  </body>
-</html>
+    {% from 'page-utils.html' import header_at_level %}
+    {% for section in version.sections %}
+      {{ header_at_level(section.heading, section.level) }}
+      {{ section.body|safe }}
+    {% endfor %}
+  </div>
+  <button type="button" onclick="submitedit()">Submit edit</button>
+  <div id="error-edit"></div>
+{% endblock %}
