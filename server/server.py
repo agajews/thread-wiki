@@ -54,11 +54,6 @@ def create_topic_page(title):
     return TopicPage.create_or_return(sections, summary, name)
 
 
-def create_bookmarks_page():
-    summary, sections = separate_sections(render_template("bookmarks-template.html"))
-    return BookmarksPage.create_or_return(sections, summary)
-
-
 def cast_param(val, cls):
     try:
         val = cls(val)
@@ -206,7 +201,7 @@ def index():
 @app.route("/recent/")
 @error_handling
 def recent():
-    pages = Page.objects.order_by([("last_edited", DESCENDING)]).limit(20)
+    pages = list(Page.objects.order_by([("last_edited", DESCENDING)]).limit(20))
     return render_template("recent.html", pages=pages)
 
 
@@ -235,10 +230,7 @@ def page(title):
 def bookmarks():
     if g.user is None:
         raise NotAllowed()
-    try:
-        g.page = BookmarksPage.find()
-    except PageNotFound:
-        g.page = create_bookmarks_page()
+    g.page = BookmarksPage.find()
     links = g.page.latest.links
     pages = list(
         Page.objects.raw({"titles": {"$in": links}})
@@ -514,6 +506,17 @@ def restore_bookmarks():
     return reload()
 
 
+@app.route("/page/<title>/bookmark/", methods=["POST"])
+@error_handling
+@bookmarks_page_errors
+def addbookmark(title):
+    if g.user is None:
+        raise NotAllowed()
+    bookmarks = BookmarksPage.find()
+    bookmarks.add_bookmark(title)
+    return rerender({"add-bookmark": "Added :)"})
+
+
 @user_page_errors
 @is_owner
 @catch_race
@@ -721,6 +724,16 @@ def setpassword():
     if g.user is None:
         return reload()
     g.user.set_password(get_param("password"))
+    return reload()
+
+
+@app.route("/resetpassword/", methods=["POST"])
+@error_handling
+@auth_errors
+def resetpassword():
+    if g.user is None:
+        return reload()
+    g.user.reset_password()
     return reload()
 
 

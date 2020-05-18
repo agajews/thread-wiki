@@ -1,5 +1,8 @@
 {% include 'modules/login.html' %}
 
+{% if g.user != None %}
+  <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
+  <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
+{% endif %}
 <a href="{{ url_for('recent') }}">Recent edits</a>
-<a href="{{ url_for('bookmarks') }}">Bookmarks</a>
 {% include 'modules/search.html' %}

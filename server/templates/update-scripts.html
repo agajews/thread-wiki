@@ -15,4 +15,10 @@
       window.freshness = response.freshness;
     });
   }
+
+  function addbookmark(errorid) {
+    signal("{{ url_for('addbookmark', title=g.page.title) }}", {
+      errorid: errorid,
+    });
+  }
 </script>

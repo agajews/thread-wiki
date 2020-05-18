@@ -1,4 +1,13 @@
 <script>
+  // make safari fully refresh on back arrow
+  (function () {
+    window.onpageshow = function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+  })();
+
   function post(url, body) {
     return fetch(url, {
       method: "POST",

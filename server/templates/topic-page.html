@@ -33,10 +33,19 @@
       {% include 'topic-page-heading.html' %}
     </div>
 
-    {% if g.page.can_edit %}
-      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
-      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
-    {% endif %}
+    <div>
+      {% if g.page.can_edit %}
+        <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+        <a href="{{ url_for('history', title=g.page.title) }}">History</a>
+      {% endif %}
+
+      {% if g.user != None and not g.page.is_bookmarked %}
+        <span id="add-bookmark">
+          <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
+          <span id="error-bookmark"></span>
+        </span>
+      {% endif %}
+    </div>
 
     <div id="summary">
       {% include 'topic-page-summary.html' %}

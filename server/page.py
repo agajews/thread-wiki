@@ -8,6 +8,7 @@ from flask import g
 from .sections import Section, SectionDiff, separate_sections, diff_sections
 from .html_utils import markup_changes
 from .app import timestamp
+from .bookmarks import BookmarksPage
 from .errors import *
 
 
@@ -43,6 +44,11 @@ class Page(MongoModel):
     def add_search_term(self, term):
         if term not in self.search_terms:
             self.search_terms.append(term)
+
+    @property
+    def is_bookmarked(self):
+        assert g.user is not None
+        return BookmarksPage.find().is_bookmarked(self.titles)
 
     def trigger_backlinks(self, new_links):
         for link in new_links:

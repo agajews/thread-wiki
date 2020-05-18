@@ -2,17 +2,17 @@ from pymodm import fields, MongoModel
 from pymodm.errors import DoesNotExist
 from pymongo.errors import DuplicateKeyError
 from pymongo.operations import IndexModel
-from flask import g
+from flask import g, render_template
+from urllib.parse import urljoin
 
-from .app import timestamp
-from .user import User
-from .html_utils import markup_changes, linkify_page
-from .sections import diff_sections, Section, SectionDiff
+from .app import timestamp, url_for
+from .html_utils import markup_changes, linkify_page, sanitize_html
+from .sections import diff_sections, separate_sections, Section, SectionDiff
 from .errors import *
 
 
 class BookmarksPage(MongoModel):
-    user = fields.ReferenceField(User)
+    user = fields.ReferenceField("User")
     versions = fields.ListField(fields.ReferenceField("BookmarksVersion"))
     diffs = fields.ListField(fields.ReferenceField("BookmarksDiff"))
 
@@ -32,6 +32,25 @@ class BookmarksPage(MongoModel):
     @property
     def latest(self):
         return self.versions[-1]
+
+    def add_bookmark(self, title):
+        sections = self.latest.sections[:]
+        url = urljoin("https://thread.wiki/", url_for("page", title=title))
+        body = sanitize_html("<div>{}</div>".format(url))
+        if len(sections) == 0:
+            sections.append(Section(heading="Unsorted bookmarks", level=2, body=body))
+        else:
+            sections[-1] = Section(
+                heading=sections[-1].heading,
+                level=sections[-1].level,
+                body=sections[-1].body + body,
+            )
+        return self.edit(sections, self.latest.summary)
+
+    def is_bookmarked(self, titles):
+        if set(titles).intersection(self.latest.links):
+            return True
+        return False
 
     def edit(self, sections, summary):
         assert g.user is not None
@@ -81,7 +100,10 @@ class BookmarksPage(MongoModel):
         try:
             return BookmarksPage.objects.get({"user": g.user._id})
         except DoesNotExist:
-            raise PageNotFound()
+            summary, sections = separate_sections(
+                render_template("bookmarks-template.html")
+            )
+            return BookmarksPage.create_or_return(sections, summary)
 
 
 class BookmarksVersion(MongoModel):

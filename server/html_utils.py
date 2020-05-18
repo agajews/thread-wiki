@@ -3,14 +3,31 @@ import re
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
 import urllib
+from urllib.parse import urlparse
+import os
 
 from .errors import *
 
 
-self_closing = ["br"]
+self_closing = ["br", "img"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = " \t\n\xa0"
-allowed_tags = ["p", "div", "br", "b", "strong", "i", "em", "li", "ol", "ul", "a"]
+allowed_tags = [
+    "p",
+    "div",
+    "br",
+    "b",
+    "strong",
+    "i",
+    "em",
+    "li",
+    "ol",
+    "ul",
+    "a",
+    "img",
+]
+allowed_attrs = {"a": ["href", "title"], "img": ["src"]}
+img_exts = [".png", ".jpg", ".jpeg", ".gif"]
 
 
 def name_to_title(name):
@@ -37,9 +54,16 @@ def linkify(html):
         href = attrs[(None, "href")]
         thread_title = get_thread_title(href)
         if thread_title is None:
-            attrs["_text"] = sanitize_text(href)
+            _fnm, ext = os.path.splitext(urlparse(href).path)
+            if ext.lower() in img_exts:
+                print("making image")
+                attrs["_text"] = sanitize_html("<img src='{}'>".format(href))
+            else:
+                attrs["_text"] = sanitize_text(href)
         else:
-            attrs["_text"] = sanitize_text(urllib.parse.unquote(title_to_name(thread_title)))
+            attrs["_text"] = sanitize_text(
+                urllib.parse.unquote(title_to_name(thread_title))
+            )
             links.add(thread_title)
         return attrs
 
@@ -47,6 +71,7 @@ def linkify(html):
         callbacks=[clean_link], url_re=bleach.linkifier.build_url_re(tlds=["[a-z]+"])
     )
     return links, linker.linkify(html)
+
 
 def linkify_page(sections, summary):
     links, summary = linkify(summary)
@@ -57,11 +82,15 @@ def linkify_page(sections, summary):
 
 
 def sanitize_html(html):
-    return bleach.clean(str(html), tags=allowed_tags + header_tags, strip=True)
+    return bleach.clean(
+        str(html), tags=allowed_tags + header_tags, attributes=allowed_attrs, strip=True
+    )
 
 
 def sanitize_paragraph(html):
-    return bleach.clean(str(html), tags=allowed_tags, strip=True)
+    return bleach.clean(
+        str(html), tags=allowed_tags, attributes=allowed_attrs, strip=True
+    )
 
 
 def sanitize_text(text):

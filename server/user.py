@@ -67,6 +67,10 @@ class User(MongoModel):
             {"$set": {"passhash": self.passhash}}
         )
 
+    def reset_password(self):
+        self.passhash = None
+        User.objects.raw({"_id": self._id}).update({"$set": {"passhash": None}})
+
     def verify_password(self, password):
         return check_password_hash(self.passhash, password)
 

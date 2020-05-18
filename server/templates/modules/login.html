@@ -8,6 +8,8 @@
           <input type="password" name="password">
           <input type="submit">
         </form>
+      {% else %}
+        <button type="button" onclick="resetpassword()">Reset password</button>
       {% endif %}
     </p>
   {% else %}
@@ -42,6 +44,13 @@
     let form = document.getElementById("password-form");
     signal("{{ url_for('setpassword') }}", {
         password: form.elements["password"].value,
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
+  function resetpassword() {
+    signal("{{ url_for('resetpassword') }}", {
         href: window.location.href,
         errorid: 'error-login',
     });
