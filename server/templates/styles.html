@@ -45,7 +45,7 @@
   }
 
   a:active {
-    color: #777;
+    color: rgb(110, 120, 130);
   }
 
   nav a {
@@ -93,18 +93,18 @@
   }
 
   header a {
-    color: white;
+    color: rgb(220, 240, 255);
     margin-left: 5px;
     margin-right: 5px;
   }
 
   header a:hover {
-    color: #CCC;
+    color: rgb(200, 220, 245);
     text-decoration: none;
   }
 
   header a:active {
-    color: #AAA;
+    color: rgb(180, 200, 225);
   }
 
   img {
@@ -117,7 +117,7 @@
 
   #login-module {
     float: right;
-    color: #ccc;
+    color: rgb(220, 240, 255);
     font-weight: normal;
   }
 
@@ -143,6 +143,23 @@
     background-color: white;
     color: #333;
     outline: none;
+  }
+
+  input[type="submit"] {
+    padding: 5px;
+    background-image: linear-gradient(-180deg, rgb(240, 243, 246), rgb(230, 235, 241) 90%);
+    color: rgb(36, 41, 46);
+    border-radius: 3px;
+  }
+
+  input[type="submit"]:hover {
+    background-image: linear-gradient(-180deg, rgb(220, 223, 226), rgb(210, 215, 221) 90%);
+    cursor: pointer;
+  }
+
+  input[type="submit"]:active {
+    background-image: linear-gradient(0deg, rgb(220, 223, 226), rgb(190, 195, 201) 90%);
+    cursor: pointer;
   }
 
   #query {
