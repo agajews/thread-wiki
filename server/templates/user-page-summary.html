@@ -1,13 +1,15 @@
-<div id="summary-display">
-  <div>{{ display.summary_diff|safe }}</div>
-  {% if g.page.can_accept %}
-    <button type="button" onclick="accept('error-summary')">Accept this version</button>
-  {% elif g.page.can_edit %}
-    <button type="button" onclick="swap('summary-display', 'summary-edit')">Edit</button>
-  {% endif %}
+<div class="edit-block">
+  <div id="summary-display">
+    <div>{{ display.summary_diff|safe }}</div>
+    {% if g.page.can_accept %}
+      <button type="button" onclick="accept('error-summary')">Accept this version</button>
+    {% elif g.page.can_edit %}
+      <button type="button" onclick="swap('summary-display', 'summary-edit')">Edit</button>
+    {% endif %}
+  </div>
+  <div id="summary-edit" hidden="true">
+    <div id="summary-body" contenteditable="true">{{ display.summary|safe }}</div>
+    <button type="button" onclick="update(get_summary(), 'error-summary')">Done</button>
+  </div>
+  <div id="error-summary"></div>
 </div>
-<div id="summary-edit" hidden="true">
-  <div id="summary-body" contenteditable="true">{{ display.summary|safe }}</div>
-  <button type="button" onclick="update(get_summary(), 'error-summary')">Done</button>
-</div>
-<div id="error-summary"></div>

@@ -13,12 +13,23 @@
   {% if len(pages) == 0 %}
     <p>No search results found :(</p>
   {% else %}
-    <ul>
-      {% for page in pages %}
-        <li><a href="{{ url_for('page', title=page.title) }}">
-          {{ page.versions[-1].name }}
-        </a></li>
-      {% endfor %}
-    </ul>
+    {% for i, page in enumerate(pages) %}
+      {% if isinstance(page, UserPage) %}
+        {% set version = page.versions[-1] %}
+        <h2><a href="{{ url_for('page', title=page.title) }}">
+          {{ version.name }} ({{ version.aka }})
+        </a></h2>
+        {{ version.summary|safe }}
+      {% elif isinstance(page, TopicPage) %}
+        {% set version = page.versions[-1] %}
+        <h2><a href="{{ url_for('page', title=page.title) }}">
+          {{ version.name }}
+        </a></h2>
+        {{ version.summary|safe }}
+      {% endif %}
+      {% if i != len(pages) - 1 %}
+        <hr>
+      {% endif %}
+    {% endfor %}
   {% endif %}
 {% endblock %}

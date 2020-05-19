@@ -59,6 +59,10 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
   }
 
+  nav em {
+    color: rgb(77, 49, 170);
+  }
+
   header {
     font-size: 11pt;
     font-weight: bold;
@@ -66,7 +70,14 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
     padding: 10px;
     padding-bottom: 0px;
+    border-bottom: solid 4px rgb(86, 63, 122);
   }
+
+  header a {
+    display: inline-block;
+    margin-top: 5px;
+  }
+
 
   div.bookmark-updates {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
@@ -107,6 +118,22 @@
     color: rgb(180, 200, 225);
   }
 
+
+  header button {
+    color: rgb(110, 120, 130);
+    border: none;
+    background-color: transparent;
+    font-size: 12pt;
+  }
+
+  header button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  header button:active {
+    color: rgb(110, 120, 130);
+  }
   img {
     max-width: 200px;
   }
@@ -115,55 +142,149 @@
     display: inline-block;
   }
 
-  #login-module {
+  .login-module {
     float: right;
     color: rgb(220, 240, 255);
     font-weight: normal;
+    margin-left: 20px;
+    margin-bottom: 10px;
+  }
+
+  .login-module input {
+    background-color: rgb(83, 88, 92);
+    color: #DDD;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    padding: 3px;
+  }
+
+  .login-module input:hover {
+    /* border-color: rgb(213, 223, 255); */
+    background-color: rgb(93, 98, 102);
+  }
+
+  .login-module input:focus {
+    outline: none;
+  }
+
+  .login-module input[type="submit"] {
+    background-image: linear-gradient(-180deg, #605eeb, #331bed);
+    font-weight: bold;
+    border: 1px solid hsl(220, 78%, 29%);
+
+    font-size: 12pt;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 10pt;
+  }
+
+  .login-module input[type="submit"]:hover {
+    cursor: pointer;
+    background-image: linear-gradient(-180deg, #5351f2, #3520d6);
+  }
+
+  .login-module input[type="submit"]:active {
+    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+  }
+
+  #login-form {
+    display: inline-block;
+    margin-left: 10px;
+  }
+
+  #error-login {
+    color: rgb(213, 223, 255);
+  }
+
+  .logged-in {
+    padding-top: 2px;
+    display: inline-block;
   }
 
   form {
     margin: 0;
   }
 
-  input {
-    background-color: rgb(63, 68, 72);
-    color: #DDD;
-    border-radius: 2px;
+  button {
+    color: rgb(18, 105, 211);
     border: none;
-    padding: 3px;
-    transition: background-color 0.2s, color 0.2s;
+    background-color: transparent;
+    font-size: 12pt;
   }
 
-  input:hover {
-    background-color: rgb(73, 78, 82);
-    color: #DDD;
+  button:hover {
+    text-decoration: underline;
+    cursor: pointer;
   }
 
-  input:focus {
-    background-color: white;
-    color: #333;
-    outline: none;
+  button:active {
+    color: rgb(110, 120, 130);
   }
 
-  input[type="submit"] {
+  button.submit {
+    background-image: linear-gradient(-180deg, #7775ee, #331bed);
+    font-weight: bold;
+    border: 1px solid hsl(220, 78%, 29%);
+
+    font-size: 12pt;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 10pt;
+
+    color: white;
+    margin-top: 10px;
+  }
+
+  button.submit:hover {
+    cursor: pointer;
+    background-image: linear-gradient(-180deg, #6764f2, #3520d6);
+    text-decoration: none;
+  }
+
+  button.submit:active {
+    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+  }
+
+  button.edit {
+    background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
+    font-weight: bold;
+    border: 1px solid rgba(27,31,35,.35);
+
+    font-size: 12pt;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 10pt;
+
+    color: #24292e;
+    margin-bottom: 10px;
+  }
+
+  button.edit:hover {
+    cursor: pointer;
+    background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
+    border-color: rgba(27,31,35,.65);
+    text-decoration: none;
+  }
+
+  button.edit:active {
+    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+  }
+
+  div[contenteditable="true"], span[contenteditable="true"] {
+    border: 1px rgb(209, 213, 218) solid;
+    background-color: rgb(250, 251, 252);
+    border-radius: 5px;
     padding: 5px;
-    background-image: linear-gradient(-180deg, rgb(240, 243, 246), rgb(230, 235, 241) 90%);
-    color: rgb(36, 41, 46);
-    border-radius: 3px;
   }
 
-  input[type="submit"]:hover {
-    background-image: linear-gradient(-180deg, rgb(220, 223, 226), rgb(210, 215, 221) 90%);
-    cursor: pointer;
-  }
-
-  input[type="submit"]:active {
-    background-image: linear-gradient(0deg, rgb(220, 223, 226), rgb(190, 195, 201) 90%);
-    cursor: pointer;
+  div[contenteditable="true"]:focus, span[contenteditable="true"]:focus {
+    border-color: #2188ff;
+    outline: none;
+    box-shadow: inset 0 1px 2px rgba(27,31,35,.075),0 0 0 2px rgba(3,102,214,.3);
   }
 
   #query {
-    width: 90%;
+    width: 100%;
     max-width: 700px;
     text-align: center;
     font-size: 12pt;
@@ -171,15 +292,34 @@
     border-radius: 5px;
     margin-bottom: 15px;
     margin-top: 0px;
+    background-color: rgb(63, 68, 72);
+    color: #DDD;
+    border: none;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  #query:hover {
+    background-color: rgb(73, 78, 82);
+    color: #DDD;
+  }
+
+  #query:focus {
+    background-color: white;
+    color: #333;
+    outline: none;
   }
 
   #search-form {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 20px;
+    margin-bottom: 0px;
     text-align: center;
   }
 
   p {
     margin: 0;
+  }
+
+  .added-bookmark {
+    color: rgb(102, 0, 246);
   }
 </style>

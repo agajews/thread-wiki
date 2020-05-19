@@ -514,7 +514,7 @@ def addbookmark(title):
         raise NotAllowed()
     bookmarks = BookmarksPage.find()
     bookmarks.add_bookmark(title)
-    return rerender({"add-bookmark": "Added :)"})
+    return rerender({"add-bookmark": "<span class='added-bookmark'>Added :)</span>"})
 
 
 @user_page_errors

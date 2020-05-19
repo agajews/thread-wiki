@@ -1,10 +1,13 @@
-<span id="login-module">
+<span class="login-module">
+  <span id="error-login"></span>
   {% if g.user %}
-    {{ g.user.email }}
-    {% if g.user.passhash != None %}
-      <button type="button" onclick="resetpassword()">Reset password</button>
-    {% endif %}
-    <button type="button" onclick="logout()">Logout</button>
+    <span class="logged-in">
+      {{ g.user.email }}
+      {% if g.user.passhash != None %}
+        <button type="button" onclick="resetpassword()">Reset password</button>
+      {% endif %}
+      <button type="button" onclick="logout()">Logout</button>
+    </span>
   {% else %}
     <form id="login-form" onsubmit="login(event)">
       <span class="form-row">
@@ -14,8 +17,7 @@
       <span class="form-row">
         <label for="password">Password:</label>
         <input type="password" name="password"></span>
-      <input type="submit">
+      <input type="submit" value="Sign in">
     </form>
   {% endif %}
-  <div id="error-login"></div>
 </span>

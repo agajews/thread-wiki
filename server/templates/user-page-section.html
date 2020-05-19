@@ -6,29 +6,31 @@
   {% set editid = "section-{}-edit".format(section.idx) %}
   {% set bodyid = "section-{}-body".format(section.idx) %}
   {% set errorid = "error-section-{}".format(section.idx) %}
-  <div id="{{ displayid }}">
-    {% set header %}
-      {% if section.inserted %}
-        <ins>[{{ section.heading }}]</ins>
-      {% else %}
+  <div class="edit-block">
+    <div id="{{ displayid }}">
+      {% set header %}
+        {% if section.inserted %}
+          <ins>[{{ section.heading }}]</ins>
+        {% else %}
+          {{ section.heading }}
+        {% endif %}
+        {% if g.page.can_accept %}
+        <button type="button" onclick="accept('{{ errorid }}')">Accept this version</button>
+        {% elif g.page.can_edit %}
+        <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
+        {% endif %}
+      {% endset %}
+      {{ header_at_level(header, section.level) }}
+      <div>{{ section.body_diff|safe }}</div>
+    </div>
+    <div id="{{ editid }}" hidden="true">
+      {% set header %}
         {{ section.heading }}
-      {% endif %}
-      {% if g.page.can_accept %}
-      <button type="button" onclick="accept('{{ errorid }}')">Accept this version</button>
-      {% elif g.page.can_edit %}
-      <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
-      {% endif %}
-    {% endset %}
-    {{ header_at_level(header, section.level) }}
-    <div>{{ section.body_diff|safe }}</div>
+        <button type="button" onclick="update(get_section({{ section.idx }}),'{{ errorid }}')">Done</button>
+      {% endset %}
+      {{ header_at_level(header, section.level) }}
+      <div id="{{ bodyid }}" contenteditable="true">{{ section.body|safe }}</div>
+    </div>
+    <div id="{{ errorid }}"></div>
   </div>
-  <div id="{{ editid }}" hidden="true">
-    {% set header %}
-      {{ section.heading }}
-      <button type="button" onclick="update(get_section({{ section.idx }}),'{{ errorid }}')">Done</button>
-    {% endset %}
-    {{ header_at_level(header, section.level) }}
-    <div id="{{ bodyid }}" contenteditable="true">{{ section.body|safe }}</div>
-  </div>
-  <div id="{{ errorid }}"></div>
 {% endif %}
