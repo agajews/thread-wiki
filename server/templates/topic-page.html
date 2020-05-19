@@ -35,10 +35,10 @@
   <nav>
     {% if g.page.can_edit %}
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
-      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% else %}
       <em>Sign in to edit!</em>
     {% endif %}
+    <a href="{{ url_for('history', title=g.page.title) }}">History</a>
 
     {% if g.user != None and not g.page.is_bookmarked %}
       <span id="add-bookmark">

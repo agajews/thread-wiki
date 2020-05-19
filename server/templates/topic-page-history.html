@@ -18,7 +18,7 @@
     {% set version = g.page.versions[num] %}
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
-    <nav>
+    <nav class="history">
       <span class="timestamp">{{ version.timestamp }}</span>
       {% if num != 0 and num != len(g.page.versions) - 1 %}
         {% if not version.is_flagged %}
@@ -27,7 +27,7 @@
           <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
         {% endif %}
       {% endif %}
-      {% if num != len(g.page.versions) - 1 %}
+      {% if g.user != None and num != len(g.page.versions) - 1 %}
         <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
       {% endif %}
       <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>

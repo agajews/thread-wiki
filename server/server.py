@@ -601,12 +601,10 @@ def bookmarks_version(num):
     return render_template("bookmarks-page-version.html", version=g.page.versions[num])
 
 
-@can_edit
 def view_user_history():
     return render_template("user-page-history.html")
 
 
-@can_edit
 def view_topic_history():
     return render_template("topic-page-history.html")
 

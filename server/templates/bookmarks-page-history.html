@@ -26,7 +26,7 @@
     {% set version = g.page.versions[num] %}
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
-    <nav>
+    <nav class="history">
       <span class="timestamp">{{ version.timestamp }}</span>
       {% if num != len(g.page.versions) - 1 %}
         <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
