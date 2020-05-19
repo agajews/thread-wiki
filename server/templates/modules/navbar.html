@@ -1,21 +1,27 @@
 <header>
-  {% if g.user != None %}
-    <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
-    <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
-  {% endif %}
-  <a href="{{ url_for('recent') }}">Recent edits</a>
-  <a href="{{ url_for('page', title='FAQ') }}">FAQ</a>
+  <div class="header-top">
+    <span class="header-links">
+      {% if g.user != None %}
+        <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
+        <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
+      {% endif %}
+      <a href="{{ url_for('recent') }}">Recent edits</a>
+      <a href="{{ url_for('page', title='FAQ') }}">FAQ</a>
+    </span>
 
-  {% include 'modules/login.html' %}
-  {% if g.user.passhash == None %}
-    <div class="login-module">
-      <form id="password-form" onsubmit="setpassword(event)">
-        <label for="password">Looks like you haven't set a password yet. Set one here:</label>
-        <input type="password" name="password">
-        <input type="submit">
-      </form>
-    </div>
-  {% endif %}
+    {% include 'modules/login.html' %}
+    {% if g.user.passhash == None %}
+      <div class="login-module">
+        <form id="password-form" onsubmit="setpassword(event)">
+          <label for="password">Looks like you haven't set a password yet. Set one here:</label>
+          <div class="form-row">
+            <input type="password" name="password">
+            <input type="submit">
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  </div>
 
   {% include 'modules/search.html' %}
 </header>

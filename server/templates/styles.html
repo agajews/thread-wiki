@@ -150,7 +150,7 @@
     float: right;
     color: rgb(220, 240, 255);
     font-weight: normal;
-    margin-left: 20px;
+    margin-left: 5px;
     margin-bottom: 10px;
   }
 
@@ -192,6 +192,10 @@
     background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
   }
 
+  #password-form input[type="password"] {
+    margin-left: 0;
+  }
+
   #login-form {
     display: inline-block;
     margin-left: 10px;
@@ -204,6 +208,15 @@
   .logged-in {
     padding-top: 2px;
     display: inline-block;
+  }
+
+  .logout-buttons {
+    float: right;
+  }
+
+  .user-email {
+    float: right;
+    margin-right: 8px;
   }
 
   form {
@@ -327,4 +340,27 @@
   .added-bookmark {
     color: rgb(102, 0, 246);
   }
+
+  @media (max-width: 600px) {
+    .header-links {
+      font-size: 9pt;
+    }
+
+    header {
+      font-size: 9pt;
+    }
+
+    header button {
+      font-size: 9pt;
+    }
+
+    .login-module input[type="submit"] {
+      font-size: 9pt;
+    }
+
+    #query {
+      font-size: 10pt;
+    }
+  }
+
 </style>
