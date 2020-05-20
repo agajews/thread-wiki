@@ -703,6 +703,14 @@ def auth_errors(fun):
     return wrapped_fun
 
 
+@app.route("/login/")
+@error_handling
+def login():
+    if g.user is not None:
+        return flask_redirect(url_for("bookmarks"))
+    return render_template("login-page.html", hide_header_login=True)
+
+
 @app.route("/authenticate/", methods=["POST"])
 @error_handling
 @auth_errors

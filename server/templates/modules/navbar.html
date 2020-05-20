@@ -22,7 +22,9 @@
       <a href="{{ url_for('page', title='FAQ') }}">FAQ</a>
     </span>
 
-    {% include 'modules/login.html' %}
+    {% if not hide_header_login %}
+      {% include 'modules/login.html' %}
+    {% endif %}
   </div>
 
   {% include 'modules/search.html' %}

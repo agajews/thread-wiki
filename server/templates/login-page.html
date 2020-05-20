@@ -1,0 +1,29 @@
+{% extends 'base-page.html' %}
+
+{% block head %}
+  <title>Sign in - Thread</title>
+  <style>
+    body {
+      background-color: #f9f9f9;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="centered-content">
+    <div class="login-page-form">
+      <!-- <h3>Sign in</h3> -->
+      <form id="login-form" onsubmit="login(event)">
+        <div class="form-block">
+          <label for="email">Email:</label>
+          <input type="email" name="email">
+        </div>
+        <div class="form-block">
+          <label for="password">Password:</label>
+          <input type="password" name="password">
+        </div>
+        <input type="submit" class="submit" value="Sign in">
+      </form>
+    </div>
+  </div>
+{% endblock %}
