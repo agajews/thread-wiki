@@ -141,6 +141,7 @@ class UserPage(Page):
             primary_diffs=[primary_diff],
             primary_version=empty_version,
             owner=owner,
+            last_edited=version.timestamp,
         )
         try:
             page.save()

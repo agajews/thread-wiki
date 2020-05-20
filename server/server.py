@@ -201,7 +201,11 @@ def index():
 @app.route("/recent/")
 @error_handling
 def recent():
-    pages = list(Page.objects.order_by([("last_edited", DESCENDING)]).limit(20))
+    pages = list(
+        Page.objects.raw({"versions.2": {"$exists": True}})
+        .order_by([("last_edited", DESCENDING)])
+        .limit(20)
+    )
     return render_template("recent.html", pages=pages)
 
 
@@ -237,6 +241,7 @@ def bookmarks():
         .order_by([("last_edited", DESCENDING)])
         .limit(10)
     )
+    print(list(page.last_edited for page in pages))
     return render_template(
         "bookmarks-page.html", display=g.page.versions[-1], pages=pages
     )

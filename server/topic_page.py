@@ -93,6 +93,7 @@ class TopicPage(Page):
             search_terms=[name],
             versions=[version],
             diffs=[diff],
+            last_edited=version.timestamp,
         )
         try:
             page.save()
