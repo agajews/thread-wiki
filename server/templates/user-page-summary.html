@@ -2,7 +2,8 @@
   <div id="summary-display">
     <div>{{ display.summary_diff|safe }}</div>
     {% if g.page.can_accept %}
-      <button type="button" onclick="accept('error-summary')">Accept this version</button>
+      <!-- <button type="button" onclick="accept('error-summary')">Accept this version</button> -->
+      <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit and accept</a>
     {% elif g.page.can_edit %}
       <button type="button" onclick="swap('summary-display', 'summary-edit')">Edit summary</button>
     {% endif %}

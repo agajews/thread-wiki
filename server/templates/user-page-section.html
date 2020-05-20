@@ -15,9 +15,10 @@
           {{ section.heading }}
         {% endif %}
         {% if g.page.can_accept %}
-        <button type="button" onclick="accept('{{ errorid }}')">Accept this version</button>
+          <!-- <button type="button" onclick="accept('{{ errorid }}')">Accept this version</button> -->
+          <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit</a>
         {% elif g.page.can_edit %}
-        <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
+          <button type="button" onclick="swap('{{ displayid }}', '{{ editid }}')">Edit</button>
         {% endif %}
       {% endset %}
       {{ header_at_level(header, section.level) }}
