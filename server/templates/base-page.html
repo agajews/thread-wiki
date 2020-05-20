@@ -3,6 +3,8 @@
     {% include 'scripts.html' %}
     {% include 'styles.html' %}
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ moment.include_jquery() }}
+    {{ moment.include_moment() }}
     {% block head %}
       <title>Thread</title>
     {% endblock %}

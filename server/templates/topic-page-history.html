@@ -12,6 +12,9 @@
   <h1>History: {{ g.page.versions[-1].name }}</h1>
   <nav>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>
+    {% if g.page.can_edit %}
+      <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
+    {% endif %}
   </nav>
 
   {% for num in reversed(range(len(g.page.versions))) %}
@@ -19,7 +22,7 @@
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
-      <span class="timestamp">{{ version.timestamp }}</span>
+      <span class="timestamp">{{ moment(version.timestamp).format('LLL') }}</span>
       {% if num != 0 and num != len(g.page.versions) - 1 %}
         {% if not version.is_flagged %}
           <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>

@@ -7,6 +7,7 @@
 import os
 from datetime import datetime
 import flask
+from flask_moment import Moment
 from pymodm import connect
 
 app = flask.Flask(__name__)
@@ -16,6 +17,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
 )
+moment = Moment(app)
 
 if "FLASK_SERVER_NAME" in os.environ:
     app.config.update(SERVER_NAME=os.environ["FLASK_SERVER_NAME"])

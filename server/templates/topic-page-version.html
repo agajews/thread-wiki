@@ -10,8 +10,8 @@
   <nav>
     {% if g.page.can_edit %}
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
-      <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     {% endif %}
+    <a href="{{ url_for('history', title=g.page.title) }}">History</a>
     <a href="{{ url_for('page', title=g.page.title) }}">Latest version</a>
   </nav>
 
