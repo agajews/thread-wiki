@@ -551,8 +551,24 @@
     box-shadow: inset 0 1px 2px rgba(27,31,35,.075),0 0 0 2px rgba(3,102,214,.3);
   }
 
+  .login-page-form button {
+    font-size: 10pt;
+    float: right;
+    margin-bottom: 5px;
+  }
+
   .form-block {
     margin-bottom: 20px;
+  }
+
+  @media (max-width: 700px) {
+    header #login-form {
+      display: none;
+    }
+
+    #signin {
+      display: inline-block;
+    }
   }
 
 
@@ -570,12 +586,7 @@
       font-size: 9pt;
     }
 
-    header #login-form {
-      display: none;
-    }
-
     #signin {
-      display: inline-block;
       font-size: 9pt;
       padding: 3px 6px;
     }
