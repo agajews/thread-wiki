@@ -70,7 +70,11 @@ def linkify(html):
     linker = bleach.Linker(
         callbacks=[clean_link], url_re=bleach.linkifier.build_url_re(tlds=["[a-z]+"])
     )
-    return links, linker.linkify(html)
+    return links, normalize(linker.linkify(html))
+
+
+def normalize(data):
+    return generate_html(get_sequence(data))
 
 
 def linkify_page(sections, summary):
