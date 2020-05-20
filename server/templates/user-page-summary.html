@@ -4,7 +4,7 @@
     {% if g.page.can_accept %}
       <button type="button" onclick="accept('error-summary')">Accept this version</button>
     {% elif g.page.can_edit %}
-      <button type="button" onclick="swap('summary-display', 'summary-edit')">Edit</button>
+      <button type="button" onclick="swap('summary-display', 'summary-edit')">Edit summary</button>
     {% endif %}
   </div>
   <div id="summary-edit" hidden="true">
