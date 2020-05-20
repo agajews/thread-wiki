@@ -36,7 +36,7 @@
       {% endif %}
       <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
     </nav>
-    <div id="{{ errorid }}"></div>
+    <div class="error-block" id="{{ errorid }}"></div>
 
     {% if version.is_flagged %}
       <div class="markupnote">This edit has been flagged. It may well be a dumpster fire; view at your own risk.</div>

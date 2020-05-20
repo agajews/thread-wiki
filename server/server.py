@@ -429,6 +429,7 @@ def update(title):
 
 @app.route("/bookmarks/update/", methods=["POST"])
 @error_handling
+@bookmarks_page_errors
 def update_bookmarks():
     if g.user is None:
         raise NotAllowed()

@@ -33,7 +33,7 @@
       {% endif %}
       <a href="{{ url_for('bookmarks_version', num=num) }}">View</a>
     </nav>
-    <div id="{{ errorid }}"></div>
+    <div class="error-block" id="{{ errorid }}"></div>
 
     {% include 'topic-page-diff.html' %}
     {% if num != 0 %}

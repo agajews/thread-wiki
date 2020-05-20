@@ -17,6 +17,6 @@
     <button type="button" onclick="update(get_section({{ idx }}),'{{ errorid }}')">Done</button>
   {% endset %}
   {{ header_at_level(header, section.level) }}
+  <div class="error-block" id="{{ errorid }}"></div>
   <div id="{{ bodyid }}" contenteditable="true">{{ section.body|safe }}</div>
 </div>
-<div id="{{ errorid }}"></div>

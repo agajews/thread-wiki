@@ -1,9 +1,6 @@
 <div class="login-module">
   {% if g.user %}
     <span class="logout-block">
-      <!-- <span class="user-email"> -->
-      <!--   {{ g.user.email }} -->
-      <!-- </span> -->
       {% if g.user.passhash != None %}
         <button type="button" onclick="resetpassword()">Reset password</button>
       {% endif %}

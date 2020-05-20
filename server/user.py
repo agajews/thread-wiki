@@ -72,6 +72,8 @@ class User(MongoModel):
         User.objects.raw({"_id": self._id}).update({"$set": {"passhash": None}})
 
     def verify_password(self, password):
+        if self.passhash is None:
+            return False
         return check_password_hash(self.passhash, password)
 
     @staticmethod
