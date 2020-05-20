@@ -14,14 +14,14 @@
   }
 
   #content {
-    max-width: 800px;
     margin: 0 auto;
     padding: 10px;
     box-sizing: border-box;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: 70%;
+    max-width: 1300px;
     align-items: flex-start;
   }
 
@@ -373,8 +373,8 @@
   }
 
   #query {
-    width: 100%;
-    max-width: 900px;
+    width: 70%;
+    max-width: 1300px;
     text-align: center;
     font-size: 12pt;
     padding: 5px;
@@ -578,6 +578,19 @@
 
   .form-block {
     margin-bottom: 20px;
+  }
+
+
+  @media (max-width: 1285.7px) {
+    #content {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    #query {
+      width: 100%;
+      max-width: 880px;
+    }
   }
 
   @media (max-width: 700px) {
