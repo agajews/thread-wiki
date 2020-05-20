@@ -1,9 +1,9 @@
 <div class="login-module">
   {% if g.user %}
-    <span class="user-email">
-      {{ g.user.email }}
-    </span>
-    <span class="logout-buttons">
+    <span class="logout-block">
+      <!-- <span class="user-email"> -->
+      <!--   {{ g.user.email }} -->
+      <!-- </span> -->
       {% if g.user.passhash != None %}
         <button type="button" onclick="resetpassword()">Reset password</button>
       {% endif %}
@@ -17,7 +17,8 @@
       </span>
       <span class="form-row">
         <label for="password">Password:</label>
-        <input type="password" name="password"></span>
+        <input type="password" name="password">
+      </span>
       <input type="submit" class="submit-button" value="Sign in">
     </form>
   {% endif %}
