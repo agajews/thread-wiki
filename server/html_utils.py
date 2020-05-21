@@ -46,7 +46,6 @@ def get_thread_title(href):
 
 
 def linkify(html):
-    # TODO: fix iamges for non-diff displays
     links = set()
 
     def clean_link(attrs, new=False):

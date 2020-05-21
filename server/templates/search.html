@@ -7,7 +7,7 @@
   <h1>Search results for "{{ query }}"</h1>
 
   {% if can_create %}
-    <a href="{{ url_for('page', title=title_to_create) }}">Create a page called {{ query }}</a>
+    <a href="{{ url_for('page', title=title_to_create) }}">Create a page called "{{ query }}" (if this is a person, make a page for their .edu email address instead so they can moderate it)</a>
   {% endif %}
 
   {% if len(pages) == 0 %}

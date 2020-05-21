@@ -1,12 +1,11 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
 from flask import g
-from urllib.parse import urljoin
 
 from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
-from .app import timestamp, url_for
+from .app import timestamp, url_for, absolute_url
 from .errors import *
 
 
@@ -42,7 +41,7 @@ class TopicPage(Page):
         if set(titles).intersection(self.latest.links):
             return
         sections = self.latest.sections[:]
-        url = urljoin("https://thread.wiki/", url_for("page", title=titles[-1]))
+        url = absolute_url(url_for("page", title=titles[-1]))
         body = sanitize_html("<div>{}</div>".format(url))
         if len(sections) == 0:
             sections.append(Section(heading="Unsorted links", level=2, body=body))

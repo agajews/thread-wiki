@@ -49,3 +49,8 @@ def manage_token(response):
         token = generate_auth_token(g.user._id)
         response.set_cookie("token", token, max_age=3600 * 24 * 7)
     return response
+
+
+@app.context_processor
+def inject_token_url():
+    return dict(token_url_for=token_url_for)

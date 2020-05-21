@@ -55,6 +55,15 @@
     });
   }
 
+  function forgotpassword() {
+    let form = document.getElementById("login-form");
+    signal("{{ url_for('forgotpassword') }}", {
+        email: form.elements["email"].value,
+        href: window.location.href,
+        errorid: 'error-login',
+    });
+  }
+
   function setpassword(event) {
     event.preventDefault();
     let form = document.getElementById("password-form");

@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <style>
+      h3 {
+        color: black;
+        margin-bottom: 0;
+      }
+
+      #visit {
+        background-image: linear-gradient(-180deg, #6f6ecc, #331bed);
+        font-weight: bold;
+        border: 1px solid hsl(220, 78%, 29%);
+
+        font-size: 14pt;
+        padding: 6px 18px;
+        border-radius: 4px;
+        font-size: 10pt;
+
+        color: white;
+        margin: 8px 0;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      img {
+        max-width: 200px;
+        margin: 10px 0px;
+      }
+
+      ins {
+        color: rgb(137, 0, 255);
+      }
+      del {
+        color: #686b91;
+      }
+      del img {
+        opacity: 0.5;
+      }
+
+      .markupnote {
+        color: #686b91;
+      }
+      .markupnote:before {
+        content: "[";
+      }
+      .markupnote:after {
+        content: "]";
+      }
+      div.centered {
+        /* text-align: center; */
+      }
+    </style>
+  </head>
+  <body>
+    <h3>New edit for {{ version.name}} ({{ version.aka }}). Someone has edited your page on Thread! View it here:</h3>
+    <div class="centered">
+      <a id="visit" href="{{ absolute_url(token_url_for(g.user, 'bookmarks')) }}">
+        Latest edit
+      </a>
+    </div>
+
+    <hr>
+
+    {% set diff = g.page.diffs[-1] %}
+    {% include 'user-page-diff.html' %}
+  </body>
+</html>

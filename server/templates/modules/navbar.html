@@ -1,8 +1,11 @@
+{% if g.user != None and g.user.is_banned %}
+<div class="error-alert">Two of your edits have been flagged, so your account ({{ g.user.email }}) has been automatically banned until {{ moment(g.user.banned_until).format('LLL') }}.</div>
+{% endif %}
 <div class="error-alert" id="error-login"></div>
-{% if g.user.passhash == None %}
+{% if g.user != None and g.user.passhash == None %}
   <div class="setpassword">
     <form id="password-form" onsubmit="setpassword(event)">
-      <label for="password">Looks like you haven't set a password yet. Set one here:</label>
+      <label for="password">Looks like your account ({{ g.user.email }}) hasn't set a password yet. Set one here:</label>
       <div class="form-row">
         <input type="password" name="password">
         <input type="submit">

@@ -1,12 +1,13 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
 from pymongo.errors import DuplicateKeyError
-from flask import g
-from urllib.parse import urljoin
+from flask import g, render_template
+from datetime import timedelta
 
 from .page import Page, PageVersion, VersionDiff
 from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
-from .app import timestamp, url_for
+from .app import timestamp, url_for, absolute_url
+from .mail import send_email
 from .errors import *
 
 
@@ -17,6 +18,7 @@ class UserPage(Page):
     primary_version = fields.ReferenceField("UserVersion")
     owner = fields.ReferenceField("User")
     is_frozen = fields.BooleanField(default=False)
+    last_emailed = fields.DateTimeField()
 
     def add_version(self, version, is_primary=False):
         diff = UserVersionDiff.compute(self.latest, version)
@@ -55,7 +57,7 @@ class UserPage(Page):
         if set(titles).intersection(self.latest.links):
             return
         sections = self.latest.sections[:]
-        url = urljoin("https://thread.wiki/", url_for("page", title=titles[-1]))
+        url = absolute_url(url_for("page", title=titles[-1]))
         body = sanitize_html("<div>{}</div>".format(url))
         if len(sections) == 0:
             sections.append(Section(heading="Unsorted links", level=2, body=body))
@@ -89,6 +91,28 @@ class UserPage(Page):
         if is_primary is None:
             is_primary = g.user == self.owner
         self.add_version(version, is_primary=is_primary)
+
+        if (
+            len(self.versions) >= 5
+            and (
+                self.last_emailed is None
+                or version.timestamp - self.last_emailed >= timedelta(days=1)
+            )
+            and g.user != self.owner
+        ):
+            send_email(
+                self.owner.email,
+                "Edit notification for {} ({}): Someone edited your page on {}".format(
+                    version.name,
+                    version.aka,
+                    version.timestamp.date().strftime("%m/%d/%y"),
+                ),
+                render_template("edit-email.html", version=version),
+                render_template("edit-email.txt", version=version),
+            )
+            Page.objects.raw({"_id": self._id}).update(
+                {"$set": {"last_emailed": version.timestamp}}
+            )
 
     def restore(self, num):
         assert 0 <= num < len(self.versions) - 1

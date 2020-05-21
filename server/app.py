@@ -9,6 +9,7 @@ from datetime import datetime
 import flask
 from flask_moment import Moment
 from pymodm import connect
+from urllib.parse import urljoin
 
 app = flask.Flask(__name__)
 app.config.update(
@@ -35,9 +36,13 @@ def url_for(*args, **kwargs):
     )
 
 
+def absolute_url(url):
+    return urljoin("https://thread.wiki/", url)
+
+
 @app.context_processor
 def inject_url_for_title():
-    return dict(url_for=url_for)
+    return dict(url_for=url_for, absolute_url=absolute_url)
 
 
 @app.context_processor

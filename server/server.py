@@ -19,8 +19,9 @@ from .user import User
 from .user_page import UserPage
 from .topic_page import TopicPage
 from .bookmarks import BookmarksPage
+from .mail import send_email
 from .errors import *
-from . import auth  # just to load handlers into the app
+from . import auth  # just to load handlers into app
 
 
 @app.context_processor
@@ -241,7 +242,6 @@ def bookmarks():
         .order_by([("last_edited", DESCENDING)])
         .limit(10)
     )
-    print(list(page.last_edited for page in pages))
     return render_template(
         "bookmarks-page.html", display=g.page.versions[-1], pages=pages
     )
@@ -726,6 +726,20 @@ def authenticate():
     g.user = user
     g.reissue_token = True
     return reload()
+
+
+@app.route("/forgotpassword/", methods=["POST"])
+@error_handling
+@auth_errors
+def forgotpassword():
+    user = User.find(email=get_param("email"))
+    send_email(
+        user.email,
+        "Thread sign-in link",
+        render_template("forgot-password-email.html", user=user),
+        render_template("forgot-password-email.txt", user=user),
+    )
+    return error("Check your email for a sign-in link.")
 
 
 @app.route("/setpassword/", methods=["POST"])
