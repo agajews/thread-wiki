@@ -14,12 +14,12 @@
 
 {% macro moment_timestamp(timestamp) %}
   <script>
-    document.write(moment("{{ timestamp }}").format('LLL'));
+    document.write(moment.utc("{{ timestamp }}").local().format('LLL'));
   </script>
 {% endmacro %}
 
 {% macro moment_from_now(timestamp) %}
   <script>
-    document.write(moment("{{ timestamp }}").fromNow());
+    document.write(moment.utc("{{ timestamp }}").local().fromNow());
   </script>
 {% endmacro %}

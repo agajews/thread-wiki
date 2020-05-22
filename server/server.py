@@ -203,7 +203,7 @@ def index():
 @error_handling
 def recent():
     pages = list(
-        Page.objects.raw({"versions.2": {"$exists": True}})
+        Page.objects.raw({"versions.1": {"$exists": True}})
         .order_by([("last_edited", DESCENDING)])
         .limit(20)
     )
