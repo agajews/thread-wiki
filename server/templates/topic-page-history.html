@@ -17,12 +17,13 @@
     {% endif %}
   </nav>
 
+  {% from 'page-utils.html' import moment_timestamp %}
   {% for num in reversed(range(len(g.page.versions))) %}
     {% set version = g.page.versions[num] %}
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
-      <span class="timestamp">{{ moment(version.timestamp).format('LLL') }}</span>
+      <span class="timestamp">{{ moment_timestamp(version.timestamp) }}</span>
       {% if num != 0 and num != len(g.page.versions) - 1 %}
         {% if not version.is_flagged %}
           <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>

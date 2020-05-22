@@ -18,12 +18,13 @@
     {% endif %}
   </nav>
 
+  {% from 'page-utils.html' import moment_timestamp %}
   {% for num in reversed(range(len(g.page.versions))) %}
     {% set version = g.page.versions[num] %}
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
-      <span class="timestamp">{{ moment(version.timestamp).format('LLL') }}</span>
+      <span class="timestamp">{{ moment_timestamp(version.timestamp) }}</span>
       {% if num == len(g.page.versions) - 1 and g.page.can_accept %}
         <button type="button" onclick="accept('error-version-{{ num }}')">Accept this version</button>
       {% endif %}

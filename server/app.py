@@ -3,6 +3,8 @@
 # FLASK_APP=server/server.py
 # FLASK_SECRET_KEY=devkey
 # MONGODB_CONNECT_STRING=mongodb://localhost:27017/thread_dev
+# AWS_ACCESS_KEY_ID=<access key>
+# AWS_SECRET_ACCESS_KEY=<secret key>
 
 import os
 from datetime import datetime

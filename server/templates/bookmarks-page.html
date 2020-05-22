@@ -45,6 +45,7 @@
     {% include 'bookmarks-page-summary.html' %}
   </div>
 
+  {% from 'page-utils.html' import moment_from_now %}
   {% if len(pages) != 0 %}
     <div class="bookmark-updates">
       <h4>Recently edited:</h4>
@@ -55,12 +56,12 @@
             {% set diff = page.diffs[-1] %}
             <a href="{{ url_for('page', title=page.title) }}">
               {{ diff.name }}
-            </a> - <span class="timestamp">{{ moment(page.versions[-1].timestamp).fromNow() }}</span>
+            </a> - <span class="timestamp">{{ moment_from_now(page.versions[-1].timestamp) }}</span>
           {% elif isinstance(page, TopicPage) %}
             {% set diff = page.diffs[-1] %}
             <a href="{{ url_for('page', title=page.title) }}">
               {{ diff.name }}
-            </a> - <span class="timestamp">{{ moment(page.versions[-1].timestamp).fromNow() }}</span>
+            </a> - <span class="timestamp">{{ moment_from_now(page.versions[-1].timestamp) }}</span>
           {% endif %}
         {% endfor %}
         </li>

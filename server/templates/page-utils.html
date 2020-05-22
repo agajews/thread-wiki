@@ -11,3 +11,15 @@
     <h6>{{ header }}</h6>
   {% endif %}
 {% endmacro %}
+
+{% macro moment_timestamp(timestamp) %}
+  <script>
+    document.write(moment("{{ timestamp }}").format('LLL'));
+  </script>
+{% endmacro %}
+
+{% macro moment_from_now(timestamp) %}
+  <script>
+    document.write(moment("{{ timestamp }}").fromNow());
+  </script>
+{% endmacro %}

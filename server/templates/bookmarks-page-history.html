@@ -22,12 +22,13 @@
     <a href="{{ url_for('bookmarks') }}">Back</a>
   </nav>
 
+  {% from 'page-utils.html' import moment_timestamp %}
   {% for num in reversed(range(len(g.page.versions))) %}
     {% set version = g.page.versions[num] %}
     {% set diff = g.page.diffs[num] %}
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
-      <span class="timestamp">{{ moment(version.timestamp).format('LLL') }}</span>
+      <span class="timestamp">{{ moment_timestamp(version.timestamp) }}</span>
       {% if num != len(g.page.versions) - 1 %}
         <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
       {% endif %}
