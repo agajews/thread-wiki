@@ -5,7 +5,8 @@
 
 {% block content %}
   <h1>Bookmarks</h1>
-  <h3>{{ version.timestamp }}</h3>
+  {% from 'page-utils.html' import moment_timestamp %}
+  <h3 class="version-timestamp">{{ moment_timestamp(version.timestamp) }}</h3>
 
   <nav>
     <a href="{{ url_for('edit_bookmarks') }}">Edit page</a>

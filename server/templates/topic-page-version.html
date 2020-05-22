@@ -5,7 +5,8 @@
 
 {% block content %}
   <h1>{{ version.name }}</h1>
-  <h3>{{ version.timestamp }}</h3>
+  {% from 'page-utils.html' import moment_timestamp %}
+  <h3 class="version-timestamp">{{ moment_timestamp(version.timestamp) }}</h3>
 
   <nav>
     {% if g.page.can_edit %}
