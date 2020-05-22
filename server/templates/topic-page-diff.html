@@ -1,6 +1,8 @@
 <div class="diff">
   {% if diff.name_changed %}
-    <div class="markupnote">Changed name to: {{ diff.name }}</div>
+    <div class="diff-block">
+      <div class="markupnote">Changed name to: {{ diff.name }}</div>
+    </div>
   {% endif %}
   {% if diff.summary_changed %}
     <div class="diff-block">

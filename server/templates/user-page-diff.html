@@ -1,10 +1,15 @@
 <div class="diff">
-  {% if diff.name_changed %}
-    <div class="markupnote">Changed name to: {{ diff.name }}</div>
+  {% if diff.name_changed or diff.aka_changed %}
+    <div class="diff-block">
+      {% if diff.name_changed %}
+        <div class="markupnote">Changed name to: {{ diff.name }}</div>
+      {% endif %}
+      {% if diff.aka_changed %}
+        <div class="markupnote">Changed aka to: {{ diff.aka }}</div>
+      {% endif %}
+    </div>
   {% endif %}
-  {% if diff.aka_changed %}
-    <div class="markupnote">Changed aka to: {{ diff.aka }}</div>
-  {% endif %}
+
   {% if diff.summary_changed %}
     {{ diff.summary_diff|safe }}
   {% endif %}
