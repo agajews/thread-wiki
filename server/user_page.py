@@ -122,7 +122,7 @@ class UserPage(Page):
             version.summary,
             version.name,
             version.aka,
-            is_primary=False,
+            is_primary=version.editor == self.owner,
         )
 
     def accept(self):
