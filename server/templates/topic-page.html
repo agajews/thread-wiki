@@ -36,7 +36,7 @@
     {% if g.page.can_edit %}
       <a href="{{ url_for('edit', title=g.page.title) }}">Edit page</a>
     {% else %}
-      <em>Sign in to edit!</em>
+      <em>Sign in to edit</em>
     {% endif %}
     <a href="{{ url_for('history', title=g.page.title) }}">History</a>
 

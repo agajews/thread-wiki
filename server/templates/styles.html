@@ -128,10 +128,28 @@
     flex-wrap: wrap-reverse;
   }
 
+  #footer {
+    text-align: center;
+    padding-bottom: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .emoticon {
+    color: white;
+    padding-top: 6px;
+    /* padding-left: 10px;
+    padding-right: 30px; */
+  }
+
   .logout-block {
     padding-top: 6px;
     padding-right: 6px;
+    padding-left: 0px;
     display: inline-block;
+  }
+
+  .logout-block > :first-child {
+    margin-left: 0px;
   }
 
   .header-links {
@@ -150,8 +168,9 @@
   }
 
   .login-module {
-    margin-left: auto;
     margin-bottom: 10px;
+    margin-left: 6px;
+    margin-left: auto;
   }
 
   div.bookmark-updates {
@@ -200,11 +219,13 @@
 
   header a:hover {
     color: rgb(200, 220, 245);
+    color: rgb(232, 232, 172);
     text-decoration: none;
   }
 
   header a:active {
     color: rgb(180, 200, 225);
+    color: rgb(232, 232, 172);
   }
 
 
@@ -222,10 +243,14 @@
   header button:hover {
     text-decoration: underline;
     cursor: pointer;
+    color: rgb(159, 79, 219);
+    color: rgb(150, 79, 219);
+    color: rgb(183, 110, 255);
+    color: rgb(141, 74, 250);
   }
 
   header button:active {
-    color: rgb(110, 120, 130);
+    /* color: rgb(110, 120, 130); */
   }
 
   img {
@@ -251,15 +276,25 @@
 
   header #login-form input {
     background-color: rgb(83, 88, 92);
+    background-color: rgb(46, 56, 64);
     color: white;
-    border-radius: 2px;
+    border-radius: 5px;
     border: 1px solid transparent;
     padding: 3px;
+    transition: background-color 0.4s, color 0.4s;
   }
 
   header #login-form input:hover {
     /* border-color: rgb(213, 223, 255); */
     background-color: rgb(93, 98, 102);
+
+    /* light yellow */
+    background-color: rgb(230, 229, 196);
+
+    /* very light yellow */
+    background-color: rgb(240, 241, 230);
+    background-color: rgb(241, 242, 224);
+    color: black;
   }
 
   header #login-form input:focus {
@@ -276,6 +311,7 @@
     padding: 6px;
     border-radius: 4px;
     font-size: 10pt;
+    color: white;
   }
 
   header #login-form input[type="submit"]:hover {
@@ -415,18 +451,25 @@
     background-color: rgb(62, 68, 80);
     color: #DDD;
     border: none;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.4s, color 0.4s;
   }
 
   #query:hover {
     background-color: rgb(73, 78, 82);
     background-color: rgb(75, 80, 97);
     background-color: rgb(75, 80, 92);
+
+    /* light yellow */
+    background-color: rgb(238, 240, 205);
+
+    /* very light yellow */
+    background-color: rgb(240, 241, 230);
+    background-color: rgb(241, 242, 224);
     color: #DDD;
   }
 
   #query:focus {
-    background-color: white;
+    /* background-color: white; */
     color: #151f45;
     outline: none;
   }

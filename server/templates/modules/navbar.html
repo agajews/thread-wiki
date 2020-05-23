@@ -1,5 +1,5 @@
 {% if g.user != None and g.user.is_banned %}
-<div class="error-alert">Two of your edits have been flagged, so your account ({{ g.user.email }}) has been automatically banned until {{ moment(g.user.banned_until).format('LLL') }}.</div>
+<div class="error-alert">Lel, two of your edits were flagged, so your account ({{ g.user.email }}) has been automatically banned until {{ moment_timestamp(g.user.banned_until) }}.</div>
 {% endif %}
 <div class="error-alert" id="error-login"></div>
 {% if g.user != None and g.user.passhash == None %}
@@ -17,6 +17,7 @@
 <header>
   <div class="header-top">
     <span class="header-links">
+      <span class="emoticon">:3</span>
       {% if g.user != None %}
         <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
         <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>

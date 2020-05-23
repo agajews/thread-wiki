@@ -701,9 +701,9 @@ def auth_errors(fun):
         try:
             return fun(*args, **kwargs)
         except UserNotFound:
-            return error("Can't find that account")
+            return error("Lel, can't find that account")
         except IncorrectPassword:
-            return error("Incorrect password")
+            return error("Lel, wrong password")
 
     return wrapped_fun
 
