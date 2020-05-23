@@ -11,7 +11,7 @@
   {% endif %}
 
   {% if len(pages) == 0 %}
-    <p>No search results found :(</p>
+    <div class="empty-search">No search results found :(</div>
   {% else %}
     {% for i, page in enumerate(pages) %}
       {% if isinstance(page, UserPage) %}
