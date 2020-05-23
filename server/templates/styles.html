@@ -239,6 +239,7 @@
     margin: 0;
     margin-left: 5px;
     padding: 0;
+    transition: color 0.2s;
   }
 
   header button:hover {
@@ -470,6 +471,19 @@
     background-color: rgb(241, 242, 224);
     color: #151f45;
     color: #5f6682;
+  }
+
+  #query::placeholder {
+    transition: color 0.4s;
+    opacity: 1;
+  }
+
+  #query:hover::placeholder {
+    color: #8991b4;
+  }
+
+  #query:focus::placeholder {
+    color: #8991b4;
   }
 
   #query:focus {
