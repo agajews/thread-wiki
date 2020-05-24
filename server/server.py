@@ -247,6 +247,15 @@ def bookmarks():
     )
 
 
+@app.route("/pageorbookmarks/")
+def pageorbookmarks():
+    if g.user is None:
+        return flask_redirect(url_for("recent"))
+    elif g.user.passhash is None:
+        return flask_redirect(url_for("bookmarks"))
+    return flask_redirect(url_for("page", title=g.user.email))
+
+
 @can_edit
 def view_user_edit():
     return render_template("edit-user-page.html", version=g.page.versions[-1])

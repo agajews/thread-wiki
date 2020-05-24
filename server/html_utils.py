@@ -42,7 +42,7 @@ def get_thread_title(href):
     match = re.fullmatch("^(http://|https://)?thread.wiki/page/([^/]+)(/)?$", href)
     if match is None:
         return None
-    return match.group(2)
+    return urllib.parse.unquote(match.group(2))
 
 
 def linkify(html):
@@ -60,9 +60,7 @@ def linkify(html):
             else:
                 attrs["_text"] = sanitize_text(href)
         else:
-            attrs["_text"] = sanitize_text(
-                urllib.parse.unquote(title_to_name(thread_title))
-            )
+            attrs["_text"] = sanitize_text(title_to_name(thread_title))
             links.add(thread_title)
         return attrs
 

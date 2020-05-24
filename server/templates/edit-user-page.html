@@ -19,7 +19,7 @@
 
 {% block content %}
   <h1>
-    <span id="name" contenteditable="true">{{ version.name }}</span>, AKA "<span id="aka" contenteditable="true">{{ version.aka }}</span>"
+    <span id="name" contenteditable="true">{{ version.name }}</span> (<span id="aka" contenteditable="true">{{ version.aka }}</span>)
   </h1>
   <nav>
     <a href="{{ url_for('page', title=g.page.title) }}">Back</a>

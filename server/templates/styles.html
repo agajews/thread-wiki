@@ -88,6 +88,7 @@
 
   a:active {
     color: rgb(110, 120, 130);
+    color: rgb(82, 68, 208);
   }
 
   nav a {
@@ -333,6 +334,10 @@
     color: rgb(62, 68, 80);
   }
 
+  header #login-form button {
+    margin-left: 0px;
+  }
+
   header #login-form input {
     background-color: rgb(83, 88, 92);
     background-color: rgb(46, 56, 64);
@@ -373,8 +378,8 @@
   }
 
   header #login-form input[type="submit"] {
-    background-image: linear-gradient(-180deg, #605eeb, #4029ed);
-    background-image: linear-gradient(-180deg, #5554cf, #4029ed);
+    /* background-image: linear-gradient(-180deg, #605eeb, #4029ed);
+    background-image: linear-gradient(-180deg, #5554cf, #4029ed); */
     font-weight: bold;
     border: 1px solid hsl(220, 78%, 29%);
 
@@ -383,16 +388,27 @@
     border-radius: 4px;
     font-size: 10pt;
     color: white;
+
+    /* outline */
+    /* background: transparent; */
+    border: 1px solid #4029ed;
+    color: #4029ed;
+    font-weight: normal;
+
+    background-color: rgb(82, 68, 208);
+    color: white;
+    font-weight: bold;
+    border-color: transparent;
   }
 
   header #login-form input[type="submit"]:hover {
     cursor: pointer;
-    background-image: linear-gradient(-180deg, #5351f2, #3520d6);
-    background-image: linear-gradient(-180deg, #4644d6, #3520d6);
+    /* background-image: linear-gradient(-180deg, #5351f2, #3520d6);
+    background-image: linear-gradient(-180deg, #4644d6, #3520d6); */
   }
 
   header #login-form input[type="submit"]:active {
-    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+    /* background-image: linear-gradient(-180deg, #3a23ea, #3a23ea); */
   }
 
   header #login-form input {
@@ -412,6 +428,10 @@
     margin: 0;
   }
 
+  nav button {
+    margin-top: 0px;
+  }
+
   button {
     color: rgb(18, 105, 211);
     color: rgb(19, 88, 227);
@@ -422,7 +442,7 @@
     margin: 0;
     padding: 0;
     margin-right: 5px;
-    margin-top: 0px;
+    margin-top: 5px;
   }
 
   h1 button, h2 button, h3 button, h4 button, h5 button, h6 button {
@@ -436,10 +456,11 @@
 
   button:active {
     color: rgb(110, 120, 130);
+    color: rgb(82, 68, 208);
   }
 
   .submit {
-    background-image: linear-gradient(-180deg, #6f6ecc, #331bed);
+    /* background-image: linear-gradient(-180deg, #6f6ecc, #331bed); */
     font-weight: bold;
     border: 1px solid hsl(220, 78%, 29%);
 
@@ -450,25 +471,30 @@
 
     color: white;
     margin-top: 10px;
+
+    background-color: rgb(82, 68, 208);
+    border-color: transparent;
   }
 
   .submit:hover {
     cursor: pointer;
-    background-image: linear-gradient(-180deg, #6764f2, #3520d6);
+    /* background-image: linear-gradient(-180deg, #6764f2, #3520d6);
     background-image: linear-gradient(-180deg, #605ef2, #1d00ff);
-    background-image: linear-gradient(-180deg, #6665cb, #331bed);
+    background-image: linear-gradient(-180deg, #6665cb, #331bed); */
     text-decoration: none;
   }
 
   .submit:active {
-    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+    /* background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+    color: white; */
     color: white;
   }
 
   button.edit {
     background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
+    background-image: linear-gradient(-180deg, #ffffff, #f1f4f8);
     font-weight: bold;
-    border: 1px solid rgba(27,31,35,.35);
+    border: 1px solid rgba(27, 30, 34, 0.19);
 
     font-size: 12pt;
     padding: 6px;
@@ -481,13 +507,14 @@
 
   button.edit:hover {
     cursor: pointer;
-    background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%);
-    border-color: rgba(27,31,35,.65);
+    /* background-image: linear-gradient(-180deg,#f0f3f6,#e6ebf1 90%); */
+    border-color: rgba(27,31,35,.35);
     text-decoration: none;
   }
 
   button.edit:active {
-    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+    /* background-image: linear-gradient(-180deg, #3a23ea, #3a23ea); */
+    background-image: linear-gradient(-180deg, #f6f3f3, #f1f4f8);
   }
 
   div {
@@ -685,7 +712,7 @@
   }
 
   .setpassword input[type="submit"] {
-    background-image: linear-gradient(-180deg, #605eeb, #4029ed);
+    /* background-image: linear-gradient(-180deg, #605eeb, #4029ed); */
     font-weight: bold;
     border: 1px solid hsl(220, 78%, 29%);
     color: white;
@@ -694,15 +721,18 @@
     padding: 6px;
     border-radius: 4px;
     font-size: 10pt;
+
+    border-color: transparent;
+    background-color: rgb(82, 68, 208);
   }
 
   .setpassword input[type="submit"]:hover {
     cursor: pointer;
-    background-image: linear-gradient(-180deg, #5351f2, #3520d6);
+    /* background-image: linear-gradient(-180deg, #5351f2, #3520d6); */
   }
 
   .setpassword input[type="submit"]:active {
-    background-image: linear-gradient(-180deg, #3a23ea, #3a23ea);
+    /* background-image: linear-gradient(-180deg, #3a23ea, #3a23ea); */
   }
 
   #signin {
