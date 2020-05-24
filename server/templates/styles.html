@@ -40,6 +40,10 @@
     margin-top: 0;
   }
 
+  h1 span[contenteditable="true"] {
+    line-height: 1.7;
+  }
+
   .recent h2 {
     margin-top: 0px;
     margin-bottom: 0px;
@@ -177,7 +181,7 @@
 
   .header-links {
     margin-bottom: 20px;
-    /* margin-right: 20px; */
+    margin-bottom: 0;
     padding-top: 6px;
     padding-left: 6px;
     text-align: center;
@@ -192,7 +196,7 @@
   }
 
   .login-module {
-    margin-bottom: 5px;
+    margin-bottom: 0px;
     margin-left: auto;
     padding-left: 6px;
     margin-right: 5px;
@@ -418,7 +422,7 @@
     margin: 0;
     padding: 0;
     margin-right: 5px;
-    margin-top: 5px;
+    margin-top: 0px;
   }
 
   h1 button, h2 button, h3 button, h4 button, h5 button, h6 button {
@@ -524,7 +528,7 @@
     background-color: rgb(220, 224, 232);
     background-color: rgb(235, 239, 247);
 
-    margin-top: 0px;
+    margin-top: 15px;
     margin-bottom: 0px;
   }
 
@@ -729,17 +733,17 @@
   .centered-content {
     display: flex;
     justify-content: center;
-    max-height: 400px;
+    max-height: 350px;
     flex-grow: 1;
     flex-direction: column;
     box-sizing: border-box;
-    align-self: center;
+    align-self: stretch;
   }
 
   .login-page-form {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
     background-color: white;
-    padding: 50px;
+    padding: 10px;
     padding-top: 30px;
     border-radius: 5px;
     /* border: 1px rgb(209, 213, 218) solid; */
@@ -763,9 +767,8 @@
     background-color: rgb(250, 251, 252);
     border-radius: 5px;
     padding: 5px;
-    width: 350px;
+    width: 100%;
     display: block;
-    max-width: 75vw;
   }
 
   .login-page-form input:focus {
@@ -815,7 +818,6 @@
   @media (max-width: 600px) {
     .header-links {
       font-size: 10pt;
-      margin-bottom: 15px;
     }
 
     header {
@@ -837,6 +839,7 @@
 
     #query {
       font-size: 10pt;
+      margin-top: 5px;
     }
 
     .setpassword {
