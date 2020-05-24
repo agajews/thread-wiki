@@ -11,20 +11,28 @@
   {% endif %}
 
   {% if diff.summary_changed %}
-    {{ diff.summary_diff|safe }}
+    <div class="diff-block">
+      {{ diff.summary_diff|safe }}
+    </div>
   {% endif %}
 
   {% from 'page-utils.html' import header_at_level %}
   {% for section in diff.sections %}
     {% if section.inserted %}
-      <ins>{{ header_at_level(section.heading, section.level) }}</ins>
-      <ins>{{ section.body|safe }}</ins>
+      <div class="diff-block">
+        <ins>{{ header_at_level(section.heading, section.level) }}</ins>
+        <ins>{{ section.body|safe }}</ins>
+      </div>
     {% elif section.deleted %}
-      <del>{{ header_at_level(section.heading, section.level) }}</del>
-      <del>{{ section.body|safe }}</del>
+      <div class="diff-block">
+        <del>{{ header_at_level(section.heading, section.level) }}</del>
+        <del>{{ section.body|safe }}</del>
+      </div>
     {% elif section.edited %}
-      {{ header_at_level(section.heading, section.level) }}
-      {{ section.body_diff|safe }}
+      <div class="diff-block">
+        {{ header_at_level(section.heading, section.level) }}
+        {{ section.body_diff|safe }}
+      </div>
     {% endif %}
   {% endfor %}
 </div>

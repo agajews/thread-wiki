@@ -4,6 +4,7 @@
       <div class="markupnote">Changed name to: {{ diff.name }}</div>
     </div>
   {% endif %}
+
   {% if diff.summary_changed %}
     <div class="diff-block">
       {{ diff.summary_diff|safe }}
