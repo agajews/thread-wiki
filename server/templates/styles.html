@@ -20,6 +20,26 @@
     background-repeat: no-repeat; */
   }
 
+  .header-background {
+    width: 100%;
+    height: 280px;
+    margin-bottom: -280px;
+    background-color: rgb(248, 248, 248);
+    border-bottom: solid 1px #DDD;
+  }
+
+  .content-border {
+    width: 70%;
+    max-width: 1300px;
+    height: 134px;
+    margin: 0 auto;
+    margin-bottom: calc(-134px - 20px);
+
+    border-radius: 5px;
+    border: solid 1px #DDD;
+    border-bottom: none;
+  }
+
   #content {
     margin: 0 auto;
     padding: 15px;
@@ -32,6 +52,22 @@
     width: 70%;
     max-width: 1300px;
     align-items: flex-start;
+
+    background-color: white;
+    border-radius: 5px;
+
+    margin-top: 20px;
+    border-radius: 5px;
+
+    /* box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.1);
+    border-radius: 5px; */
+  }
+
+  .separator {
+    width: 100%;
+    height: 4px;
+    background-color: grey;
+    margin-bottom: 20px;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -84,6 +120,16 @@
 
   .recent h1 {
     margin-bottom: 10px;
+    font-size: 14pt;
+    color: #788;
+  }
+
+  .recent {
+    color: black;
+  }
+
+  .asterisk {
+    text-align: center;
   }
 
   nav.history {
@@ -558,7 +604,7 @@
   }
 
   #query {
-    width: 70%;
+    width: 50%;
     max-width: 1300px;
     text-align: center;
     font-size: 12pt;
@@ -578,19 +624,26 @@
     background-color: rgb(220, 224, 232);
     background-color: rgb(235, 239, 247);
 
-    margin-top: 20px;
-    margin-bottom: 0px;
+    margin-top: 50px;
+    margin-bottom: 10px;
+
+    /* jisho */
+    border: 4px #DDD solid;
+    border-radius: 5px;
+    background-color: white;
+    text-align: left;
+    padding: 0.5em;
+    font-size: 14pt;
+    width: 70%;
 
   }
 
   #query:hover {
-    background-color: rgb(73, 78, 82);
+    /* background-color: rgb(73, 78, 82);
     background-color: rgb(75, 80, 97);
 
-    /* light yellow */
     background-color: rgb(238, 240, 205);
 
-    /* very light yellow */
     background-color: rgb(240, 241, 230);
     background-color: rgb(241, 242, 224);
     color: #151f45;
@@ -599,13 +652,11 @@
     background-color: rgb(75, 80, 92);
     color: #DDD;
 
-    /* incognito */
     background-color: rgb(75, 80, 92);
     color: #DDD;
 
-    /* light */
     background-color: rgb(225, 230, 238);
-    color: #345;
+    color: #345; */
   }
 
   /* #query::placeholder {
@@ -622,22 +673,21 @@
   } */
 
   #query:focus {
-    background-color: rgb(241, 242, 224);
+    /* background-color: rgb(241, 242, 224);
     color: #5f6682;
     outline: none;
 
     background-color: white;
     color: #151f45;
 
-    /* incognito */
     background-color: rgb(75, 80, 92);
     color: #DDD;
 
-    /* light */
     background-color: rgb(235, 239, 247);
     color: #345;
 
-    background-color: rgb(225, 230, 238);
+    background-color: rgb(225, 230, 238); */
+    outline: none;
   }
 
   #search-form {
@@ -864,6 +914,9 @@
     #query {
       width: 100%;
       max-width: 880px;
+
+      width: 80%;
+      max-width: 700px;
     }
   }
 
@@ -907,6 +960,7 @@
     #query {
       /* font-size: 10pt; */
       margin-top: 10px;
+      margin-bottom: 0px;
     }
 
     .setpassword {

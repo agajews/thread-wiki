@@ -14,9 +14,14 @@
   {% endblock %}
 
   <body>
+    <div class="header-background"></div>
     {% include "modules/navbar.html" %}
 
+    <!-- <div class="asterisk">✽</div> -->
+
+    <div class="content-border"></div>
     <div id="content">
+      <!-- <div class="separator"></div> -->
       {% block content %}
       {% endblock %}
     </div>
