@@ -40,11 +40,15 @@
     {% endif %}
     <a href="{{ url_for('history', title=g.page.title) }}">History</a>
 
-    {% if g.user != None and not g.page.is_bookmarked %}
-      <span id="add-bookmark">
-        <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
-        <span id="error-bookmark"></span>
-      </span>
+    {% if g.user != None %}
+      {% if not g.page.is_bookmarked %}
+        <span id="add-bookmark">
+          <button type="button" onclick="addbookmark('error-bookmark')">Add bookmark</button>
+          <span id="error-bookmark"></span>
+        </span>
+      {% else %}
+        <em>Bookmarked</em>
+      {% endif %}
     {% endif %}
   </nav>
 
