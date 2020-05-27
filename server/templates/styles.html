@@ -10,7 +10,7 @@
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-family: "Helvetica Neue", Helvetica, Arial, "Source Han Sans", "源ノ角ゴシック", "Hiragino Sans", "HiraKakuProN-W3", "Hiragino Kaku Gothic ProN W3", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "Noto Sans", "Noto Sans CJK JP", "メイリオ", Meiryo, "游ゴシック", YuGothic, "ＭＳ Ｐゴシック", "MS PGothic", "ＭＳ ゴシック", "MS Gothic", sans-serif;
     color: #333;
-    line-height: 1.5;
+    line-height: 1.6;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -410,28 +410,31 @@
     margin-left: 5px;
     padding: 0;
     transition: color 0.2s;
+
+    color: rgb(19, 88, 227);
+    color: #777;
   }
 
   header button:hover {
     text-decoration: underline;
     cursor: pointer;
-    color: rgb(159, 79, 219);
+    /* color: rgb(159, 79, 219);
     color: rgb(150, 79, 219);
     color: rgb(183, 110, 255);
     color: rgb(141, 74, 250);
 
-    color: rgb(74, 250, 220);
+    color: rgb(74, 250, 220); */
 
     /* purple */
-    color: rgb(82, 68, 208);
-    color: {{ bright_purple }};
+    /* color: rgb(82, 68, 208);
+    color: {{ bright_purple }}; */
   }
 
   header button:active {
     /* color: rgb(110, 120, 130); */
     /* dark purple */
-    color: rgb(75, 65, 166);
-    color: {{ bright_purple }};
+    /* color: rgb(75, 65, 166);
+    color: {{ bright_purple }}; */
   }
 
   img {
@@ -674,13 +677,20 @@
     margin: 0;
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
+    color: black;
+    /* color: rgb(19, 88, 227); */
     /* background-color: #DDD; */
+    transition: none;
+    color: rgb(19, 88, 227);
   }
 
   #search-form button[type="submit"]:hover {
     background-color: #DDD;
     text-decoration: none;
     color: black;
+    color: rgb(19, 88, 227);
+    background-color: #FCFCFC;
+    background-color: white;
   }
 
   .questionmark {

@@ -88,8 +88,12 @@
   function search(event) {
     event.preventDefault();
     let form = document.getElementById("search-form");
+    let query = form.elements["query"].value;
+    if (query == '') {
+      return;
+    }
     signal("{{ url_for('submitsearch') }}", {
-        query: form.elements["query"].value,
+        query: query,
     });
   }
 </script>
