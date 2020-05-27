@@ -4,10 +4,13 @@
   {% include 'diff-styles.html' %}
 {% endblock %}
 
+{% block precontent %}
+{% endblock %}
+
+
 {% block content %}
   <div class="recent">
-    <h1>Recent Edits</h1>
-
+    <div class="page-heading">Recent Edits</div>
     {% from 'page-utils.html' import moment_from_now %}
     {% for i, page in enumerate(pages) %}
       {% if isinstance(page, UserPage) %}

@@ -14,16 +14,30 @@
   {% endblock %}
 
   <body>
-    <div class="header-background"></div>
     {% include "modules/navbar.html" %}
 
     <!-- <div class="asterisk">✽</div> -->
 
-    <div class="content-border"></div>
-    <div id="content">
-      <!-- <div class="separator"></div> -->
-      {% block content %}
+    <div class="precontent">
+      {% block precontent %}
       {% endblock %}
+    </div>
+
+    <div id="content">
+
+      <div class="sidebar">
+        {% if g.user != None %}
+          <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
+          <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
+        {% endif %}
+        <a href="{{ url_for('recent') }}">Recent edits</a>
+        <a href="{{ url_for('page', title='FAQ') }}">FAQ</a>
+      </div>
+
+      <div class="content-body">
+        {% block content %}
+        {% endblock %}
+      </div>
     </div>
 
     <div id="footer">

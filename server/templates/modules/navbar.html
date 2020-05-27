@@ -15,21 +15,17 @@
 {% endif %}
 
 <header>
-  <div class="header-top">
-    <span class="header-links">
-      <!-- <span class="emoticon">:3</span> -->
-      {% if g.user != None %}
-        <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
-        <a href="{{ url_for('page', title=g.user.email) }}">Your page</a>
-      {% endif %}
-      <a href="{{ url_for('recent') }}">Recent edits</a>
-      <a href="{{ url_for('page', title='FAQ') }}">FAQ</a>
-    </span>
-
+  <div class="login-wrapper">
     {% if not hide_header_login %}
       {% include 'modules/login.html' %}
     {% endif %}
   </div>
 
-  {% include 'modules/search.html' %}
+  <div class="logosearch">
+    <span class="logo">thread</span>
+    {% include 'modules/search.html' %}
+  </div>
+
+  </div>
+
 </header>
