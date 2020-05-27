@@ -94,7 +94,7 @@
     font-weight: bold;
     font-family: "Helvetica Neue", Helvetica, Arial, "Source Han Sans", "源ノ角ゴシック", "Hiragino Sans", "HiraKakuProN-W3", "Hiragino Kaku Gothic ProN W3", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "Noto Sans", "Noto Sans CJK JP", "メイリオ", Meiryo, "游ゴシック", YuGothic, "ＭＳ Ｐゴシック", "MS PGothic", "ＭＳ ゴシック", "MS Gothic", sans-serif;
     position: relative;
-    top: -5px;
+    top: -4px;
     margin-right: 15px;
     margin-left: 40px;
     /* color: #e9ebf1;
@@ -1200,14 +1200,17 @@
     .login-wrapper {
       justify-content: space-between;
       margin-top: 0px;
+      margin-bottom: 0px;
     }
 
     .login-wrapper .logo {
       display: inline-block;
-      margin-left: 8px;
-      font-size: 14pt;
-      margin-top: 8px;
+      margin-left: 6px;
+      font-size: 24pt;
+      margin-top: 15px;
       color: #CCC;
+      flex-shrink: 0;
+      margin-right: 0;
     }
 
     .login-wrapper .logo:before {
@@ -1220,6 +1223,10 @@
 
     .logosearch {
       align-items: center;
+    }
+
+    #search-form {
+      margin-top: 0;
     }
   }
 
