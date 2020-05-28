@@ -1,4 +1,4 @@
-Welcome to your bookmarks page! This the only page that's private to you. If you came here from an email, you might be looking for the page about you: <a href="{{ absolute_url(url_for('page', title=g.user.email)) }}">{{ g.user.email }}</a>
+Welcome to your bookmarks page! This page is private to you. If you came here from an email, you might be looking for the page about you: <a href="{{ absolute_url(url_for('page', title=g.user.email)) }}">{{ g.user.email }}</a>
 
 <h2>What is this place?</h2>
 <div>
@@ -6,11 +6,18 @@ Welcome to your bookmarks page! This the only page that's private to you. If you
 </div>
 <br>
 <div>
-  You can also make pages for things that are not people. Make a page for a club or reading group, and link to the people who are a part of it. Or make a page for a class and link to its syllabus and course reviews. In this function, Thread is more of a shared notebook that people can write together.
+  <!-- TODO: this is confusing -->
+  You can search for your friends to see what other people have written about them. The title of a person's page always starts out as their email, so if nothing is coming up for their name, try searching for their .edu email instead. (You can't make pages for people without .edu emails).
+</div>
+<br>
+<div>
+  <!-- TODO: add less generic examples -->
+  You can also make pages for things that are not people. Make a page for a club or reading group, and link to the people who are a part of it. Or make a page for a class and link to its syllabus and course reviews. Or even make pages reviewing books that you've liked, or games that you recommend. In this function, Thread is more of a shared notebook that people can write together.
 </div>
 
 <h3>Suggestions</h3>
 <div>
+  <!-- TODO: something about why it's like this? -->
   On your personal page, edits made by other people are marked as suggestions surrounded by brackets. You can then accept the latest suggested version, removing the brackets and giving it your stamp of approval, or you can restore an earlier version and get rid of the suggestions.
 </div>
 
@@ -21,27 +28,21 @@ Welcome to your bookmarks page! This the only page that's private to you. If you
 
 <h3>Flags</h3>
 <div>
-  Editing is anonymous, so there aren't the usual social pressures to be nice. If you see some vandalism on a page, go to the version history and flag the edit in question. If two different people flag two different edits by the same person, they get auto-banned for a bit.
+  If you see some vandalism on a page, go to the version history and flag the edit in question. Then if two different people flag two different edits by the same person, they get auto-banned for a bit.
 </div>
 
 <h3>This page</h3>
 <div>
-  This is your bookmarks page. It's the only page that's private to you. When you add a bookmark, it's automatically added at the bottom. Lists of links are no good, though, so you should occasionally organize your bookmarks in sections like these.
+  This is your bookmarks page, and it's private to you. When you add a bookmark, it's automatically added at the bottom. Then you can organize it into a section later.
+</div>
+<br>
+<div>
+  Feel free to delete all of this placeholder text and replace it with actual bookmarks, because you can always find it again in the version history.
 </div>
 
 <h3>Editing</h3>
 <div>
-  Every section has a small edit button next to it, and you should use this for small edits. For bigger changes (adding sections, etc.), you should go to the actual edit page, which makes the whole page editable.
-</div>
-
-<h2>Pages for my friends</h2>
-<div>
-  Maybe put your friends' pages here.
-</div>
-
-<h2>Classes to take</h2>
-<div>
-  How about a list of classes you want to take? (If there isn't a page for one of your classes, make it!)
+  Every section has a small edit button next to it, which you can use to edit just that section. For bigger changes (adding sections, etc.), you can go to the actual edit page, which makes the whole page editable.
 </div>
 
 <h2>Unsorted bookmarks</h2>
