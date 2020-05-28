@@ -90,6 +90,7 @@
 
   .logo {
     font-size: 36pt;
+    color: #E2E2E2;
     color: #DDD;
     font-weight: bold;
     font-family: "Helvetica Neue", Helvetica, Arial, "Source Han Sans", "源ノ角ゴシック", "Hiragino Sans", "HiraKakuProN-W3", "Hiragino Kaku Gothic ProN W3", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "Noto Sans", "Noto Sans CJK JP", "メイリオ", Meiryo, "游ゴシック", YuGothic, "ＭＳ Ｐゴシック", "MS PGothic", "ＭＳ ゴシック", "MS Gothic", sans-serif;
@@ -214,6 +215,8 @@
     color: #737ce3;
     color: #7b97c7;
     color: #8892ff;
+
+    color: #444;
   }
 
   nav a {
@@ -513,6 +516,8 @@
     background-color: white;
     border: 1px solid #DDD;
     color: black;
+
+    border-color: #BBB;
   }
 
   header #login-form input:hover {
@@ -574,13 +579,25 @@
     font-size: 12pt;
     border-color: rgb(215, 215, 215);
     border-color: rgb(209, 213, 218);
-    font-size: 12pt;
+
+    /* color: #777; */
+    transition: none;
   }
 
   header #login-form input[type="submit"]:hover {
     cursor: pointer;
     /* background-image: linear-gradient(-180deg, #5351f2, #3520d6);
     background-image: linear-gradient(-180deg, #4644d6, #3520d6); */
+
+    /* background-color: transparent;
+    color: #4e6de6;
+    border-color: #4e6de6; */
+
+    /* border-color: #8892ff;
+    color: #8892ff;
+    background-color: #e7e9ff;
+    background-color: #f6f7ff; */
+
     border-color: rgba(27,31,35,.35);
   }
 
@@ -643,6 +660,8 @@
     color: #737ce3;
     color: #7b97c7;
     color: #8892ff;
+    
+    color: #444;
   }
 
   .submit, .login-page-form .submit, #signin {
@@ -768,6 +787,7 @@
     color: #e5e7ec; */
     /* border-color: #F3F3F3; */
     color: #8892ff;
+    border-color: #DDD;
   }
 
   #search-form button[type="submit"]:hover {
@@ -833,6 +853,8 @@
     /* border-color: #e9ebf1;
     color: #e5e7ec; */
     /* border-color: rgb(230, 230, 230); */
+
+    border-color: #DDD;
   }
 
   #query:hover {
@@ -902,6 +924,23 @@
     margin-top: 10px;
   }
 
+  .create-page {
+    background-color: #cfcbff;
+    border: 1px solid #9a8bf9;
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+
+    background-color: rgba(207, 203, 255, 0.51);
+
+    /* background-color: #ffe6cd;
+    border: 1px solid #f2c293; */
+
+    /* background-color: #fffdcb; */
+    /* border: 1px solid #c2c162; */
+    /* border-radius: 0px; */
+  }
+
   p {
     margin: 0;
   }
@@ -933,6 +972,8 @@
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
+
+    background-color: rgba(207, 203, 255, 0.71);
   }
 
   .setpassword label {
@@ -954,12 +995,22 @@
     background-color: #cdffe4;
     color: #048553;
     border-bottom: 1px solid #93f2d3;
+
+    background-color: #ffe6cd;
+    border: 1px solid #f2c293;
+    color: #855804;
   }
 
   .error-alert:empty {
     display: none;
   }
 
+  .recently-edited {
+    font-size: 14pt;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-align: center;
+  }
 
   .error-block {
     padding: 10px 20px;
@@ -972,6 +1023,10 @@
     margin: 10px 0px;
     display: block;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
+
+    background-color: #ffe6cd;
+    border: 1px solid #f2c293;
+    color: #855804;
   }
 
   .error-block:empty {

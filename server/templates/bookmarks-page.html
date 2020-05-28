@@ -48,7 +48,8 @@
   {% from 'page-utils.html' import moment_from_now %}
   {% if len(pages) != 0 %}
     <div class="bookmark-updates">
-      <h4>Recently edited:</h4>
+      <div class="recently-edited">Recently edited:</div>
+      <!-- <h4>Recently edited:</h4> -->
       <ul>
         {% for page in pages %}
           <li>
