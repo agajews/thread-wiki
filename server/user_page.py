@@ -101,7 +101,7 @@ class UserPage(Page):
             bookmarks.add_bookmark(self.title)
 
     def should_send_email(self, version):
-        if len(self.versions) < 5:
+        if len(self.versions) < 3:
             return False
         if g.user == self.owner:
             return False
