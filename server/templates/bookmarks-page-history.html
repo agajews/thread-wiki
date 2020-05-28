@@ -7,7 +7,7 @@
 {% block scripts %}
   <script>
     function restore(num, errorid) {
-      signal("{{ url_for('restore_bookmarks', title=g.page.title) }}", {
+      signal("{{ url_for('restore_bookmarks') }}", {
         num: num,
         href: window.location.href,
         errorid: errorid,

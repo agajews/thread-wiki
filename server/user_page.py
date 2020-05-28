@@ -4,6 +4,7 @@ from flask import g, render_template
 from datetime import timedelta
 
 from .page import Page, PageVersion, VersionDiff
+from .bookmarks import BookmarksPage
 from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp, url_for, absolute_url
@@ -92,27 +93,38 @@ class UserPage(Page):
             is_primary = g.user == self.owner
         self.add_version(version, is_primary=is_primary)
 
-        if (
-            len(self.versions) >= 5
-            and (
-                self.last_emailed is None
-                or version.timestamp - self.last_emailed >= timedelta(days=1)
-            )
-            and g.user != self.owner
-        ):
-            send_email(
-                self.owner.email,
-                "Edit notification for {} ({}): Someone edited your page on {}".format(
-                    version.name,
-                    version.aka,
-                    version.timestamp.date().strftime("%m/%d/%y"),
-                ),
-                render_template("edit-email.html", version=version),
-                render_template("edit-email.txt", version=version),
-            )
-            Page.objects.raw({"_id": self._id}).update(
-                {"$set": {"last_emailed": version.timestamp}}
-            )
+        if self.should_send_email(version):
+            self.send_email(version)
+
+        if not self.is_bookmarked:
+            bookmarks = BookmarksPage.find()
+            bookmarks.add_bookmark(self.title)
+
+    def should_send_email(self, version):
+        if len(self.versions) < 5:
+            return False
+        if g.user == self.owner:
+            return False
+        if self.last_emailed is None:
+            return True
+        if version.timestamp - self.last_emailed >= timedelta(days=1):
+            return True
+        return False
+
+    def send_email(self, version):
+        send_email(
+            self.owner.email,
+            "Edit notification for {} ({}): Someone edited your page on {}".format(
+                version.name,
+                version.aka,
+                version.timestamp.date().strftime("%m/%d/%y"),
+            ),
+            render_template("edit-email.html", version=version),
+            render_template("edit-email.txt", version=version),
+        )
+        Page.objects.raw({"_id": self._id}).update(
+            {"$set": {"last_emailed": version.timestamp}}
+        )
 
     def restore(self, num):
         assert 0 <= num < len(self.versions) - 1

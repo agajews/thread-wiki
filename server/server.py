@@ -513,10 +513,10 @@ def restore(title):
 def restore_bookmarks():
     if g.user is None:
         raise NotAllowed()
+    g.page = BookmarksPage.find()
     num = get_param("num", int)
     if not 0 <= num < len(g.page.versions):
         raise Malformed()
-    g.page = BookmarksPage.find()
     g.page.restore(num)
     return reload()
 

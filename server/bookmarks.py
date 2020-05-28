@@ -73,7 +73,10 @@ class BookmarksPage(MongoModel):
     def create_or_return(sections, summary):
         assert g.user is not None
         version = BookmarksVersion(
-            sections=sections, summary=summary, timestamp=timestamp(),
+            sections=sections,
+            summary=summary,
+            timestamp=timestamp(),
+            links=[g.user.email],
         )
         empty_version = BookmarksVersion(sections=[], summary="")
         diff = BookmarksDiff.compute(empty_version, version)

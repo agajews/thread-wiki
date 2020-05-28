@@ -3,6 +3,7 @@ from pymongo.errors import DuplicateKeyError
 from flask import g
 
 from .page import Page, PageVersion, VersionDiff
+from .bookmarks import BookmarksPage
 from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
 from .sections import diff_sections, Section, SectionDiff
 from .app import timestamp, url_for, absolute_url
@@ -66,6 +67,10 @@ class TopicPage(Page):
             links=links,
         )
         self.add_version(version)
+
+        if not self.is_bookmarked:
+            bookmarks = BookmarksPage.find()
+            bookmarks.add_bookmark(self.title)
 
     def restore(self, num):
         assert 0 <= num < len(self.versions) - 1
