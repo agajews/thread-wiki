@@ -74,6 +74,39 @@
     <hr>
 
     {% set diff = g.page.diffs[-1] %}
-    {% include 'user-page-diff.html' %}
+    {% if diff.name_changed or diff.aka_changed %}
+      <div class="diff-block">
+        {% if diff.name_changed %}
+          <div class="markupnote">Changed name to: {{ diff.name }}</div>
+        {% endif %}
+        {% if diff.aka_changed %}
+          <div class="markupnote">Changed aka to: {{ diff.aka }}</div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="diff-block">
+      {{ diff.summary_diff|safe }}
+    </div>
+
+    {% from 'page-utils.html' import header_at_level %}
+    {% for section in diff.sections %}
+      {% if section.inserted %}
+        <div class="diff-block">
+          <ins>{{ header_at_level(section.heading, section.level) }}</ins>
+          <ins>{{ section.body|safe }}</ins>
+        </div>
+      {% elif section.deleted %}
+        <div class="diff-block">
+          <del>{{ header_at_level(section.heading, section.level) }}</del>
+          <del>{{ section.body|safe }}</del>
+        </div>
+      {% else %}
+        <div class="diff-block">
+          {{ header_at_level(section.heading, section.level) }}
+          {{ section.body_diff|safe }}
+        </div>
+      {% endif %}
+    {% endfor %}
   </body>
 </html>
