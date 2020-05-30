@@ -47,6 +47,8 @@ def get_thread_title(href):
 
 def linkify(html):
     links = set()
+    from .page import Page
+    from .templates import try_create_page
 
     def clean_link(attrs, new=False):
         if (None, "href") not in attrs:
@@ -60,7 +62,15 @@ def linkify(html):
             else:
                 attrs["_text"] = sanitize_text(href)
         else:
-            attrs["_text"] = sanitize_text(title_to_name(thread_title))
+            try:
+                page = Page.find(thread_title)
+                attrs["_text"] = sanitize_text(page.name)
+            except PageNotFound:
+                page = try_create_page(thread_title)
+                if page is not None:
+                    attrs["_text"] = sanitize_text(page.name)
+                else:
+                    attrs["_text"] = sanitize_text(title_to_name(thread_title))
             links.add(thread_title)
         return attrs
 
@@ -70,16 +80,16 @@ def linkify(html):
     return links, normalize(linker.linkify(html))
 
 
-def normalize(data):
-    return generate_html(get_sequence(data))
-
-
 def linkify_page(sections, summary):
     links, summary = linkify(summary)
     for section in sections:
         section_links, section.body = linkify(section.body)
         links = links.union(section_links)
     return links, sections, summary
+
+
+def normalize(data):
+    return generate_html(get_sequence(data))
 
 
 def sanitize_html(html):

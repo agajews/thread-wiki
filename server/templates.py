@@ -1,9 +1,18 @@
 import random
 import csv
 import os
-from flask import render_template
+import re
+from flask import render_template, g
 
 from .app import app
+from .sections import separate_sections
+from .user import User
+from .user_page import UserPage
+from .topic_page import TopicPage
+from .html_utils import (
+    title_to_name,
+    name_to_title,
+)
 
 
 def open_file(name):
@@ -15,13 +24,9 @@ def open_file(name):
     return data
 
 
-def get_email_name(email):
-    name = ""
-    for char in email:
-        if char == "@":
-            break
-        name += char
-    return name
+def split_email(email):
+    match = re.fullmatch("^([a-zA-Z0-9.\\-_]+)@([a-zA-Z0-9\\-_\\.]+)\\.edu$", email)
+    return match.groups()
 
 
 nouns = open_file("random-words/Nouns.csv")
@@ -58,13 +63,13 @@ def inject_generators():
 
 
 def generate_user_template(email):
-    name = get_email_name(email)
+    name, domain = split_email(email)
     quote = random.choice(quotes).format(
         noun=random.choice(nouns), verb=random.choice(verbs), email=name
     )
     # possible injection attack here? probably not if emails are legitimate,
     # but there might be places that let you make arbitrary aliases...
-    return render_template("user-template.html", email=name, quote=quote)
+    return render_template("user-template.html", name=name, domain=domain, quote=quote)
 
 
 def generate_aka():
@@ -73,3 +78,38 @@ def generate_aka():
 
 def generate_topic_template(name):
     return render_template("topic-template.html", name=name)
+
+
+def is_email(email):
+    if re.fullmatch(
+        "^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+[a-zA-Z0-9\\-_]+$", email
+    ):
+        return True
+    return False
+
+
+def is_valid_email(email):
+    if re.fullmatch("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
+        return True
+    return False
+
+
+def create_user_page(email):
+    summary, sections = separate_sections(generate_user_template(email))
+    owner = User.create_or_return(email)
+    return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
+
+
+def create_topic_page(title):
+    name = title_to_name(title)
+    summary, sections = separate_sections(generate_topic_template(name))
+    return TopicPage.create_or_return(sections, summary, name)
+
+
+def try_create_page(title):
+    assert g.user is not None and g.user.can_create
+    if is_valid_email(title):
+        return create_user_page(title)
+    elif is_email(title):
+        return None
+    return create_topic_page(title)

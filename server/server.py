@@ -13,7 +13,7 @@ from .html_utils import (
     name_to_title,
 )
 from .sections import separate_sections, Section
-from .templates import generate_user_template, generate_aka, generate_topic_template
+from .templates import try_create_page, is_valid_email, is_email
 from .page import Page
 from .user import User
 from .user_page import UserPage
@@ -27,32 +27,6 @@ from . import auth  # just to load handlers into app
 @app.context_processor
 def inject_models():
     return dict(UserPage=UserPage, TopicPage=TopicPage)
-
-
-def is_email(email):
-    if re.fullmatch(
-        "^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+[a-zA-Z0-9\\-_]+$", email
-    ):
-        return True
-    return False
-
-
-def is_valid_email(email):
-    if re.fullmatch("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
-        return True
-    return False
-
-
-def create_user_page(email):
-    summary, sections = separate_sections(generate_user_template(email))
-    owner = User.create_or_return(email)
-    return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
-
-
-def create_topic_page(title):
-    name = title_to_name(title)
-    summary, sections = separate_sections(generate_topic_template(name))
-    return TopicPage.create_or_return(sections, summary, name)
 
 
 def cast_param(val, cls):
@@ -218,12 +192,9 @@ def page(title):
     except PageNotFound as e:
         if g.user is None or not g.user.can_create:
             raise e
-        if is_valid_email(title):
-            g.page = create_user_page(title)
-        elif is_email(title):
+        g.page = try_create_page(title)
+        if g.page is None:
             raise e
-        else:
-            g.page = create_topic_page(title)
     if isinstance(g.page, UserPage):
         return render_template("user-page.html", display=g.page.primary_diffs[-1])
     elif isinstance(g.page, TopicPage):

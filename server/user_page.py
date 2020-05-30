@@ -21,6 +21,10 @@ class UserPage(Page):
     is_frozen = fields.BooleanField(default=False)
     last_emailed = fields.DateTimeField()
 
+    @property
+    def name(self):
+        return "{} ({})".format(self.versions[-1].name, self.versions[-1].aka)
+
     def add_version(self, version, is_primary=False):
         diff = UserVersionDiff.compute(self.latest, version)
         if diff.is_empty:
@@ -154,6 +158,7 @@ class UserPage(Page):
     @staticmethod
     def create_or_return(sections, summary, email, aka, owner):
         assert g.user is not None
+        links, sections, summary = linkify_page(sections, summary)
         version = UserVersion(
             sections=sections,
             summary=summary,
@@ -161,6 +166,7 @@ class UserPage(Page):
             aka=aka,
             timestamp=timestamp(),
             editor=g.user,
+            links=links,
         )
         empty_version = UserVersion(sections=[], summary="", name="", aka="")
         diff = UserVersionDiff.compute(empty_version, version)

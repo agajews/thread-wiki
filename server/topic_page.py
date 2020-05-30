@@ -14,6 +14,10 @@ class TopicPage(Page):
     versions = fields.ListField(fields.ReferenceField("TopicVersion"))
     diffs = fields.ListField(fields.ReferenceField("TopicVersionDiff"))
 
+    @property
+    def name(self):
+        return self.versions[-1].name
+
     def add_version(self, version):
         diff = TopicVersionDiff.compute(self.latest, version)
         if diff.is_empty:
@@ -80,12 +84,14 @@ class TopicPage(Page):
     @staticmethod
     def create_or_return(sections, summary, name):
         assert g.user is not None
+        links, sections, summary = linkify_page(sections, summary)
         version = TopicVersion(
             sections=sections,
             summary=summary,
             name=name,
             timestamp=timestamp(),
             editor=g.user,
+            links=links,
         )
         empty_version = TopicVersion(sections=[], summary="", name="")
         diff = TopicVersionDiff.compute(empty_version, version)

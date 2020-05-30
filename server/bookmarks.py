@@ -72,11 +72,9 @@ class BookmarksPage(MongoModel):
     @staticmethod
     def create_or_return(sections, summary):
         assert g.user is not None
+        links, sections, summary = linkify_page(sections, summary)
         version = BookmarksVersion(
-            sections=sections,
-            summary=summary,
-            timestamp=timestamp(),
-            links=[g.user.email],
+            sections=sections, summary=summary, timestamp=timestamp(), links=links,
         )
         empty_version = BookmarksVersion(sections=[], summary="")
         diff = BookmarksDiff.compute(empty_version, version)
