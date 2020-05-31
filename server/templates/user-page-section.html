@@ -1,6 +1,5 @@
 {% from 'page-utils.html' import header_at_level %}
 {% if section.deleted %}
-  <div><del>[]</del></div>
 {% else %}
   {% set displayid = "section-{}-display".format(section.idx) %}
   {% set editid = "section-{}-edit".format(section.idx) %}
