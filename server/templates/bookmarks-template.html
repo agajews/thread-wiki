@@ -1,4 +1,4 @@
-Welcome to your bookmarks page! This page is private to you. If you came here from an email, you might be looking for the page about you: <a href="{{ absolute_url(url_for('page', title=g.user.email)) }}">{{ g.user.email }}</a>
+Welcome to your bookmarks page! This page is private to you. If you came here from an email, you might be looking for the page about you: {{ absolute_url(url_for('page', title=g.user.email)) }}
 
 <h2>What is this place?</h2>
 <div>

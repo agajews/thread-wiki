@@ -7,8 +7,10 @@ from flask import render_template, g
 from .app import app
 from .sections import separate_sections
 from .user import User
+from .page import Page
 from .user_page import UserPage
 from .topic_page import TopicPage
+from .errors import *
 from .html_utils import (
     title_to_name,
     name_to_title,
@@ -62,8 +64,7 @@ def inject_generators():
     )
 
 
-def generate_user_template(email):
-    name, domain = split_email(email)
+def generate_user_template(name, domain):
     quote = random.choice(quotes).format(
         noun=random.choice(nouns), verb=random.choice(verbs), email=name
     )
@@ -78,6 +79,10 @@ def generate_aka():
 
 def generate_topic_template(name):
     return render_template("topic-template.html", name=name)
+
+
+def generate_university_template(name):
+    return render_template("university-template.html", name=name)
 
 
 def is_email(email):
@@ -95,9 +100,24 @@ def is_valid_email(email):
 
 
 def create_user_page(email):
-    summary, sections = separate_sections(generate_user_template(email))
+    name, domain = split_email(email)
+    summary, sections = separate_sections(generate_user_template(name, domain))
     owner = User.create_or_return(email)
+    try:
+        Page.find(domain)
+    except PageNotFound:
+        create_university_page(domain)
     return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
+
+
+def create_university_page(title):
+    name = title_to_name(title)
+    summary, sections = separate_sections(generate_university_template(name))
+    try:
+        Page.find("Universities")
+    except PageNotFound:
+        create_topic_page("Universities")
+    return TopicPage.create_or_return(sections, summary, name)
 
 
 def create_topic_page(title):

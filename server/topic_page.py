@@ -116,6 +116,7 @@ class TopicPage(Page):
         version.page = page
         empty_version.save()
         version.save()
+        page.trigger_backlinks(links)
         return page
 
     @property

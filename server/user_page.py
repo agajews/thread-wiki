@@ -58,7 +58,6 @@ class UserPage(Page):
         return self.versions[-1]
 
     def add_backlink(self, titles):
-        print("adding user backlink")
         if set(titles).intersection(self.latest.links):
             return
         sections = self.latest.sections[:]
@@ -105,7 +104,7 @@ class UserPage(Page):
             bookmarks.add_bookmark(self.title)
 
     def should_send_email(self, version):
-        if len(self.versions) < 3:
+        if len(self.versions) < 4:
             return False
         if g.user == self.owner:
             return False
@@ -197,6 +196,7 @@ class UserPage(Page):
         version.page = page
         empty_version.save()
         version.save()
+        page.trigger_backlinks(links)
         return page
 
     def freeze(self):
