@@ -21,6 +21,9 @@ class BookmarksPage(MongoModel):
 
     def add_version(self, version):
         diff = BookmarksDiff.compute(self.latest, version)
+        print("version", version.summary)
+        print("diff", diff.summary)
+        print("actual diff", diff.summary_diff)
         if diff.is_empty:
             raise EmptyEdit()
         version.save()

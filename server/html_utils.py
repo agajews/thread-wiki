@@ -179,14 +179,21 @@ class TagToken(Token):
 
 class HTMLSequencer(HTMLParser):
     def __init__(self):
-        super().__init__()
+        super().__init__(convert_charrefs=False)
 
         self.context = []
         self.sequence = []
 
         self.just_closed = None
 
+    def handle_entityref(self, name):
+        self.sequence.append(DataToken("&{};".format(name), self.context.copy()))
+
+    def handle_charref(self, name):
+        self.sequence.append(DataToken("&#{};".format(name), self.context.copy()))
+
     def handle_starttag(self, tag, attrs):
+        print("got tag", tag)
         if tag in self_closing:
             self.sequence.append(TagToken(tag, self.context.copy(), attrs))
         else:

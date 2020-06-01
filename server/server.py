@@ -429,6 +429,7 @@ def update_bookmarks():
     sections = old_version.sections[:]
     if "summary" in update:
         summary = sanitize_paragraph(update["summary"])
+        print("sanitized update", summary)
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
