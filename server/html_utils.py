@@ -193,7 +193,6 @@ class HTMLSequencer(HTMLParser):
         self.sequence.append(DataToken("&#{};".format(name), self.context.copy()))
 
     def handle_starttag(self, tag, attrs):
-        print("got tag", tag)
         if tag in self_closing:
             self.sequence.append(TagToken(tag, self.context.copy(), attrs))
         else:
