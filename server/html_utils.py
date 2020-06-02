@@ -1,5 +1,6 @@
 import bleach
 import re
+import itertools
 from html.parser import HTMLParser
 from difflib import SequenceMatcher
 import urllib
@@ -12,6 +13,7 @@ from .errors import *
 self_closing = ["br", "img"]
 header_tags = ["h{}".format(x) for x in range(2, 7)]
 whitespace = " \t\n\xa0"
+wordbreak = ".,?!/-–—"
 allowed_tags = [
     "p",
     "div",
@@ -28,6 +30,14 @@ allowed_tags = [
 ]
 allowed_attrs = {"a": ["href", "title"], "img": ["src"]}
 img_exts = [".png", ".jpg", ".jpeg", ".gif"]
+
+
+def char_type(c):
+    if c in whitespace:
+        return 0
+    if c in wordbreak:
+        return 1
+    return 2
 
 
 def name_to_title(name):
@@ -118,20 +128,27 @@ def is_word(s):
     return len(s.strip(whitespace)) > 0
 
 
+# def split_words(data):
+#     words = []
+#     start = 0
+#     for i in range(len(data)):
+#         if i == len(data) - 1:
+#             words.append(data[start:])
+#             break
+#         if (
+#             data[i] in whitespace
+#             and data[i + 1] not in whitespace
+#             and is_word(data[start : i + 1])
+#         ):
+#             words.append(data[start : i + 1])
+#             start = i + 1
+#     return words
+
+
 def split_words(data):
     words = []
-    start = 0
-    for i in range(len(data)):
-        if i == len(data) - 1:
-            words.append(data[start:])
-            break
-        if (
-            data[i] in whitespace
-            and data[i + 1] not in whitespace
-            and is_word(data[start : i + 1])
-        ):
-            words.append(data[start : i + 1])
-            start = i + 1
+    for _, group in itertools.groupby(data, char_type):
+        words.append("".join(group))
     return words
 
 
@@ -158,7 +175,7 @@ class Token:
 
 class DataToken(Token):
     def __init__(self, data, context):
-        super().__init__((data.strip(whitespace), context))
+        super().__init__((data, context))
         self.data = data
         self.context = context
 
@@ -369,7 +386,101 @@ def add_concise_diff_to_context(matcher, sequence_a, sequence_b):
 def markup_changes(data_a, data_b, concise=False):
     sequence_a = get_sequence(data_a)
     sequence_b = get_sequence(data_b)
+    # print(sequence_a)
+    print(sequence_b)
     matcher = SequenceMatcher(isjunk=None, a=sequence_a, b=sequence_b, autojunk=False)
     diff_fn = add_concise_diff_to_context if concise else add_diff_to_context
     merged_sequence = diff_fn(matcher, sequence_a, sequence_b)
     return generate_html(merged_sequence)
+
+
+def compute_diff(data_a, data_b):
+    matcher = SequenceMatcher(isjunk=None, a=data_a, b=data_b, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            yield ("equal", i1, i2, j1, j2)
+        if tag == "replace" or tag == "delete":
+            yield ("delete", i1, i2, j1, j1)
+        if tag == "replace" or tag == "insert":
+            yield ("insert", i2, i2, j1, j2)
+
+
+def truncate_chunk(i1_trunc, i2_trunc, tag, i1, i2, j1, j2):
+    i1_offset = i1_trunc - i1
+    i2_offset = i2 - i2_trunc
+    if tag == "equal":
+        return ("equal", j1 + i1_offset, j2 - i2_offset)
+    elif tag == "delete":
+        assert j1 == j2
+        return ("delete", j1, j2)
+    elif tag == "insert":
+        assert i1 == i1_trunc == i2 == i2_trunc
+        return ("insert", j1, j2)
+
+
+def align_diffs(diff_list):
+    opcode_list = [next(diff) for diff in diff_list]
+    shared_i1 = 0
+    i2_list = [i2 for _, i1, i2, _, _ in opcode_list]
+    ended_list = [False] * len(diff_list)
+    while True:
+        assert all(i2 >= shared_i1 for i2 in i2_list)
+        i2_min = min(i2 for i2 in i2_list)
+        chunks = [truncate_chunk(shared_i1, i2_min, *opcode) for opcode in opcode_list]
+        yield shared_i1, i2_min, chunks
+        for i, i2 in enumerate(i2_list):
+            if i2 <= i2_min:
+                try:
+                    opcode_list[i] = next(diff_list[i])
+                    _, i1, i2, _, _ = opcode_list[i]
+                    i2_list[i] = i2
+                except StopIteration:
+                    ended_list[i] = True
+                    _, i1, i2, j1, j2 = opcode_list[i]
+                    opcode_list[i] = ("equal", i2, i2, j2, j2)
+        if all(ended_list):
+            return
+        shared_i1 = i2_min
+
+
+def get_changes(aligned_chunks, data_original, data_new_list):
+    for i1, i2, chunk in aligned_chunks:
+        yield data_original[i1:i2], [
+            data_new_list[i][j1:j2] for i, (op, j1, j2) in enumerate(chunk)
+        ]
+
+
+def all_equal(data_list):
+    return all(data == data_list[0] for data in data_list[1:])
+
+
+def diffn(data_original, data_new_list):
+    diff_list = []
+    for data_new in data_new_list:
+        diff_list.append(compute_diff(data_original, data_new))
+    aligned_chunks = align_diffs(diff_list)
+    for original, change_list in get_changes(
+        aligned_chunks, data_original, data_new_list
+    ):
+        changes = [i for i, change in enumerate(change_list) if change != original]
+        if len(changes) == 0:
+            yield ("equal", original)
+        elif len(changes) == 1:
+            yield ("edit", change_list[changes[0]])
+        elif all_equal(change_list):
+            yield ("edit", change_list[0])
+        else:
+            yield ("conflict", list(set(tuple(change) for change in change_list)))
+
+
+def merge_html(data_original, data_new_list):
+    merged_tokens = []
+    for op, chunk in diffn(
+        get_sequence(data_original), [get_sequence(data) for data in data_new_list]
+    ):
+        if op == "equal" or op == "edit":
+            merged_tokens += chunk
+        elif op == "conflict":
+            for change in chunk:
+                merged_tokens += wrap_brackets(change)
+    return generate_html(merged_tokens)
