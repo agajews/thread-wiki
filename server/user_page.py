@@ -1,12 +1,21 @@
 from pymodm import fields, MongoModel, EmbeddedMongoModel
+from pymodm.errors import DoesNotExist
 from pymongo.errors import DuplicateKeyError
+from pymongo import ASCENDING, DESCENDING
+from pymongo.operations import IndexModel
 from flask import g, render_template
 from datetime import timedelta
 
 from .page import Page, PageVersion, VersionDiff
 from .bookmarks import BookmarksPage
-from .html_utils import markup_changes, name_to_title, linkify_page, sanitize_html
-from .sections import diff_sections, Section, SectionDiff
+from .html_utils import (
+    markup_changes,
+    name_to_title,
+    linkify_page,
+    sanitize_html,
+    merge_html,
+)
+from .sections import diff_sections, Section, SectionDiff, separate_sections
 from .app import timestamp, url_for, absolute_url
 from .mail import send_email
 from .errors import *
@@ -17,6 +26,9 @@ class UserPage(Page):
     diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
     primary_diffs = fields.ListField(fields.ReferenceField("UserVersionDiff"))
     primary_version = fields.ReferenceField("UserVersion")
+    proposed_versions = fields.ListField(fields.ReferenceField("UserVersion"))
+    merged_version = fields.ReferenceField("UserVersion")
+    merged_diff = fields.ReferenceField("UserVersionDiff")
     owner = fields.ReferenceField("User")
     is_frozen = fields.BooleanField(default=False)
     last_emailed = fields.DateTimeField()
@@ -25,12 +37,79 @@ class UserPage(Page):
     def name(self):
         return "{} ({})".format(self.versions[-1].name, self.versions[-1].aka)
 
-    def add_version(self, version, is_primary=False):
+    @property
+    def user_primary_diff(self):
+        assert g.user is not None
+        if not hasattr(self, "_user_primary_diff"):
+            try:
+                self._user_primary_diff = (
+                    UserVersionDiff.objects.raw(
+                        {
+                            "version_a": self.primary_version._id,
+                            "editor": g.user._id,
+                            "concise": True,
+                        }
+                    )
+                    .order_by([("timestamp", DESCENDING)])
+                    .first()
+                )
+            except DoesNotExist:
+                self._user_primary_diff = self.primary_diffs[-1]
+        return self._user_primary_diff
+
+    @property
+    def user_version(self):
+        assert g.user is not None
+        return self.user_primary_diff.version_b
+
+    def add_user_version(self, version):
+        # add to self.proposed_versions (and remove anything else by this editor)
+        # make merged version and set as self.merged_version
+        # make full diff b/w merged version and latest version (which should be primary)
+        #   and set as self.merged_diff
+        # make concise diff b/w proposed version and primary version
+        #   (for showing to the user)
+        # don't update last_edited (but do update freshness,
+        #   which means sometimes you'll get race condition error
+        #   even when there's no competing edit)
+        diff = UserVersionDiff.compute(self.user_version, version)
+        if diff.is_empty:
+            raise EmptyEdit()
+        delattr(self, "_user_primary_diff")
+        primary_diff = UserVersionDiff.compute(
+            self.primary_version, version, concise=True
+        )
+        version.save()
+        diff.save()
+        primary_diff.save()
+        for proposal in self.proposed_versions:
+            if proposal.editor == version.editor:
+                self.proposed_versions.remove(proposal)
+        self.proposed_versions.append(version)
+        self.merged_version = UserVersion.merge(self.latest, self.proposed_versions)
+        self.merged_diff = UserVersionDiff.compute(self.latest, self.merged_version)
+        self.merged_version.save()
+        self.merged_diff.save()
+        try:
+            self.save_if_fresh()
+        except (RaceCondition, DuplicatePage):
+            version.delete()
+            diff.delete()
+            primary_diff.delete()
+            self.merged_version.delete()
+            self.merged_diff.delete()
+            raise
+
+    def add_primary_version(self, version):
+        # make full diff with last version (which should be primary)
+        # make concise diff with self, add to primary_diffs
+        # add version to self.versions
+        # reset self.proposed_versions
+        # reset merged_version and merged_diff
         diff = UserVersionDiff.compute(self.latest, version)
         if diff.is_empty:
             raise EmptyEdit()
-        if is_primary:
-            self.primary_version = version
+        self.primary_version = version
         primary_diff = UserVersionDiff.compute(
             self.primary_version, version, concise=True
         )
@@ -41,9 +120,13 @@ class UserPage(Page):
         self.versions.append(version)
         self.diffs.append(diff)
         self.primary_diffs.append(primary_diff)
-        self.add_title(version.title)
+        if version.title is not None:
+            self.add_title(version.title)
         self.add_search_term(version.name)
         self.last_edited = version.timestamp
+        self.proposed_versions = []
+        self.merged_version = None
+        self.merged_diff = None
         try:
             self.save_if_fresh()
         except (RaceCondition, DuplicatePage):
@@ -58,9 +141,13 @@ class UserPage(Page):
         return self.versions[-1]
 
     def add_backlink(self, titles):
-        if set(titles).intersection(self.latest.links):
+        if self.is_owner:
+            version = self.latest
+        else:
+            version = self.user_version
+        if set(titles).intersection(version.links):
             return
-        sections = self.latest.sections[:]
+        sections = version.sections[:]
         url = absolute_url(url_for("page", title=titles[-1]))
         body = sanitize_html("<div>{}</div>".format(url))
         if len(sections) == 0:
@@ -72,16 +159,14 @@ class UserPage(Page):
                 body=sections[-1].body + body,
             )
         return self.edit(
-            sections,
-            self.latest.summary,
-            self.latest.name,
-            self.latest.aka,
-            is_primary=False,
+            sections, version.summary, version.name, version.aka, is_primary=False,
         )
 
     def edit(self, sections, summary, name, aka, is_primary=None):
         assert g.user is not None
         links, sections, summary = linkify_page(sections, summary)
+        if is_primary is None:
+            is_primary = g.user == self.owner
         version = UserVersion(
             page=self,
             timestamp=timestamp(),
@@ -92,9 +177,10 @@ class UserPage(Page):
             aka=aka,
             links=links,
         )
-        if is_primary is None:
-            is_primary = g.user == self.owner
-        self.add_version(version, is_primary=is_primary)
+        if is_primary:
+            self.add_primary_version(version)
+        else:
+            self.add_user_version(version)
 
         if self.should_send_email(version):
             self.send_email(version)
@@ -142,17 +228,14 @@ class UserPage(Page):
 
     def accept(self):
         assert g.user == self.owner
-        self.primary_version = self.latest
-        primary_diff = UserVersionDiff.compute(
-            self.primary_version, self.primary_version, concise=True
+        assert self.merged_version is not None
+        self.edit(
+            self.merged_version.sections,
+            self.merged_version.summary,
+            self.merged_version.name,
+            self.merged_version.aka,
+            is_primary=True,
         )
-        primary_diff.save()
-        self.primary_diffs[-1] = primary_diff
-        try:
-            self.save_if_fresh()
-        except RaceCondition:
-            primary_diff.delete()
-            raise
 
     @staticmethod
     def create_or_return(sections, summary, email, aka, owner):
@@ -169,7 +252,7 @@ class UserPage(Page):
         )
         empty_version = UserVersion(sections=[], summary="", name="", aka="")
         diff = UserVersionDiff.compute(empty_version, version)
-        primary_diff = UserVersionDiff.compute(empty_version, version, concise=True)
+        primary_diff = UserVersionDiff.compute(version, version, concise=True)
         empty_version.save()
         version.save()
         diff.save()
@@ -180,7 +263,7 @@ class UserPage(Page):
             versions=[version],
             diffs=[diff],
             primary_diffs=[primary_diff],
-            primary_version=empty_version,
+            primary_version=version,
             owner=owner,
             last_edited=version.timestamp,
         )
@@ -223,13 +306,20 @@ class UserPage(Page):
         return True
 
     @property
+    def is_owner(self):
+        if g.user is None:
+            return False
+        return g.user == self.owner
+
+    @property
     def can_accept(self):
         if g.user is None:
             return False
         if g.user != self.owner:
             return False
-        if self.latest != self.primary_version:
+        if self.merged_diff is not None:
             return True
+        return False
 
 
 class UserVersion(PageVersion):
@@ -240,7 +330,40 @@ class UserVersion(PageVersion):
 
     @property
     def title(self):
+        if self.name == "Placeholder Name":
+            return None
         return name_to_title(self.name + " (" + self.aka + ")")
+
+    @staticmethod
+    def merge(original, proposed):
+        original_body = render_template("user-page-body.html", version=original)
+        proposed_body_list = [
+            render_template("user-page-body.html", version=proposal)
+            for proposal in proposed
+        ]
+        merged_body = merge_html(original_body, proposed_body_list)
+        summary, sections = separate_sections(merged_body)
+        new_names = [
+            proposal.name for proposal in proposed if proposal.name != original.name
+        ]
+        name = original.name
+        if new_names:
+            name = new_names[-1]
+        new_akas = [
+            proposal.aka for proposal in proposed if proposal.aka != original.aka
+        ]
+        aka = original.aka
+        if new_akas:
+            aka = new_akas[-1]
+        return UserVersion(
+            page=original.page,
+            timestamp=proposed[-1].timestamp,
+            editor=None,
+            summary=summary,
+            sections=sections,
+            name=name,
+            aka=aka,
+        )
 
 
 class UserVersionDiff(VersionDiff):
@@ -253,6 +376,29 @@ class UserVersionDiff(VersionDiff):
     prev_name = fields.CharField(blank=True)
     aka = fields.CharField(blank=True)
     prev_aka = fields.CharField(blank=True)
+
+    editor = fields.ReferenceField("User", blank=True)
+    timestamp = fields.DateTimeField()
+    concise = fields.BooleanField()
+
+    class Meta:
+        indexes = [
+            IndexModel(
+                [
+                    ("version_a", ASCENDING),
+                    ("editor", ASCENDING),
+                    ("concise", ASCENDING),
+                    ("timestamp", DESCENDING),
+                ]
+            ),
+            IndexModel(
+                [
+                    ("version_a", ASCENDING),
+                    ("version_b", ASCENDING),
+                    ("concise", ASCENDING),
+                ]
+            ),
+        ]
 
     @property
     def heading_changed(self):
@@ -297,6 +443,9 @@ class UserVersionDiff(VersionDiff):
             prev_name=prev_name,
             aka=aka,
             prev_aka=prev_aka,
+            concise=concise,
+            editor=version_b.editor,
+            timestamp=version_b.timestamp,
         )
 
     @property

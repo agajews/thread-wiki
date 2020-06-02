@@ -82,7 +82,7 @@ class Page(MongoModel):
 class PageVersion(MongoModel):
     page = fields.ReferenceField(Page)
     timestamp = fields.DateTimeField()
-    editor = fields.ReferenceField("User")
+    editor = fields.ReferenceField("User", blank=True)
     flag = fields.EmbeddedDocumentField("Flag")
     is_flagged = fields.BooleanField(default=False)
     links = fields.ListField(fields.CharField(), default=[], blank=True)

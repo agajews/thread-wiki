@@ -7,7 +7,7 @@
   <div class="page-heading">Search results for "{{ query }}"</div>
 
   {% if can_create %}
-    <div class="create-page">
+    <div class="info-block inline">
       <a href="{{ url_for('page', title=title_to_create) }}">Create a page called "{{ query }}" (if this is a person, make a page for their .edu email address instead so they can moderate it)</a>
     </div>
   {% endif %}

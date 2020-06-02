@@ -386,8 +386,6 @@ def add_concise_diff_to_context(matcher, sequence_a, sequence_b):
 def markup_changes(data_a, data_b, concise=False):
     sequence_a = get_sequence(data_a)
     sequence_b = get_sequence(data_b)
-    # print(sequence_a)
-    print(sequence_b)
     matcher = SequenceMatcher(isjunk=None, a=sequence_a, b=sequence_b, autojunk=False)
     diff_fn = add_concise_diff_to_context if concise else add_diff_to_context
     merged_sequence = diff_fn(matcher, sequence_a, sequence_b)

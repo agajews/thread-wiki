@@ -25,16 +25,6 @@
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
       <span class="timestamp">{{ moment_timestamp(version.timestamp) }}</span>
-      {% if num == len(g.page.versions) - 1 and g.page.can_accept %}
-        <button type="button" onclick="accept('error-version-{{ num }}')">Accept this version</button>
-      {% endif %}
-      {% if num != 0 and num != len(g.page.versions) - 1 %}
-        {% if not version.is_flagged %}
-          <button type="button" onclick="flag({{ num }}, '{{ errorid }}')">Flag</button>
-        {% elif version.flag.sender == g.user %}
-          <button type="button" onclick="unflag({{ num }}, '{{ errorid }}')">Unflag</button>
-        {% endif %}
-      {% endif %}
       {% if g.user != None and num != len(g.page.versions) - 1 %}
         <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
       {% endif %}

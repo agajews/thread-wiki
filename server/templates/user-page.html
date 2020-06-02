@@ -1,8 +1,12 @@
 {% extends 'base-page.html' %}
 {% block head %}
   <title>{{ display.name }} - Thread</title>
-  {% include 'concise-diff-styles.html' %}
   {% include 'user-styles.html' %}
+  {% if g.page.can_accept %}
+    {% include 'diff-styles.html' %}
+  {% else %}
+    {% include 'concise-diff-styles.html' %}
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -43,7 +47,6 @@
       <em>Sign in to edit</em>
     {% endif %}
     <a href="{{ url_for('history', title=g.page.title) }}">History</a>
-    <span class="email">{{ g.page.owner.email }}</span>
 
     {% if g.user != None %}
       {% if not g.page.is_bookmarked %}
@@ -56,15 +59,18 @@
       {% endif %}
     {% endif %}
 
-    {% if g.user == g.page.owner %}
-      {% if g.page.is_frozen %}
-        <button type="button" onclick="unfreeze()">Unfreeze page</button>
-      {% else %}
-        <button type="button" onclick="freeze()">Freeze page</button>
-      {% endif %}
-      <span id="error-freeze"></span>
+    {% if g.page.is_owner %}
+    (This is you)
     {% endif %}
   </nav>
+
+  {% if g.page.can_accept %}
+    <div class="info-block">
+      Only you can see these suggestions.
+      <button type="button" onclick="accept('error-heading')" class="action-link">Accept</button> them, or
+      <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit</a> before accepting.
+    </div>
+  {% endif %}
 
   <div id="summary">
     {% include 'user-page-summary.html' %}

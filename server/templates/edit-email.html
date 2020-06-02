@@ -73,7 +73,7 @@
 
     <hr>
 
-    {% set diff = g.page.diffs[-1] %}
+    {% set diff = g.page.merged_diff %}
     {% if diff.name_changed or diff.aka_changed %}
       <div class="diff-block">
         {% if diff.name_changed %}

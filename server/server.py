@@ -16,12 +16,12 @@ from .sections import separate_sections, Section
 from .templates import try_create_page, is_valid_email, is_email
 from .page import Page
 from .user import User
-from .user_page import UserPage
+from .user_page import UserPage, UserVersionDiff
 from .topic_page import TopicPage
 from .bookmarks import BookmarksPage
 from .mail import send_email
 from .errors import *
-from . import auth  # just to load handlers into app
+from . import auth  # just to load handlers into the app
 
 
 @app.context_processor
@@ -184,6 +184,16 @@ def recent():
     return render_template("recent.html", pages=pages)
 
 
+def find_user_display():
+    if g.user is None:
+        return g.page.primary_diffs[-1]
+    elif g.page.can_accept:
+        return g.page.merged_diff
+    elif g.page.is_owner:
+        return g.page.primary_diffs[-1]
+    return g.page.user_primary_diff
+
+
 @app.route("/page/<title>/")
 @error_handling
 def page(title):
@@ -196,7 +206,10 @@ def page(title):
         if g.page is None:
             raise e
     if isinstance(g.page, UserPage):
-        return render_template("user-page.html", display=g.page.primary_diffs[-1])
+        display = find_user_display()
+        return render_template(
+            "user-page.html", display=display, is_owner=g.user == g.page.owner
+        )
     elif isinstance(g.page, TopicPage):
         return render_template("topic-page.html", display=g.page.versions[-1])
 
@@ -229,7 +242,13 @@ def pageorbookmarks():
 
 @can_edit
 def view_user_edit():
-    return render_template("edit-user-page.html", version=g.page.versions[-1])
+    if g.page.can_accept:
+        version = g.page.merged_version
+    elif g.page.is_owner:
+        version = g.page.versions[-1]
+    else:
+        version = g.page.user_version
+    return render_template("edit-user-page.html", version=version)
 
 
 @can_edit
@@ -308,7 +327,7 @@ def update_user_page():
     update_sections = []
 
     # TODO: maybe move the new section logic to page class
-    old_version = g.page.latest
+    old_version = g.page.user_version
     update = get_param("update", dict)
     name = old_version.name
     aka = old_version.aka
@@ -341,7 +360,7 @@ def update_user_page():
         pass
 
     html = {}
-    display = g.page.primary_diffs[-1]
+    display = find_user_display()
     if update_heading:
         html["heading"] = render_template("user-page-heading.html", display=display)
     if update_summary:
@@ -429,7 +448,6 @@ def update_bookmarks():
     sections = old_version.sections[:]
     if "summary" in update:
         summary = sanitize_paragraph(update["summary"])
-        print("sanitized update", summary)
         update_summary = True
     if "sections" in update:
         for key, body in cast_param(update["sections"], dict).items():
@@ -509,6 +527,8 @@ def addbookmark(title):
 @is_owner
 @catch_race
 def accept_version():
+    if not g.page.can_accept:
+        raise NotAllowed()
     g.page.accept()
     return reload()
 
