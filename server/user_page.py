@@ -197,8 +197,13 @@ class UserPage(Page):
             bookmarks.add_bookmark(self.title)
 
     def should_send_email(self, version):
-        if len(self.versions) < 4:
-            return False
+        if len(self.versions) == 1:
+            num_pending = UserVersionDiff.objects.raw(
+                {"version_a": self.primary_version._id, "concise": True}
+            ).count()
+            print(num_pending)
+            if num_pending < 3:
+                return False
         if g.user == self.owner:
             return False
         if self.last_emailed is None:
