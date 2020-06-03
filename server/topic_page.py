@@ -18,7 +18,7 @@ class TopicPage(Page):
     def name(self):
         return self.versions[-1].name
 
-    def add_version(self, version):
+    def add_version(self, version, backlink=True):
         diff = TopicVersionDiff.compute(self.latest, version)
         if diff.is_empty:
             raise EmptyEdit()
@@ -36,7 +36,8 @@ class TopicPage(Page):
             version.delete()
             diff.delete()
             raise
-        self.trigger_backlinks(new_links)
+        if backlink:
+            self.trigger_backlinks(new_links)
 
     @property
     def latest(self):
@@ -56,9 +57,11 @@ class TopicPage(Page):
                 level=sections[-1].level,
                 body=sections[-1].body + body,
             )
-        return self.edit(sections, self.latest.summary, self.latest.name)
+        return self.edit(
+            sections, self.latest.summary, self.latest.name, backlink=False
+        )
 
-    def edit(self, sections, summary, name):
+    def edit(self, sections, summary, name, backlink=True):
         assert g.user is not None
         links, sections, summary = linkify_page(sections, summary)
         version = TopicVersion(
@@ -70,7 +73,7 @@ class TopicPage(Page):
             name=name,
             links=links,
         )
-        self.add_version(version)
+        self.add_version(version, backlink=backlink)
 
         if not self.is_bookmarked:
             bookmarks = BookmarksPage.find()

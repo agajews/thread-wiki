@@ -1,12 +1,36 @@
 <form id="search-form" onsubmit="search(event)">
-  <input type="text" name="query" id="query" placeholder="Search by .edu email, name, or topic">
+  <input type="text" name="query" id="query" placeholder="Search by .edu email, name, or topic" onmouseenter="showsearchtooltip()" onmouseleave="hidesearchtooltip()" onfocus="showsearchtooltip()" onblur="hidesearchtooltip()">
+  <div class="search-tooltip" id="search-tooltip"><span class="search-tooltip-text">Add people by searching for their school email</span></div>
   <button type="submit">
     <svg class="bi bi-search" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path fill-rule="evenodd" d="M10.442 10.442a1 1 0 0 1 1.415 0l3.85 3.85a1 1 0 0 1-1.414 1.415l-3.85-3.85a1 1 0 0 1 0-1.415z"/>
       <path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
   </svg>
-  <!-- <svg class="bi bi-folder-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"> -->
-  <!-- <path fill-rule="evenodd" d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/> -->
-<!-- </svg> -->
   </button>
 </form>
+
+<script>
+  window.searchTooltipShowLevel = 0;
+  showsearchtooltip();
+  setTimeout(function() {
+    hidesearchtooltip();
+  }, 1000);
+  function showsearchtooltip() {
+    {% if g.user != None and not g.user.hide_search_hint %}
+      let tooltip = document.getElementById('search-tooltip');
+      window.searchTooltipShowLevel++;
+      if (window.searchTooltipShowLevel == 1) {
+        tooltip.classList.add('show');
+      }
+    {% endif %}
+  }
+  function hidesearchtooltip() {
+    {% if g.user != None and not g.user.hide_search_hint %}
+      let tooltip = document.getElementById('search-tooltip');
+      window.searchTooltipShowLevel--;
+      if (window.searchTooltipShowLevel == 0) {
+        tooltip.classList.remove('show');
+      }
+    {% endif %}
+  }
+</script>

@@ -28,6 +28,51 @@
     word-break: break-word;
   }
 
+  #search-form {
+    position: relative;
+  }
+
+  .search-tooltip {
+    position: absolute;
+    display: flex;
+    bottom: 100%;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .search-tooltip-text {
+    background: black;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 5px;
+    opacity: 0%;
+    transition: opacity 0.3s;
+  }
+
+  .search-tooltip-text::after {
+    content: " ";
+    position: absolute;
+    top: 100%; /* At the bottom of the tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+  }
+
+  .search-tooltip.show .search-tooltip-text {
+    opacity: 80%;
+  }
+
+  /* #search-form:hover .search-tooltip, #query:focus + .search-tooltip {
+    visibility: visible;
+  }
+
+  #search-form:hover .search-tooltip-text, #query:focus + .search-tooltip .search-tooltip-text {
+    opacity: 80%;
+  } */
+
   .header-background {
     width: 100%;
     height: 280px;
@@ -68,6 +113,11 @@
 
     /* box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.1);
     border-radius: 5px; */
+    padding-top: 0px;
+  }
+
+  header {
+    padding-bottom: 0px;
   }
 
   .sidebar {
@@ -76,16 +126,29 @@
     flex-grow: 0;
     padding-right: 25px;
     box-sizing: border-box;
+    margin-right: 2px;
+    text-align: right;
   }
 
   .sidebar a {
     display: block;
-    text-align: right;
     font-size: 13pt;
   }
 
   .content-body {
     flex-grow: 1;
+  }
+
+  .sublogo {
+    font-weight: bold;
+    font-size: 10.5pt;
+  }
+
+  .sublogo {
+    width: 222px;
+    text-align: right;
+    margin-top: -13px;
+    margin-bottom: 2px;
   }
 
   .logo {
@@ -95,9 +158,9 @@
     font-weight: bold;
     font-family: "Helvetica Neue", Helvetica, Arial, "Source Han Sans", "源ノ角ゴシック", "Hiragino Sans", "HiraKakuProN-W3", "Hiragino Kaku Gothic ProN W3", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3", "Noto Sans", "Noto Sans CJK JP", "メイリオ", Meiryo, "游ゴシック", YuGothic, "ＭＳ Ｐゴシック", "MS PGothic", "ＭＳ ゴシック", "MS Gothic", sans-serif;
     position: relative;
-    top: -4px;
-    margin-right: 15px;
-    margin-left: 40px;
+    top: -5px;
+    margin-right: 21px;
+    margin-left: 36px;
     /* color: #e9ebf1;
     color: #e5e7ec; */
   }
@@ -283,7 +346,7 @@
     font-size: 11pt;
     font-weight: bold;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji", Roboto, Helvetica, Arial, sans-serif;
-    padding: 5px;
+    padding: 5px 11px;
 
     /* border-bottom: solid 4px rgb(86, 63, 122);
     border-bottom: solid 4px rgb(99, 41, 190);
@@ -335,6 +398,7 @@
     padding-left: 0px;
     display: inline-block;
     margin-bottom: 20px;
+    text-align: right;
   }
 
   .logout-block > :first-child {
@@ -360,7 +424,7 @@
   .login-module {
     margin-bottom: 0px;
     padding-left: 6px;
-    margin-right: 8px;
+    margin-right: 2px;
     margin-top: 1px;
   }
 
@@ -927,7 +991,7 @@
     margin-bottom: 0px;
     /* text-align: center; */
     box-sizing: border-box;
-    padding: 0 6px;
+    padding: 0 0px;
     align-self: center;
     margin-left: 0px;
     flex-grow: 1;
@@ -1264,15 +1328,19 @@
       flex-basis: 0;
       margin-bottom: 10px;
       padding-right: 0;
+      text-align: left;
     }
 
     .sidebar a {
-      text-align: left;
       display: inline-block;
       margin-right: 5px;
     }
 
     .logo {
+      display: none;
+    }
+
+    .sublogo {
       display: none;
     }
 
@@ -1284,7 +1352,7 @@
 
     .login-wrapper .logo {
       display: inline-block;
-      margin-left: 6px;
+      margin-left: 0px;
       font-size: 24pt;
       margin-top: 15px;
       color: #CCC;
@@ -1307,47 +1375,10 @@
     #search-form {
       margin-top: 0;
     }
+
+    .search-tooltip-text {
+      font-size: 10pt;
+    }
   }
-
-
-  /* @media (max-width: 600px) {
-    .header-links {
-      font-size: 10pt;
-    }
-
-    header {
-      font-size: 10pt;
-    }
-
-    header button {
-      font-size: 10pt;
-    }
-
-    #content {
-      padding-top: 10px;
-    }
-
-    #signin {
-      font-size: 10pt;
-      padding: 3px 6px;
-    }
-
-    .header-links {
-      padding: 6px 6px;
-    }
-
-    #query {
-      margin-top: 10px;
-      margin-bottom: 0px;
-    }
-
-    .setpassword {
-      font-size: 10pt;
-    }
-
-    .setpassword input[type="submit"] {
-      font-size: 10pt;
-    }
-  } */
 
 </style>

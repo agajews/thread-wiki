@@ -48,6 +48,10 @@
     {% endif %}
     <a href="{{ url_for('history', title=g.page.title) }}">History</a>
 
+    {% if display_email %}
+      <span class="email">{{ display_email }}</span>
+    {% endif %}
+
     {% if g.user != None %}
       {% if not g.page.is_bookmarked %}
         <span id="add-bookmark">

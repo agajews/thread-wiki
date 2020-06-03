@@ -14,9 +14,14 @@ from .page import PageVersion
 class User(MongoModel):
     email = fields.EmailField()
     passhash = fields.CharField(default=None)
+    hide_search_hint = fields.BooleanField(default=False)
 
     class Meta:
         indexes = [IndexModel("email", unique=True)]
+
+    def set_hide_search_hint(self):
+        self.hide_search_hint = True
+        User.objects.raw({"_id": self._id}).update({"$set": {"hide_search_hint": True}})
 
     @property
     def is_banned(self):

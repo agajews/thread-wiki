@@ -100,7 +100,7 @@ class UserPage(Page):
             self.merged_diff.delete()
             raise
 
-    def add_primary_version(self, version):
+    def add_primary_version(self, version, backlink=True):
         # make full diff with last version (which should be primary)
         # make concise diff with self, add to primary_diffs
         # add version to self.versions
@@ -134,7 +134,8 @@ class UserPage(Page):
             diff.delete()
             primary_diff.delete()
             raise
-        self.trigger_backlinks(new_links)
+        if backlink:
+            self.trigger_backlinks(new_links)
 
     @property
     def latest(self):
@@ -159,10 +160,15 @@ class UserPage(Page):
                 body=sections[-1].body + body,
             )
         return self.edit(
-            sections, version.summary, version.name, version.aka, is_primary=False,
+            sections,
+            version.summary,
+            version.name,
+            version.aka,
+            is_primary=False,
+            backlink=False,
         )
 
-    def edit(self, sections, summary, name, aka, is_primary=None):
+    def edit(self, sections, summary, name, aka, is_primary=None, backlink=True):
         assert g.user is not None
         links, sections, summary = linkify_page(sections, summary)
         if is_primary is None:
@@ -178,7 +184,7 @@ class UserPage(Page):
             links=links,
         )
         if is_primary:
-            self.add_primary_version(version)
+            self.add_primary_version(version, backlink=backlink)
         else:
             self.add_user_version(version)
 
@@ -244,11 +250,11 @@ class UserPage(Page):
         version = UserVersion(
             sections=sections,
             summary=summary,
-            name=email,
+            name="Placeholder Name",
             aka=aka,
             timestamp=timestamp(),
             editor=g.user,
-            links=links,
+            links=[],
         )
         empty_version = UserVersion(sections=[], summary="", name="", aka="")
         diff = UserVersionDiff.compute(empty_version, version)
@@ -279,7 +285,6 @@ class UserPage(Page):
         version.page = page
         empty_version.save()
         version.save()
-        page.trigger_backlinks(links)
         return page
 
     def freeze(self):

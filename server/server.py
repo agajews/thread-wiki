@@ -207,8 +207,15 @@ def page(title):
             raise e
     if isinstance(g.page, UserPage):
         display = find_user_display()
+        if title == g.page.titles[0]:
+            display_email = title
+        else:
+            display_email = None
         return render_template(
-            "user-page.html", display=display, is_owner=g.user == g.page.owner
+            "user-page.html",
+            display=display,
+            is_owner=g.user == g.page.owner,
+            display_email=display_email,
         )
     elif isinstance(g.page, TopicPage):
         return render_template("topic-page.html", display=g.page.versions[-1])
@@ -640,6 +647,7 @@ def bookmarks_history():
 @error_handling
 def search(query):
     if g.user is not None and is_valid_email(query):
+        g.user.set_hide_search_hint()
         return flask_redirect(url_for("page", title=query))
     title = name_to_title(query)
     can_create = False

@@ -25,7 +25,7 @@
     {% set errorid = "error-version-{}".format(num) %}
     <nav class="history">
       <span class="timestamp">{{ moment_timestamp(version.timestamp) }}</span>
-      {% if g.user != None and num != len(g.page.versions) - 1 %}
+      {% if g.page.is_owner %}
         <button type="button" onclick="restore({{ num }}, '{{ errorid }}')">Restore</button>
       {% endif %}
       <a href="{{ url_for('version', title=g.page.title, num=num) }}">View</a>
