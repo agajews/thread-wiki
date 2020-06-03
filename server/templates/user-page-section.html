@@ -9,7 +9,7 @@
     <div id="{{ displayid }}">
       {% set header %}
         {% if section.inserted %}
-          <ins>[{{ section.heading }}]</ins>
+          <ins>{{ section.heading }}</ins>
         {% else %}
           {{ section.heading }}
         {% endif %}

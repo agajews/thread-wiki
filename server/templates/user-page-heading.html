@@ -2,7 +2,7 @@
   <div id="heading-display">
     <h1>
       {% if display.heading_changed %}
-        <ins>[{{ display.name }} ({{ display.aka }})]</ins>
+        <ins>{{ display.name }} ({{ display.aka }})</ins>
       {% else %}
         {{ display.name }} ({{ display.aka }})
       {% endif %}
