@@ -15,7 +15,7 @@ from .errors import *
 class Page(MongoModel):
     titles = fields.ListField(fields.CharField())
     freshness = fields.IntegerField(default=0)
-    search_terms = fields.ListField(fields.CharField())
+    search_terms = fields.ListField(fields.CharField(), blank=True)
     last_edited = fields.DateTimeField(default=0)
 
     class Meta:

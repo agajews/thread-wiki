@@ -265,7 +265,7 @@ class UserPage(Page):
         primary_diff.save()
         page = UserPage(
             titles=[email],
-            search_terms=[email],
+            search_terms=[],
             versions=[version],
             diffs=[diff],
             primary_diffs=[primary_diff],

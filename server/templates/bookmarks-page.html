@@ -56,7 +56,7 @@
           {% if isinstance(page, UserPage) %}
             {% set diff = page.diffs[-1] %}
             <a href="{{ url_for('page', title=page.title) }}">
-              {{ diff.name }}
+              {{ page.user_version.name }}
             </a> - <span class="timestamp">{{ moment_from_now(page.versions[-1].timestamp) }}</span>
           {% elif isinstance(page, TopicPage) %}
             {% set diff = page.diffs[-1] %}
