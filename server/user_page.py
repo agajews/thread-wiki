@@ -215,7 +215,7 @@ class UserPage(Page):
     def send_email(self, version):
         send_email(
             self.owner.email,
-            "Edit notification for {} ({}): Someone edited your page on {}".format(
+            "Edit notification for {} ({}): Someone suggested an edit for your page on {}".format(
                 version.name,
                 version.aka,
                 version.timestamp.date().strftime("%m/%d/%y"),

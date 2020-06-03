@@ -67,10 +67,10 @@
     </style>
   </head>
   <body>
-    <h3>New edit for {{ version.name}} ({{ version.aka }}). Someone has edited your page on Thread! View it here:</h3>
+    <h3>New edit suggestion for {{ version.name}} ({{ version.aka }}). Someone has suggested an edit your page on Thread! Accept or edit it here:</h3>
     <div class="centered">
       <a id="visit" href="{{ absolute_url(token_url_for(g.page.owner, 'pageorbookmarks')) }}">
-        Latest edit
+        Latest suggestions
       </a>
     </div>
 
