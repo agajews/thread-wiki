@@ -39,6 +39,8 @@
     width: 100%;
     justify-content: center;
     margin-bottom: 10px;
+    visibility: hidden;
+    transition: visibility 0.3s;
   }
 
   .search-tooltip-text {
@@ -59,6 +61,10 @@
     border-width: 5px;
     border-style: solid;
     border-color: black transparent transparent transparent;
+  }
+
+  .search-tooltip.show {
+    visibility: visible;
   }
 
   .search-tooltip.show .search-tooltip-text {

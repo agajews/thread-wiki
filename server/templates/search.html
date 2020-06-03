@@ -17,7 +17,11 @@
   {% else %}
     {% for i, page in enumerate(pages) %}
       {% if isinstance(page, UserPage) %}
-        {% set version = page.user_version %}
+        {% if g.user != None %}
+          {% set version = page.user_version %}
+        {% else %}
+          {% set version = page.versions[-1] %}
+        {% endif %}
         <h2><a href="{{ url_for('page', title=page.title) }}">
           {{ version.name }} ({{ version.aka }})
         </a></h2>

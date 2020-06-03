@@ -7,7 +7,6 @@ from flask import g, render_template
 from datetime import timedelta
 
 from .page import Page, PageVersion, VersionDiff
-from .bookmarks import BookmarksPage
 from .html_utils import (
     markup_changes,
     name_to_title,
@@ -169,6 +168,8 @@ class UserPage(Page):
         )
 
     def edit(self, sections, summary, name, aka, is_primary=None, backlink=True):
+        from .bookmarks import BookmarksPage
+
         assert g.user is not None
         links, sections, summary = linkify_page(sections, summary)
         if is_primary is None:

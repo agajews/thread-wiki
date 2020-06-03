@@ -655,7 +655,14 @@ def search(query):
         Page.find(title)
     except PageNotFound:
         can_create = g.user is not None and g.user.can_create and not is_email(title)
-    pages = Page.search(query)
+    if g.user is not None:
+        bookmarks_pages = BookmarksPage.search(query)
+        search_pages = [
+            page for page in Page.search(query) if page not in bookmarks_pages
+        ]
+        pages = bookmarks_pages + search_pages
+    else:
+        pages = Page.search(query)
     return render_template(
         "search.html",
         pages=pages,

@@ -6,9 +6,16 @@ from flask import g, render_template
 from urllib.parse import urljoin
 
 from .app import timestamp, url_for
-from .html_utils import markup_changes, linkify_page, sanitize_html
+from .page import Page
+from .user_page import UserPage
+from .html_utils import markup_changes, linkify_page, sanitize_html, split_words
 from .sections import diff_sections, separate_sections, Section, SectionDiff
 from .errors import *
+
+
+def to_terms(text):
+    words = split_words(text)
+    return [word.lower() for word in words]
 
 
 class BookmarksPage(MongoModel):
@@ -31,6 +38,22 @@ class BookmarksPage(MongoModel):
         self.versions.append(version)
         self.diffs.append(diff)
         self.save()
+
+    @staticmethod
+    def search(query):
+        bookmarks = BookmarksPage.find()
+        links = bookmarks.latest.links
+        pages = list(Page.objects.raw({"titles": {"$in": links}}).all())
+        query_terms = to_terms(query)
+        matches = []
+        for page in pages:
+            if not isinstance(page, UserPage):
+                continue
+            name, aka = page.user_version.name, page.user_version.aka
+            terms = to_terms(name + " " + aka)
+            if any(query_term in terms for query_term in query_terms):
+                matches.append(page)
+        return matches
 
     @property
     def latest(self):
