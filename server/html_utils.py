@@ -128,23 +128,6 @@ def is_word(s):
     return len(s.strip(whitespace)) > 0
 
 
-# def split_words(data):
-#     words = []
-#     start = 0
-#     for i in range(len(data)):
-#         if i == len(data) - 1:
-#             words.append(data[start:])
-#             break
-#         if (
-#             data[i] in whitespace
-#             and data[i + 1] not in whitespace
-#             and is_word(data[start : i + 1])
-#         ):
-#             words.append(data[start : i + 1])
-#             start = i + 1
-#     return words
-
-
 def split_words(data):
     words = []
     for _, group in itertools.groupby(data, char_type):
@@ -299,7 +282,7 @@ def get_sequence(data):
 def add_diff_to_context(matcher, sequence_a, sequence_b):
     merged_sequence = []
     diff = []
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    for tag, i1, i2, j1, j2 in stretched_opcodes(matcher, sequence_a, sequence_b):
         if tag == "equal":
             merged_sequence += sequence_b[j1:j2]
             diff += ["equal"] * (j2 - j1)
@@ -339,7 +322,7 @@ def contains_word(tokens):
     return False
 
 
-def stretched_opcodes(matcher, sequence_a, sequence_b, n=3, depth=0, maxdepth=3):
+def stretched_opcodes(matcher, sequence_a, sequence_b, n=5, depth=0, maxdepth=3):
     marked_dirty = False
     opcodes = matcher.get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:
