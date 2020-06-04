@@ -8,7 +8,7 @@
       {% endif %}
       {% if g.page.can_accept %}
         <!-- <button type="button" onclick="accept('error-heading')">Accept this version</button> -->
-        <button type="button" onclick="accept('error-heading')" class="action-link">Accept</button>
+        <!-- <button type="button" onclick="accept('error-heading')" class="action-link">Accept</button> -->
         <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit</a>
       {% elif g.page.can_edit %}
         <button type="button" onclick="swap('heading-display', 'heading-edit')">Edit name</button>
