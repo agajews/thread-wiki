@@ -7,25 +7,21 @@
       }
 
       #visit {
-        background-color: rgb(82, 68, 208);
-        font-weight: bold;
-        border: 1px solid transparent;
-
-        font-size: 14pt;
         padding: 6px 18px;
-        border-radius: 4px;
-        font-size: 10pt;
 
-        color: white;
         margin: 8px 0;
         text-decoration: none;
         display: inline-block;
 
-        background-color: transparent;
-        border: 1px solid #00FF00;
-        color: rgb(19, 88, 227);
-        font-weight: normal;
-        border-color: rgb(209, 213, 218);
+        background-image: linear-gradient(-180deg, #6f6ecc, #331bed);
+        background-image: linear-gradient(-180deg, #5a59d4, #331bed);
+        font-weight: bold;
+        border: 1px solid hsl(220, 78%, 29%);
+
+        border-radius: 4px;
+        font-size: 10pt;
+
+        color: white;
       }
 
       img {
@@ -70,7 +66,7 @@
     <h3>New edit suggestion for {{ version.name}} ({{ version.aka }}). Someone has suggested an edit your page on Thread! Accept or edit it here:</h3>
     <div class="centered">
       <a id="visit" href="{{ absolute_url(token_url_for(g.page.owner, 'pageorbookmarks')) }}">
-        Latest suggestions
+        Accept or edit
       </a>
     </div>
 

@@ -70,9 +70,14 @@
 
   {% if g.page.can_accept %}
     <div class="info-block">
-      Only you can see these suggestions.
-      <button type="button" onclick="accept('error-heading')" class="action-link">Accept</button> them, or
-      <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit</a> before accepting.
+      <div class="flex-gap-container">
+        <span class="margin-right vertical-margin">
+          Only you can see these suggestions.
+          <button type="button" onclick="accept('error-heading')" class="action-link">Accept</button> them, or
+          <a href="{{ url_for('edit', title=g.page.title) }}" class="action-link">Edit</a> before accepting.
+        </span>
+        <button type="button" class="button-primary vertical-margin" onclick="accept('error-heading')">Accept suggestions</button>
+      </div>
     </div>
   {% endif %}
 
@@ -85,4 +90,7 @@
       {% include 'user-page-section.html' %}
     </div>
   {% endfor %}
+
+  {% if g.page.can_accept %}
+  {% endif %}
 {% endblock %}
