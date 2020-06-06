@@ -13,7 +13,7 @@ from .html_utils import (
     name_to_title,
 )
 from .sections import separate_sections, Section
-from .templates import try_create_page, is_valid_email, is_email
+from .templates import try_create_page, is_edu_email, is_email
 from .page import Page
 from .user import User
 from .user_page import UserPage, UserVersionDiff
@@ -646,7 +646,7 @@ def bookmarks_history():
 @app.route("/search/?<query>")
 @error_handling
 def search(query):
-    if g.user is not None and is_valid_email(query):
+    if g.user is not None and is_email(query):
         g.user.set_hide_search_hint()
         return flask_redirect(url_for("page", title=query))
     title = name_to_title(query)
@@ -654,7 +654,7 @@ def search(query):
     try:
         Page.find(title)
     except PageNotFound:
-        can_create = g.user is not None and g.user.can_create and not is_email(title)
+        can_create = g.user is not None and g.user.can_create
     if g.user is not None:
         bookmarks_pages = BookmarksPage.search(query)
         search_pages = [

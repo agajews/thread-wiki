@@ -1,6 +1,8 @@
 <div>
   "{{ quote|safe }}" - Placeholder Name, probably.
-  Goes to {{ absolute_url(url_for('page', title=domain)) }}.
+  {% if is_edu %}
+    Goes to {{ absolute_url(url_for('page', title=domain)) }}.
+  {% endif %}
 </div>
 <h2>Projects</h2>
 <div>Placeholder Name's last project was making something to {{ random_verb() }} everyone's {{ random_noun() }}.</div>

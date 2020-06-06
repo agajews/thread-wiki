@@ -27,7 +27,7 @@ def open_file(name):
 
 
 def split_email(email):
-    match = re.fullmatch("^([a-zA-Z0-9.\\-_]+)@([a-zA-Z0-9\\-_\\.]+)\\.edu$", email)
+    match = re.fullmatch("^([a-zA-Z0-9.\\-_]+)@([a-zA-Z0-9\\-_\\.]+)\\.[a-z]+$", email)
     return match.groups()
 
 
@@ -64,13 +64,15 @@ def inject_generators():
     )
 
 
-def generate_user_template(name, domain):
+def generate_user_template(name, domain, is_edu=True):
     quote = random.choice(quotes).format(
         noun=random.choice(nouns), verb=random.choice(verbs), email=name
     )
     # possible injection attack here? probably not if emails are legitimate,
     # but there might be places that let you make arbitrary aliases...
-    return render_template("user-template.html", name=name, domain=domain, quote=quote)
+    return render_template(
+        "user-template.html", name=name, domain=domain, is_edu=is_edu, quote=quote
+    )
 
 
 def generate_aka():
@@ -93,7 +95,7 @@ def is_email(email):
     return False
 
 
-def is_valid_email(email):
+def is_edu_email(email):
     if re.fullmatch("^[a-zA-Z0-9.\\-_]+@([a-zA-Z0-9\\-_]+\\.)+edu$", email):
         return True
     return False
@@ -101,12 +103,16 @@ def is_valid_email(email):
 
 def create_user_page(email):
     name, domain = split_email(email)
-    summary, sections = separate_sections(generate_user_template(name, domain))
+    is_edu = is_edu_email(email)
+    summary, sections = separate_sections(
+        generate_user_template(name, domain, is_edu=is_edu)
+    )
     owner = User.create_or_return(email)
-    try:
-        Page.find(domain)
-    except PageNotFound:
-        create_university_page(domain)
+    if is_edu:
+        try:
+            Page.find(domain)
+        except PageNotFound:
+            create_university_page(domain)
     return UserPage.create_or_return(sections, summary, email, generate_aka(), owner)
 
 
@@ -128,8 +134,6 @@ def create_topic_page(title):
 
 def try_create_page(title):
     assert g.user is not None and g.user.can_create
-    if is_valid_email(title):
+    if is_email(title):
         return create_user_page(title)
-    elif is_email(title):
-        return None
     return create_topic_page(title)
